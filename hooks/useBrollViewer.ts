@@ -9,7 +9,10 @@ import type {
   ExportSnapshot,
   FetchPayload,
   FlagClipResponse,
+  FolderFetchPlan,
+  FolderShortageStrategy,
   JudgmentSummary,
+  ScriptFormat,
   SegmentsPayload,
   ViewerSegment,
 } from "@/lib/types";
@@ -38,6 +41,7 @@ export function useBrollViewer() {
   const [segments, setSegments] = useState<ViewerSegment[]>([]);
   const [title, setTitle] = useState("Loading script…");
   const [projectFolder, setProjectFolder] = useState("");
+  const [scriptFormat, setScriptFormat] = useState<ScriptFormat>("legacy");
   const [videoDurationS, setVideoDurationS] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [beatFilter, setBeatFilter] = useState("");
@@ -69,6 +73,7 @@ export function useBrollViewer() {
   const customQueriesRef = useRef(customQueries);
   const segmentsRef = useRef(segments);
   const videoDurationRef = useRef(videoDurationS);
+  const scriptFormatRef = useRef(scriptFormat);
 
   useEffect(() => {
     customQueriesRef.current = customQueries;
@@ -81,6 +86,10 @@ export function useBrollViewer() {
   useEffect(() => {
     videoDurationRef.current = videoDurationS;
   }, [videoDurationS]);
+
+  useEffect(() => {
+    scriptFormatRef.current = scriptFormat;
+  }, [scriptFormat]);
 
   const showStatus = useCallback((message: string, isError = false) => {
     setStatusMessage(message);
@@ -159,6 +168,7 @@ export function useBrollViewer() {
     if (payload.ai_judge) {
       setAiJudge(payload.ai_judge);
     }
+    setScriptFormat(payload.script_format === "folder" ? "folder" : "legacy");
     setTitle(payload.title || "Billions");
     setProjectFolder(
       payload.project_folder
@@ -246,6 +256,21 @@ export function useBrollViewer() {
       quiet = false,
       provider: FetchProvider = "mix",
     ) => {
+      const segment = segmentsRef.current.find((item) => item.segment_id === segmentId);
+      if (segment && scriptFormatRef.current === "folder") {
+        const category = segment.category.trim().toLowerCase();
+        if (category !== "stock") {
+          const folderStatus = segment.folder_status;
+          if (folderStatus && !folderStatus.has_folder) {
+            const confirmed = window.confirm(
+              `Segment ${segmentId} (type "${segment.category}") has no B-Roll/${segment.category}/ folder.\n\n` +
+                `API fetch will use: "${segment.search_query || segment.description}".\n\nContinue?`,
+            );
+            if (!confirmed) return false;
+          }
+        }
+      }
+
       setLoadingIds((current) => new Set(current).add(segmentId));
 
       try {
@@ -569,15 +594,91 @@ export function useBrollViewer() {
     [batchRunning, fetchConcurrency, runBatchWorkers, showStatus],
   );
 
+  const shouldApiFetchSegment = useCallback((segment: ViewerSegment) => {
+    if (scriptFormatRef.current !== "folder") return true;
+    const category = segment.category.trim().toLowerCase();
+    if (category === "stock") return true;
+    const folderFetchStarted = segmentsRef.current.some(
+      (item) =>
+        item.category.trim().toLowerCase() !== "stock" &&
+        item.selection?.provider === "storage",
+    );
+    return folderFetchStarted;
+  }, []);
+
   const fetchMissing = useCallback(async () => {
     await runBatch(
       "Fetching missing",
-      () => segmentsRef.current.filter((segment) => !segment.selection),
+      () =>
+        segmentsRef.current.filter(
+          (segment) => !segment.selection && shouldApiFetchSegment(segment),
+        ),
       false,
       "mix",
       { untilComplete: true },
     );
-  }, [runBatch]);
+  }, [runBatch, shouldApiFetchSegment]);
+
+  const loadFolderFetchPreview = useCallback(async (shortageStrategy?: FolderShortageStrategy) => {
+    const query = shortageStrategy
+      ? `?shortage_strategy=${encodeURIComponent(shortageStrategy)}`
+      : "";
+    return apiFetch<FolderFetchPlan>(`/api/folder-fetch/preview${query}`);
+  }, []);
+
+  const applyFolderFetch = useCallback(
+    async (shortageStrategy?: FolderShortageStrategy) => {
+      const result = await apiFetch<{
+        applied_count: number;
+        api_fetched_count?: number;
+        applied: Array<{ segment_id: number; selection: ViewerSegment["selection"] }>;
+        api_fetched?: Array<{ segment_id: number; selection?: ViewerSegment["selection"] }>;
+        summary?: FolderFetchPlan["summary"];
+      }>("/api/folder-fetch/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          shortageStrategy ? { shortage_strategy: shortageStrategy } : {},
+        ),
+      });
+
+      const appliedById = new Map<number, ViewerSegment["selection"]>();
+      for (const entry of result.applied ?? []) {
+        if (entry.selection) appliedById.set(entry.segment_id, entry.selection);
+      }
+      for (const entry of result.api_fetched ?? []) {
+        if (entry.selection) appliedById.set(entry.segment_id, entry.selection);
+      }
+
+      if (appliedById.size > 0) {
+        setSegments((current) =>
+          current.map((segment) => {
+            const selection = appliedById.get(segment.segment_id);
+            return selection ? { ...segment, selection, _alternatives: [] } : segment;
+          }),
+        );
+      }
+
+      const apiRemaining =
+        (result.summary?.api ?? 0) +
+        (result.summary?.api_warning ?? 0) +
+        (result.summary?.unassigned ?? 0);
+      const apiFetched = result.api_fetched_count ?? 0;
+      showStatus(
+        `Folder fetch assigned ${result.applied_count} clip${
+          result.applied_count === 1 ? "" : "s"
+        }` +
+          (apiFetched > 0
+            ? ` · ${apiFetched} fetched from API`
+            : "") +
+          (apiRemaining > 0
+            ? ` · ${apiRemaining} still need attention`
+            : ""),
+      );
+      return result;
+    },
+    [showStatus],
+  );
 
   const refetchAll = useCallback(async (provider: FetchProvider = "mix") => {
     if (!segmentsRef.current.length) return;
@@ -864,6 +965,7 @@ export function useBrollViewer() {
     visibleSegments,
     title,
     projectFolder,
+    scriptFormat,
     searchQuery,
     setSearchQuery,
     beatFilter,
@@ -892,6 +994,8 @@ export function useBrollViewer() {
     fetchSegmentWithRetry,
     selectAlternative,
     selectStorageClip,
+    loadFolderFetchPreview,
+    applyFolderFetch,
     fetchMissing,
     refetchAll,
     refetchReview,

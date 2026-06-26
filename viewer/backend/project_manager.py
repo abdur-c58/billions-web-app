@@ -260,6 +260,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
 
     script_title = None
     segment_count = 0
+    script_format = None
     if script_exists:
         try:
             with paths["script"].open("r", encoding="utf-8") as infile:
@@ -267,8 +268,12 @@ def project_status(workspace: Path) -> dict[str, Any]:
             script_title = script_data.get("title")
             for beat_block in script_data.get("script", []):
                 segment_count += len(beat_block.get("segments", []))
+            from script_format import detect_script_format
+
+            script_format = detect_script_format(script_data)
         except (json.JSONDecodeError, OSError):
             script_title = None
+            script_format = None
 
     aligned_segments = 0
     if timestamps_exists:
@@ -296,6 +301,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "timestamps_ready": timestamps_exists,
         "viewer_ready": ready,
         "title": script_title,
+        "script_format": script_format,
         "segment_count": segment_count,
         "aligned_segments": aligned_segments,
         "timestamps_job": timestamps_job,

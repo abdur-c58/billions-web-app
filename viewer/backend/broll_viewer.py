@@ -339,27 +339,9 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
-    segments: list[dict[str, Any]] = []
-    for beat_block in script_data.get("script", []):
-        beat = beat_block.get("beat")
-        label = beat_block.get("label")
-        for segment in beat_block.get("segments", []):
-            if "segment_id" not in segment or "content" not in segment:
-                continue
-            search_query, category = (segment.get("type", ["", ""]) + ["", ""])[:2]
-            segments.append(
-                {
-                    "segment_id": segment["segment_id"],
-                    "beat": beat,
-                    "label": label,
-                    "content": segment.get("content", ""),
-                    "description": segment.get("description", ""),
-                    "search_query": search_query,
-                    "category": category,
-                }
-            )
-    segments.sort(key=lambda item: item["segment_id"])
-    return segments
+    from script_format import iter_broll_script_segments
+
+    return iter_broll_script_segments(script_data)
 
 
 def selection_matches_segment(
@@ -1495,13 +1477,21 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self.timestamps_path,
                 self.selections_path,
             )
+            script_data = read_json(self.script_path, {})
+            from script_format import detect_script_format
+            from folder_fetch import enrich_segments_folder_status
+
+            script_format = detect_script_format(script_data)
+            enrich_segments_folder_status(rows, script_format)
             timestamps_meta = read_json(self.timestamps_path, {})
             ai_snapshot = self.ai_budget.snapshot() if self.ai_budget else {}
+
             self._send_json(
                 {
-                    "title": read_json(self.script_path, {}).get("title"),
+                    "title": script_data.get("title"),
                     "project_folder": str(self.project_dir),
                     "script": str(self.script_path),
+                    "script_format": script_format,
                     "video_duration_s": timestamps_meta.get("video_duration_s"),
                     "segments": rows,
                     "judgment_summary": summarize_judgments(rows),
@@ -1511,6 +1501,58 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     },
                 }
             )
+            return
+
+        if parsed.path == "/api/folder-fetch/preview":
+            if not self._project_ready():
+                self._send_json(
+                    {"error": "Project not ready."},
+                    HTTPStatus.BAD_REQUEST,
+                )
+                return
+            try:
+                script_data = read_json(self.script_path, {})
+                from script_format import detect_script_format
+                from folder_fetch import build_folder_fetch_plan
+
+                script_format = detect_script_format(script_data)
+                if script_format != "folder":
+                    self._send_json(
+                        {
+                            "error": "Folder fetch requires a folder-format script.json "
+                            "(string type per segment).",
+                            "script_format": script_format,
+                        },
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                rows = build_segment_rows(
+                    self.script_path,
+                    self.timestamps_path,
+                    self.selections_path,
+                )
+                strategy_param = (params.get("shortage_strategy") or [""])[0].strip()
+                shortage_strategy = strategy_param or None
+                if shortage_strategy and shortage_strategy not in {
+                    "leave_empty",
+                    "reuse_spaced",
+                    "random_api",
+                }:
+                    self._send_json(
+                        {"error": f"Invalid shortage_strategy: {shortage_strategy}"},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                plan = build_folder_fetch_plan(
+                    rows,
+                    shortage_strategy=shortage_strategy,  # type: ignore[arg-type]
+                )
+                plan["script_format"] = script_format
+                self._send_json(plan)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
         if parsed.path == "/api/fetch":
@@ -1870,6 +1912,75 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     },
                 )
                 self._send_json({"segment_id": segment_id, "selection": saved})
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/folder-fetch/apply":
+            if not self._project_ready():
+                self._send_json(
+                    {"error": "Project not ready."},
+                    HTTPStatus.BAD_REQUEST,
+                )
+                return
+            try:
+                script_data = read_json(self.script_path, {})
+                from script_format import detect_script_format
+                from folder_fetch import apply_folder_fetch_plan, build_folder_fetch_plan
+
+                if detect_script_format(script_data) != "folder":
+                    self._send_json(
+                        {"error": "Folder fetch requires a folder-format script.json."},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                rows = build_segment_rows(
+                    self.script_path,
+                    self.timestamps_path,
+                    self.selections_path,
+                )
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                shortage_strategy = str(body.get("shortage_strategy") or "").strip() or None
+                if shortage_strategy and shortage_strategy not in {
+                    "leave_empty",
+                    "reuse_spaced",
+                    "random_api",
+                }:
+                    self._send_json(
+                        {"error": f"Invalid shortage_strategy: {shortage_strategy}"},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                plan = build_folder_fetch_plan(
+                    rows,
+                    shortage_strategy=shortage_strategy,  # type: ignore[arg-type]
+                )
+                if plan.get("needs_shortage_choice"):
+                    self._send_json(
+                        {
+                            "error": "Choose how to handle folder shortages before applying.",
+                            "shortages": plan.get("shortages", []),
+                        },
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                segments_by_id = {row["segment_id"]: row for row in rows}
+                result = apply_folder_fetch_plan(
+                    self.selections_path,
+                    self.script_path,
+                    segments_by_id,
+                    plan["assignments"],
+                    cache_dir=self.cache_dir,
+                    use_ai=self.use_ai_judge,
+                    ai_budget=self.ai_budget,
+                    judgment_cache=self.judgment_cache,
+                    flagged_path=self.flagged_path,
+                )
+                result["summary"] = plan["summary"]
+                self._send_json(result)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return

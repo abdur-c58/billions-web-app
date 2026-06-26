@@ -1,6 +1,6 @@
 "use client";
 
-import { FileAudio, FileJson, FileStack, Loader2, Sparkles } from "lucide-react";
+import { Check, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
 import type { ProjectStatus } from "@/lib/project";
@@ -93,6 +93,22 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     ? setup.status.title || "Script uploaded"
                     : "Upload your documentary script JSON."}
                 </p>
+                {setup.status?.script_uploaded ? (
+                  <p
+                    className={`mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium ${
+                      setup.status.script_format === "folder"
+                        ? "text-emerald-300"
+                        : "text-[var(--muted)]"
+                    }`}
+                  >
+                    {setup.status.script_format === "folder" ? (
+                      <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    )}
+                    Folder fetch
+                  </p>
+                ) : null}
               </div>
               <label className="glow-btn-secondary cursor-pointer rounded-[10px] px-3.5 py-2.5 text-sm font-semibold">
                 Choose file

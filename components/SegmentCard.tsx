@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Flag, HardDrive, Play } from "lucide-react";
-import type { PexelsVideo, ViewerSegment } from "@/lib/types";
+import type { PexelsVideo, ScriptFormat, ViewerSegment } from "@/lib/types";
 import { formatTiming } from "@/lib/format";
 import type { FetchProvider } from "@/hooks/useBrollViewer";
 import {
@@ -14,6 +14,7 @@ import {
 
 type SegmentCardProps = {
   segment: ViewerSegment;
+  scriptFormat: ScriptFormat;
   customQuery: string;
   isLoading: boolean;
   isFocused?: boolean;
@@ -26,6 +27,7 @@ type SegmentCardProps = {
 
 function SegmentCardInner({
   segment,
+  scriptFormat,
   customQuery,
   isLoading,
   isFocused = false,
@@ -47,6 +49,14 @@ function SegmentCardInner({
   const qualityTier = selection?.quality_tier ?? computeQualityTier(selection);
   const qualityLabel = selection?.quality_label || QUALITY_LABELS[qualityTier];
   const detail = judgmentDetail(selection);
+  const folderStatus = segment.folder_status;
+  const isFolderFormat = scriptFormat === "folder";
+  const isStock = segment.category.trim().toLowerCase() === "stock";
+  const showNoFolderWarning =
+    isFolderFormat && !isStock && folderStatus?.expects_folder && !folderStatus.has_folder;
+  const showShortageWarning =
+    isFolderFormat && !isStock && folderStatus?.has_folder && folderStatus.shortage;
+  const showFolderTypeBadge = isFolderFormat && !isStock;
 
   const cardGlowClass = isFocused
     ? "glow-card glow-card-focused"
@@ -105,6 +115,11 @@ function SegmentCardInner({
         <span className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(229,229,229,0.12)] px-2 py-0.5 text-[0.68rem] text-[var(--foreground)]">
           {segment.search_query || "No search term"}
         </span>
+        {showFolderTypeBadge ? (
+          <span className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(163,163,163,0.12)] px-2 py-0.5 text-[0.68rem] text-[var(--muted)]">
+            Type: {segment.category}
+          </span>
+        ) : null}
         {searchedWithCustom ? (
           <span
             className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(163,163,163,0.12)] px-2 py-0.5 text-[0.68rem] text-[var(--muted)]"
@@ -152,6 +167,22 @@ function SegmentCardInner({
           </span>
         ) : null}
       </div>
+
+      {showNoFolderWarning ? (
+        <div className="mx-3 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-[0.72rem] leading-snug text-amber-100">
+          No <code className="text-[var(--foreground)]">B-Roll/{segment.category}/</code> folder
+          found. Manual fetch will use the API with &quot;{segment.search_query}&quot;.
+        </div>
+      ) : null}
+
+      {showShortageWarning ? (
+        <div className="mx-3 rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-[0.72rem] leading-snug text-amber-100/90">
+          Only {folderStatus?.clip_count} clip
+          {folderStatus?.clip_count === 1 ? "" : "s"} in{" "}
+          <code className="text-[var(--foreground)]">B-Roll/{segment.category}/</code> — use Folder
+          Fetch to choose how extras are handled.
+        </div>
+      ) : null}
 
       <div className="flex flex-1 flex-col gap-2.5 px-3 py-2.5 pb-3">
         <div className="grid gap-2">

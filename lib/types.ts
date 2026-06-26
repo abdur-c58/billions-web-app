@@ -63,6 +63,7 @@ export type ViewerSegment = {
   description: string;
   search_query: string;
   category: string;
+  folder_status?: SegmentFolderStatus;
   timing: SegmentTiming;
   selection?: SegmentSelection | null;
   selection_flagged?: boolean;
@@ -109,10 +110,73 @@ export type FlagClipResponse = {
   affected_count: number;
 };
 
+export type ScriptFormat = "legacy" | "folder";
+
+export type FolderShortageStrategy = "leave_empty" | "reuse_spaced" | "random_api";
+
+export type SegmentFolderStatus = {
+  expects_folder: boolean;
+  has_folder: boolean;
+  clip_count: number;
+  folder_prefix?: string;
+  shortage?: boolean;
+};
+
+export type FolderFetchMode =
+  | "folder"
+  | "api"
+  | "api_warning"
+  | "unassigned"
+  | "api_shortage";
+
+export type FolderShortage = {
+  category: string;
+  segment_count: number;
+  clip_count: number;
+  deficit: number;
+  folder_prefix: string;
+};
+
+export type FolderFetchAssignment = {
+  segment_id: number;
+  category: string;
+  mode: FolderFetchMode;
+  search_query: string;
+  storage_key?: string;
+  clip_name?: string;
+  folder?: string;
+  warning?: string;
+  reused?: boolean;
+};
+
+export type FolderFetchPlan = {
+  script_format?: ScriptFormat;
+  assignments: FolderFetchAssignment[];
+  shortages?: FolderShortage[];
+  needs_shortage_choice?: boolean;
+  shortage_strategy?: FolderShortageStrategy | null;
+  summary: {
+    folder: number;
+    api: number;
+    api_warning: number;
+    api_shortage?: number;
+    unassigned?: number;
+    total: number;
+  };
+  folders: Record<
+    string,
+    {
+      prefix: string;
+      clip_count: number;
+    }
+  >;
+};
+
 export type SegmentsPayload = {
   title?: string;
   project_folder?: string;
   script?: string;
+  script_format?: ScriptFormat;
   video_duration_s?: number | null;
   segments: ViewerSegment[];
   judgment_summary?: JudgmentSummary;

@@ -452,6 +452,8 @@ def get_audio_duration(audio_path: Path) -> float | None:
 
 
 def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
+    from script_format import parse_segment_broll_fields
+
     segments: list[dict[str, Any]] = []
     for beat_block in script_data.get("script", []):
         beat = beat_block.get("beat")
@@ -459,7 +461,7 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
         for segment in beat_block.get("segments", []):
             content = str(segment.get("content", "")).strip()
             description = segment.get("description", "")
-            search_query, category = (segment.get("type", ["", ""]) + ["", ""])[:2]
+            search_query, category = parse_segment_broll_fields(segment)
             segments.append(
                 {
                     "segment_id": segment.get("segment_id"),

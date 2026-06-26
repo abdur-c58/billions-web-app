@@ -3,7 +3,7 @@
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FetchProvider } from "@/hooks/useBrollViewer";
-import type { ViewerSegment } from "@/lib/types";
+import type { ScriptFormat, ViewerSegment } from "@/lib/types";
 import { SegmentCard } from "@/components/SegmentCard";
 
 const CARD_MIN_WIDTH = 300;
@@ -16,6 +16,7 @@ function columnCountForWidth(width: number): number {
 
 type SegmentVirtualGridProps = {
   segments: ViewerSegment[];
+  scriptFormat: ScriptFormat;
   customQueries: Record<number, string>;
   loadingIds: Set<number>;
   focusedSegmentId: number | null;
@@ -32,6 +33,7 @@ type SegmentVirtualGridProps = {
 
 export function SegmentVirtualGrid({
   segments,
+  scriptFormat,
   customQueries,
   loadingIds,
   focusedSegmentId,
@@ -124,6 +126,7 @@ export function SegmentVirtualGrid({
                 <SegmentCard
                   key={segment.segment_id}
                   segment={segment}
+                  scriptFormat={scriptFormat}
                   customQuery={
                     customQueries[segment.segment_id] ??
                     segment.selection?.custom_query ??

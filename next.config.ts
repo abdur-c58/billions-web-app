@@ -67,6 +67,10 @@ const nextConfig: NextConfig = {
         source: "/api/rescore/:path*",
         destination: `${backendBase}/api/rescore/:path*`,
       },
+      {
+        source: "/api/folder-fetch/:path*",
+        destination: `${backendBase}/api/folder-fetch/:path*`,
+      },
     ];
   },
 };

@@ -1,9 +1,11 @@
 import { apiFetch, getBrollBackendUrl } from "@/lib/api";
+import type { ScriptFormat } from "@/lib/types";
 
 export type ProjectStatus = {
   workspace: string;
   project_id?: string | null;
   script_uploaded: boolean;
+  script_format?: ScriptFormat | null;
   audio_uploaded: boolean;
   timestamps_ready: boolean;
   viewer_ready: boolean;

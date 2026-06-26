@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "dev:api": "python viewer/backend/broll_viewer.py --workspace --no-browser --port 8766",
+    "tunnel": "cloudflared tunnel --url http://127.0.0.1:8766",
     "dev:all": "concurrently -k -n web,api -c blue,green \"npm run dev\" \"npm run dev:api\"",
     "build": "next build",
     "start": "next start -p 3001",

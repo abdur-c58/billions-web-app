@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Flag, Clapperboard, Clock, Download, Loader2, RefreshCw, Search } from "lucide-react";
+import { Flag, Clapperboard, Clock, Download, FolderOpen, Loader2, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportAudioModal } from "@/components/ExportAudioModal";
 import { FlagClipModal } from "@/components/FlagClipModal";
 import { StorageClipSelectModal } from "@/components/StorageClipSelectModal";
+import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
+import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
   const viewer = useBrollViewer();
@@ -18,6 +20,11 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
   const [storagePickerSegmentId, setStoragePickerSegmentId] = useState<number | null>(null);
   const [storagePickerBusy, setStoragePickerBusy] = useState(false);
+  const [folderFetchOpen, setFolderFetchOpen] = useState(false);
+  const [folderFetchBusy, setFolderFetchBusy] = useState(false);
+  const [folderFetchPlan, setFolderFetchPlan] = useState<FolderFetchPlan | null>(null);
+  const [folderFetchError, setFolderFetchError] = useState<string | null>(null);
+  const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
     viewer.exportSnapshot.status,
@@ -74,6 +81,51 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const handleChooseFromStorage = useCallback((segmentId: number) => {
     setStoragePickerSegmentId(segmentId);
   }, []);
+
+  const openFolderFetch = useCallback(async () => {
+    setFolderFetchOpen(true);
+    setFolderFetchPlan(null);
+    setFolderFetchError(null);
+    try {
+      const plan = await viewer.loadFolderFetchPreview();
+      setFolderFetchPlan(plan);
+    } catch (error) {
+      setFolderFetchError(
+        error instanceof Error ? error.message : "Failed to load folder fetch preview",
+      );
+    }
+  }, [viewer]);
+
+  const reloadFolderFetch = useCallback(
+    async (strategy?: FolderShortageStrategy) => {
+      setFolderFetchError(null);
+      try {
+        const plan = await viewer.loadFolderFetchPreview(strategy);
+        setFolderFetchPlan(plan);
+      } catch (error) {
+        setFolderFetchError(
+          error instanceof Error ? error.message : "Failed to load folder fetch preview",
+        );
+      }
+    },
+    [viewer],
+  );
+
+  const handleConfirmFolderFetch = useCallback(
+    async (strategy?: FolderShortageStrategy) => {
+      setFolderFetchBusy(true);
+      try {
+        await viewer.applyFolderFetch(strategy);
+        setFolderFetchOpen(false);
+        setFolderFetchPlan(null);
+      } catch {
+        // Error toast handled in hook.
+      } finally {
+        setFolderFetchBusy(false);
+      }
+    },
+    [viewer],
+  );
 
   const handleConfirmStorageClip = useCallback(
     async (payload: {
@@ -213,6 +265,26 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
             <option value="none">Missing b-roll</option>
             <option value="unknown">Unknown quality</option>
           </select>
+
+          <button
+            type="button"
+            disabled={
+              !folderFormatEnabled ||
+              viewer.batchRunning ||
+              viewer.exportRunning ||
+              !viewer.backendReady
+            }
+            onClick={() => void openFolderFetch()}
+            className="glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+            title={
+              folderFormatEnabled
+                ? "Assign clips from B-Roll storage folders by segment type"
+                : "Folder Fetch requires a folder-format script.json (string type per segment)"
+            }
+          >
+            <FolderOpen className="h-4 w-4" />
+            Folder Fetch
+          </button>
 
           <button
             type="button"
@@ -451,6 +523,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
 
       <SegmentVirtualGrid
         segments={viewer.visibleSegments}
+        scriptFormat={viewer.scriptFormat}
         customQueries={viewer.customQueries}
         loadingIds={viewer.loadingIds}
         focusedSegmentId={viewer.focusedSegmentId}
@@ -468,6 +541,22 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
           if (!storagePickerBusy) setStoragePickerSegmentId(null);
         }}
         onConfirm={(payload) => void handleConfirmStorageClip(payload)}
+      />
+
+      <FolderFetchModal
+        open={folderFetchOpen}
+        busy={folderFetchBusy}
+        plan={folderFetchPlan}
+        error={folderFetchError}
+        onClose={() => {
+          if (!folderFetchBusy) {
+            setFolderFetchOpen(false);
+            setFolderFetchPlan(null);
+            setFolderFetchError(null);
+          }
+        }}
+        onConfirm={(strategy) => void handleConfirmFolderFetch(strategy)}
+        onReload={(strategy) => void reloadFolderFetch(strategy)}
       />
 
       <FlagClipModal
