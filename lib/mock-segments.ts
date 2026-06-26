@@ -1,0 +1,367 @@
+import type { ViewerSegment } from "./types";
+
+export const MOCK_TITLE =
+  "The Animal You Trust Most Kills More People Than Sharks, Lions, and Crocodiles Combined — And It's Sleeping In Your House Tonight";
+
+export const MOCK_PROJECT_FOLDER = "video3";
+
+export const MOCK_SEGMENTS: ViewerSegment[] = [
+  {
+    segment_id: 1,
+    beat: 1,
+    label: "Hook",
+    content:
+      "There's an animal somewhere near you right now that you'd never think to fear. It's probably asleep on a couch, or waiting by a door, or curled up at someone's feet.",
+    description: "dog sleeping on a couch indoors",
+    search_query: "dog sleeping on couch",
+    category: "commons",
+    timing: {
+      start_seconds: 0,
+      end_seconds: 9.2,
+      duration_seconds: 9.2,
+      start_timecode: "0:00",
+      end_timecode: "0:09",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/7197965/7197965-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/7197965/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/dog-sleeping-on-sofa-7197965/",
+      photographer: "cottonbro studio",
+      video_id: 7197965,
+    },
+  },
+  {
+    segment_id: 2,
+    beat: 1,
+    label: "Hook",
+    content:
+      "If you had to rank the most dangerous animals on Earth, this one almost certainly wouldn't make your list at all.",
+    description: "person thinking, making a mental list",
+    search_query: "person thinking mental list",
+    category: "stock",
+    timing: {
+      start_seconds: 9.2,
+      end_seconds: 15.1,
+      duration_seconds: 5.9,
+      start_timecode: "0:09",
+      end_timecode: "0:15",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/7578605/7578605-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/7578605/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/man-thinking-7578605/",
+      photographer: "cottonbro studio",
+      video_id: 7578605,
+    },
+  },
+  {
+    segment_id: 3,
+    beat: 1,
+    label: "Hook",
+    content:
+      "And yet, by verified global death toll, it outpaces sharks, lions, and crocodiles, combined, every single year.",
+    description: "animal comparison chart graphic",
+    search_query: "animal comparison chart graphic",
+    category: "stock",
+    timing: {
+      start_seconds: 15.1,
+      end_seconds: 24.5,
+      duration_seconds: 9.4,
+      start_timecode: "0:15",
+      end_timecode: "0:24",
+    },
+  },
+  {
+    segment_id: 4,
+    beat: 1,
+    label: "Hook",
+    content:
+      "In a village in the hills, far from any city, a stray dog has been wandering between houses for weeks, fed scraps, tolerated, occasionally petted by children on their way to school.",
+    description: "rural village with a dog near children",
+    search_query: "rural village dog children",
+    category: "commons",
+    timing: {
+      start_seconds: 24.5,
+      end_seconds: 36.5,
+      duration_seconds: 12,
+      start_timecode: "0:24",
+      end_timecode: "0:36",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/6235134/6235134-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/6235134/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/kids-playing-with-dog-6235134/",
+      photographer: "Kelly",
+      video_id: 6235134,
+    },
+  },
+  {
+    segment_id: 5,
+    beat: 1,
+    label: "Hook",
+    content:
+      "Nobody there sees a predator. They see a familiar shape, the same one that's followed humans around for over fifteen thousand years.",
+    description: "dog walking alongside a person",
+    search_query: "dog walking alongside human",
+    category: "commons",
+    timing: {
+      start_seconds: 36.5,
+      end_seconds: 44.6,
+      duration_seconds: 8.1,
+      start_timecode: "0:36",
+      end_timecode: "0:44",
+    },
+  },
+  {
+    segment_id: 6,
+    beat: 1,
+    label: "Hook",
+    content:
+      "That familiarity is exactly what makes this animal so dangerous, not in spite of how much we trust it, but because of it.",
+    description: "hand reaching out toward a dog",
+    search_query: "hand reaching toward dog",
+    category: "commons",
+    timing: {
+      start_seconds: 44.6,
+      end_seconds: 52.3,
+      duration_seconds: 7.7,
+      start_timecode: "0:44",
+      end_timecode: "0:52",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/5730871/5730871-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/5730871/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/person-petting-a-dog-5730871/",
+      photographer: "cottonbro studio",
+      video_id: 5730871,
+    },
+  },
+  {
+    segment_id: 7,
+    beat: 1,
+    label: "Hook",
+    content:
+      "Today we're doing something different than our usual countdowns. One animal, one full hour, every myth stripped away and replaced with the verified reality.",
+    description: "documentary title card for a single subject",
+    search_query: "documentary title card graphic",
+    category: "stock",
+    timing: {
+      start_seconds: 52.3,
+      end_seconds: 62.1,
+      duration_seconds: 9.8,
+      start_timecode: "0:52",
+      end_timecode: "1:02",
+    },
+  },
+  {
+    segment_id: 8,
+    beat: 1,
+    label: "Hook",
+    content:
+      "Quick pause before we go any further. If you're ready to see more of these kind of videos, hit subscribe now.",
+    description: "youtube subscribe button animation",
+    search_query: "youtube subscribe button animation",
+    category: "stock",
+    timing: {
+      start_seconds: 62.1,
+      end_seconds: 68.4,
+      duration_seconds: 6.3,
+      start_timecode: "1:02",
+      end_timecode: "1:08",
+    },
+  },
+  {
+    segment_id: 9,
+    beat: 1,
+    label: "Hook",
+    content:
+      "Turn on the bell too. Billions only posts when a topic has earned a full hour of research, so you will not want to miss the next one.",
+    description: "notification bell icon glowing",
+    search_query: "notification bell icon glowing",
+    category: "stock",
+    timing: {
+      start_seconds: 68.4,
+      end_seconds: 76.2,
+      duration_seconds: 7.8,
+      start_timecode: "1:08",
+      end_timecode: "1:16",
+    },
+  },
+  {
+    segment_id: 10,
+    beat: 1,
+    label: "Hook",
+    content:
+      "And if you are already hooked on where this is going, a like right now genuinely helps more than most people realize.",
+    description: "thumbs up icon on screen",
+    search_query: "thumbs up icon screen",
+    category: "stock",
+    timing: {
+      start_seconds: 76.2,
+      end_seconds: 83.5,
+      duration_seconds: 7.3,
+      start_timecode: "1:16",
+      end_timecode: "1:23",
+    },
+  },
+  {
+    segment_id: 11,
+    beat: 2,
+    label: "Methodology",
+    content:
+      "Every claim in this video is built on three categories of evidence: global health body estimates, peer-reviewed virology and epidemiology research, and documented medical history.",
+    description: "stack of evidence folders on a desk",
+    search_query: "stack folders evidence desk",
+    category: "stock",
+    timing: {
+      start_seconds: 120,
+      end_seconds: 130.5,
+      duration_seconds: 10.5,
+      start_timecode: "2:00",
+      end_timecode: "2:10",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/7578600/7578600-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/7578600/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/person-reading-documents-7578600/",
+      photographer: "cottonbro studio",
+      video_id: 7578600,
+      query_used: "research desk documents",
+      custom_query: "research desk documents",
+    },
+  },
+  {
+    segment_id: 12,
+    beat: 2,
+    label: "Methodology",
+    content:
+      "Where a popular number online turns out to be outdated, rounded, or simply wrong, we're going to flag it on screen and explain the actual figure.",
+    description: "graphic showing a correction stamp overlay",
+    search_query: "correction stamp graphic overlay",
+    category: "stock",
+    timing: {
+      start_seconds: 130.5,
+      end_seconds: 139.8,
+      duration_seconds: 9.3,
+      start_timecode: "2:10",
+      end_timecode: "2:19",
+    },
+  },
+  {
+    segment_id: 13,
+    beat: 3,
+    label: "The Reveal - Overview",
+    content:
+      "The disease responsible is rabies, a virus that has been killing humans for thousands of years — and the animal that transmits it most often is the domestic dog.",
+    description: "rabid dog behavior warning scene",
+    search_query: "stray dog street alert",
+    category: "commons",
+    timing: {
+      start_seconds: 240,
+      end_seconds: 252.4,
+      duration_seconds: 12.4,
+      start_timecode: "4:00",
+      end_timecode: "4:12",
+    },
+  },
+  {
+    segment_id: 14,
+    beat: 3,
+    label: "The Reveal - Overview",
+    content:
+      "The World Health Organization estimates rabies kills approximately fifty-nine thousand people every year — almost all of them in Asia and Africa.",
+    description: "world map rabies burden graphic",
+    search_query: "rabies africa map",
+    category: "stock",
+    timing: {
+      start_seconds: 252.4,
+      end_seconds: 263.1,
+      duration_seconds: 10.7,
+      start_timecode: "4:12",
+      end_timecode: "4:23",
+    },
+    selection: {
+      url: "https://videos.pexels.com/video-files/3189005/3189005-uhd_2560_1440_25fps.mp4",
+      thumbnail: "https://images.pexels.com/videos/3189005/pictures/preview-0.jpg",
+      pexels_url: "https://www.pexels.com/video/digital-map-of-the-world-3189005/",
+      photographer: "Pressmaster",
+      video_id: 3189005,
+    },
+  },
+  {
+    segment_id: 15,
+    beat: 4,
+    label: "History - Pre-Pasteur Era",
+    content:
+      "For most of human history, a bite from a rabid animal was not a medical problem with a solution. It was a death sentence with a waiting period.",
+    description: "old medical illustration fear scene",
+    search_query: "vintage medical illustration",
+    category: "stock",
+    timing: {
+      start_seconds: 420,
+      end_seconds: 431.2,
+      duration_seconds: 11.2,
+      start_timecode: "7:00",
+      end_timecode: "7:11",
+    },
+  },
+  {
+    segment_id: 16,
+    beat: 4,
+    label: "History - Pre-Pasteur Era",
+    content:
+      "Ancient Greek physicians described the disease too, naming the symptom that would define it for millennia: hydrophobia, the fear of water.",
+    description: "ancient greek medical text closeup",
+    search_query: "ancient greek manuscript",
+    category: "stock",
+    timing: {
+      start_seconds: 431.2,
+      end_seconds: 442.8,
+      duration_seconds: 11.6,
+      start_timecode: "7:11",
+      end_timecode: "7:22",
+    },
+  },
+  {
+    segment_id: 17,
+    beat: 5,
+    label: "History - Pasteur & Joseph Meister",
+    content:
+      "In 1885, a nine-year-old boy named Joseph Meister was brought to Louis Pasteur after being bitten fourteen times by a rabid dog.",
+    description: "vintage historic paris street scene",
+    search_query: "vintage paris street historic",
+    category: "stock",
+    timing: {
+      start_seconds: 540,
+      end_seconds: 551.5,
+      duration_seconds: 11.5,
+      start_timecode: "9:00",
+      end_timecode: "9:11",
+    },
+  },
+  {
+    segment_id: 18,
+    beat: 6,
+    label: "Virus Biology & Mechanism",
+    content:
+      "Rabies travels along peripheral nerves toward the brain, replicating slowly enough that post-exposure treatment can still work if administered in time.",
+    description: "virus and laboratory illustration scene",
+    search_query: "rabies virus microscope",
+    category: "stock",
+    timing: {
+      start_seconds: 720,
+      end_seconds: 732.6,
+      duration_seconds: 12.6,
+      start_timecode: "12:00",
+      end_timecode: "12:12",
+    },
+  },
+];
+
+export const MOCK_ALTERNATIVES = [
+  "https://images.pexels.com/videos/7197965/pictures/preview-0.jpg",
+  "https://images.pexels.com/videos/7578605/pictures/preview-0.jpg",
+  "https://images.pexels.com/videos/6235134/pictures/preview-0.jpg",
+  "https://images.pexels.com/videos/5730871/pictures/preview-0.jpg",
+  "https://images.pexels.com/videos/3189005/pictures/preview-0.jpg",
+];

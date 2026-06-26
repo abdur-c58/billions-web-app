@@ -1,0 +1,910 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch, isRetryableFetchError, retryDelayMs, sleep } from "@/lib/api";
+import { formatDuration, truncateExportMessage } from "@/lib/format";
+import { findSegmentAtExportTime, formatTimestampClock, parseTimestamp } from "@/lib/timestamp";
+import type {
+  AiJudgeStatus,
+  ExportSnapshot,
+  FetchPayload,
+  FlagClipResponse,
+  JudgmentSummary,
+  SegmentsPayload,
+  ViewerSegment,
+} from "@/lib/types";
+import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
+
+const BATCH_DELAY_MS = 250;
+const BATCH_PASS_DELAY_MS = 3000;
+const MAX_FETCH_ATTEMPTS = 50;
+const DEFAULT_FETCH_CONCURRENCY = 2;
+
+type StatusFilter = "" | "missing" | "selected";
+type QualityFilter = "" | QualityTier;
+
+export type BatchProgress = {
+  label: string;
+  pass: number;
+  done: number;
+  total: number;
+  status: "fetching" | "waiting";
+  waitSeconds?: number;
+};
+
+export type FetchProvider = "mix" | "pexels" | "pixabay" | "random";
+
+export function useBrollViewer() {
+  const [segments, setSegments] = useState<ViewerSegment[]>([]);
+  const [title, setTitle] = useState("Loading script…");
+  const [projectFolder, setProjectFolder] = useState("");
+  const [videoDurationS, setVideoDurationS] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [beatFilter, setBeatFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>("");
+  const [aiJudge, setAiJudge] = useState<AiJudgeStatus>({ enabled: false });
+  const [customQueries, setCustomQueries] = useState<Record<number, string>>({});
+  const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [exportRunning, setExportRunning] = useState(false);
+  const [exportSnapshot, setExportSnapshot] = useState<ExportSnapshot>({
+    status: "idle",
+  });
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusIsError, setStatusIsError] = useState(false);
+  const [backendReady, setBackendReady] = useState(true);
+  const [fetchConcurrency, setFetchConcurrency] = useState(DEFAULT_FETCH_CONCURRENCY);
+  const [focusedSegmentId, setFocusedSegmentId] = useState<number | null>(null);
+  const [timestampSeekInput, setTimestampSeekInput] = useState("");
+  const [flagConflict, setFlagConflict] = useState<{
+    segmentIds: number[];
+    affectedCount: number;
+  } | null>(null);
+
+  const exportPollRef = useRef<number | null>(null);
+  const statusTimerRef = useRef<number | null>(null);
+  const batchAbortRef = useRef(false);
+  const customQueriesRef = useRef(customQueries);
+  const segmentsRef = useRef(segments);
+  const videoDurationRef = useRef(videoDurationS);
+
+  useEffect(() => {
+    customQueriesRef.current = customQueries;
+  }, [customQueries]);
+
+  useEffect(() => {
+    segmentsRef.current = segments;
+  }, [segments]);
+
+  useEffect(() => {
+    videoDurationRef.current = videoDurationS;
+  }, [videoDurationS]);
+
+  const showStatus = useCallback((message: string, isError = false) => {
+    setStatusMessage(message);
+    setStatusIsError(isError);
+    if (statusTimerRef.current) {
+      window.clearTimeout(statusTimerRef.current);
+    }
+    statusTimerRef.current = window.setTimeout(() => setStatusMessage(null), 4000);
+  }, []);
+
+  const beats = useMemo(() => {
+    return [...new Set(segments.map((segment) => segment.beat))].sort((a, b) => a - b);
+  }, [segments]);
+
+  const visibleSegments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return segments.filter((segment) => {
+      if (beatFilter && String(segment.beat) !== beatFilter) return false;
+      if (statusFilter === "missing" && segment.selection) return false;
+      if (statusFilter === "selected" && !segment.selection) return false;
+      if (qualityFilter) {
+        const tier =
+          segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
+        if (tier !== qualityFilter) return false;
+      }
+      if (!query) return true;
+
+      const haystack = [
+        segment.segment_id,
+        segment.beat,
+        segment.label,
+        segment.content,
+        segment.description,
+        segment.search_query,
+        segment.category,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [segments, searchQuery, beatFilter, statusFilter, qualityFilter]);
+
+  const judgmentSummary = useMemo<JudgmentSummary>(
+    () => summarizeJudgments(segments),
+    [segments],
+  );
+
+  const selectedCount = segments.filter((segment) => segment.selection).length;
+
+  const updateExportUi = useCallback((snapshot: ExportSnapshot) => {
+    setExportSnapshot(snapshot);
+    setExportRunning(snapshot.status === "running");
+  }, []);
+
+  const pollExportStatus = useCallback(async () => {
+    try {
+      const snapshot = await apiFetch<ExportSnapshot>("/api/export/status");
+      updateExportUi(snapshot);
+      if (snapshot.status === "running") {
+        exportPollRef.current = window.setTimeout(() => {
+          void pollExportStatus();
+        }, 1000);
+      }
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Export status failed", true);
+    }
+  }, [showStatus, updateExportUi]);
+
+  const loadSegments = useCallback(async () => {
+    const payload = await apiFetch<SegmentsPayload>("/api/segments");
+    setSegments(payload.segments || []);
+    setVideoDurationS(
+      typeof payload.video_duration_s === "number" ? payload.video_duration_s : null,
+    );
+    if (payload.ai_judge) {
+      setAiJudge(payload.ai_judge);
+    }
+    setTitle(payload.title || "Billions");
+    setProjectFolder(
+      payload.project_folder
+        ? `Project: ${payload.project_folder} · ${payload.segments?.length ?? 0} segments`
+        : `${payload.segments?.length ?? 0} segments`,
+    );
+  }, []);
+
+  const checkServerHealth = useCallback(async () => {
+    try {
+      const health = await apiFetch<{
+        features?: string[];
+        export_api_version?: number;
+        export_mux_mode?: string;
+        ai_judge?: AiJudgeStatus;
+        pexels_key_count?: number;
+        fetch_concurrency?: number;
+        pixabay_enabled?: boolean;
+        provider_modes?: FetchProvider[];
+      }>("/api/health");
+      if (!health.features?.includes("export")) {
+        throw new Error("Server is missing export support.");
+      }
+      if (health.export_api_version !== undefined && health.export_api_version < 3) {
+        throw new Error(
+          "Export API is outdated. Restart backend: npm run dev:api",
+        );
+      }
+      if (health.ai_judge) {
+        setAiJudge(health.ai_judge);
+      }
+      const concurrency =
+        health.fetch_concurrency ?? health.pexels_key_count ?? DEFAULT_FETCH_CONCURRENCY;
+      setFetchConcurrency(Math.max(1, concurrency));
+      setBackendReady(true);
+    } catch (error) {
+      setBackendReady(false);
+      showStatus(
+        error instanceof Error
+          ? `${error.message} Start backend: npm run dev:api`
+          : "Cannot reach broll viewer API.",
+        true,
+      );
+    }
+  }, [showStatus]);
+
+  const applyFetchPayload = useCallback((segmentId: number, payload: FetchPayload) => {
+    setSegments((current) =>
+      current.map((segment) =>
+        segment.segment_id === segmentId
+          ? {
+              ...segment,
+              selection: payload.selection,
+              _alternatives: payload.alternatives,
+            }
+          : segment,
+      ),
+    );
+    if (payload.selection?.custom_query) {
+      setCustomQueries((current) => ({
+        ...current,
+        [segmentId]: payload.selection.custom_query || "",
+      }));
+    }
+  }, []);
+
+  const fetchSegmentOnce = useCallback(
+    async (segmentId: number, refetch: boolean, provider: FetchProvider) => {
+    const customQuery = (customQueriesRef.current[segmentId] || "").trim();
+      let url = `/api/fetch?segment_id=${segmentId}&refetch=${refetch ? "true" : "false"}&provider=${provider}`;
+    if (customQuery) {
+      url += `&query=${encodeURIComponent(customQuery)}`;
+    }
+    const payload = await apiFetch<FetchPayload>(url);
+    applyFetchPayload(segmentId, payload);
+    return payload;
+    },
+    [applyFetchPayload],
+  );
+
+  const fetchSegmentWithRetry = useCallback(
+    async (
+      segmentId: number,
+      refetch: boolean,
+      quiet = false,
+      provider: FetchProvider = "mix",
+    ) => {
+      setLoadingIds((current) => new Set(current).add(segmentId));
+
+      try {
+        for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+          try {
+            const payload = await fetchSegmentOnce(segmentId, refetch, provider);
+            if (!quiet) {
+              const label = payload.query_used || payload.search_query;
+              const tier =
+                payload.selection?.quality_label ||
+                payload.selection?.quality_tier ||
+                "unknown";
+              showStatus(
+                `Segment ${segmentId}: ${refetch ? "refetched" : "loaded"} (${provider}) "${label}" · ${tier}`,
+              );
+            }
+            return true;
+          } catch (error) {
+            if (attempt >= MAX_FETCH_ATTEMPTS) {
+              if (!quiet) {
+                showStatus(
+                  `Segment ${segmentId} failed after ${MAX_FETCH_ATTEMPTS} attempts: ${
+                    error instanceof Error ? error.message : "Unknown error"
+                  }`,
+                  true,
+                );
+              }
+              return false;
+            }
+
+            const delay = isRetryableFetchError(error)
+              ? retryDelayMs(attempt, error)
+              : 1200 * attempt;
+
+            if (!quiet) {
+              showStatus(
+                `Segment ${segmentId} retry ${attempt}/${MAX_FETCH_ATTEMPTS} in ${Math.round(delay / 1000)}s…`,
+              );
+            }
+            await sleep(delay);
+          }
+        }
+        return false;
+      } finally {
+        setLoadingIds((current) => {
+          const next = new Set(current);
+          next.delete(segmentId);
+          return next;
+        });
+      }
+    },
+    [fetchSegmentOnce, showStatus],
+  );
+
+  const selectAlternative = useCallback(
+    async (segmentId: number, searchQueryValue: string, videoIndex: number) => {
+      const segment = segments.find((item) => item.segment_id === segmentId);
+      const video = segment?._alternatives?.[videoIndex];
+      if (!video) return;
+
+      try {
+        const payload = await apiFetch<{ selection: ViewerSegment["selection"] }>(
+          "/api/select",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              segment_id: segmentId,
+              search_query: searchQueryValue,
+              video,
+              page: 1,
+              result_index: videoIndex,
+            }),
+          },
+        );
+
+        setSegments((current) =>
+          current.map((item) =>
+            item.segment_id === segmentId
+              ? { ...item, selection: payload.selection }
+              : item,
+          ),
+        );
+        showStatus(`Segment ${segmentId}: selected clip ${videoIndex + 1}`);
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Select failed", true);
+      }
+    },
+    [segments, showStatus],
+  );
+
+  const selectStorageClip = useCallback(
+    async (
+      segmentId: number,
+      searchQueryValue: string,
+      payload: {
+        storageKey: string;
+        name: string;
+        duration: number | null;
+        loop: boolean;
+      },
+    ) => {
+      try {
+        const response = await apiFetch<{ selection: ViewerSegment["selection"] }>(
+          "/api/select/storage",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              segment_id: segmentId,
+              search_query: searchQueryValue,
+              storage_key: payload.storageKey,
+              duration: payload.duration,
+              loop: payload.loop,
+              name: payload.name,
+            }),
+          },
+        );
+
+        setSegments((current) =>
+          current.map((item) =>
+            item.segment_id === segmentId
+              ? { ...item, selection: response.selection, _alternatives: [] }
+              : item,
+          ),
+        );
+        showStatus(
+          payload.loop
+            ? `Segment ${segmentId}: using storage clip with loop`
+            : `Segment ${segmentId}: selected storage clip`,
+        );
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Storage select failed", true);
+        throw error;
+      }
+    },
+    [showStatus],
+  );
+
+  const runBatchWorkers = useCallback(
+    async (
+      label: string,
+      pass: number,
+      targetSegments: ViewerSegment[],
+      refetch: boolean,
+      provider: FetchProvider,
+      concurrency: number,
+      onProgress: (done: number, total: number, segmentId: number) => void,
+    ) => {
+      const failed: ViewerSegment[] = [];
+      let nextIndex = 0;
+      let completed = 0;
+      const workerCount = Math.min(concurrency, targetSegments.length);
+
+      const worker = async () => {
+        while (!batchAbortRef.current) {
+          const index = nextIndex;
+          nextIndex += 1;
+          if (index >= targetSegments.length) return;
+
+          const segment = targetSegments[index];
+          const ok = await fetchSegmentWithRetry(segment.segment_id, refetch, true, provider);
+          if (!ok) failed.push(segment);
+
+          completed += 1;
+          onProgress(completed, targetSegments.length, segment.segment_id);
+
+          if (index < targetSegments.length - 1) {
+            await sleep(BATCH_DELAY_MS);
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: workerCount }, () => worker()));
+      return failed;
+    },
+    [fetchSegmentWithRetry],
+  );
+
+  const runBatch = useCallback(
+    async (
+      label: string,
+      getTargets: () => ViewerSegment[],
+      refetch: boolean,
+      provider: FetchProvider,
+      options?: { untilComplete?: boolean },
+    ) => {
+      if (batchRunning) return;
+
+      const initialTargets = getTargets();
+      if (!initialTargets.length) {
+        showStatus(`No segments to ${label.toLowerCase()}.`);
+        return;
+      }
+
+      batchAbortRef.current = false;
+      setBatchRunning(true);
+      let pass = 0;
+
+      const reportProgress = (
+        pendingTotal: number,
+        done: number,
+        currentPass: number,
+        status: BatchProgress["status"] = "fetching",
+        waitSeconds?: number,
+      ) => {
+        setBatchProgress({
+          label,
+          pass: currentPass,
+          done,
+          total: pendingTotal,
+          status,
+          waitSeconds,
+        });
+      };
+
+      try {
+        if (options?.untilComplete) {
+          while (!batchAbortRef.current) {
+            const pending = getTargets();
+            if (!pending.length) break;
+
+            pass += 1;
+            const beforeCount = pending.length;
+
+            reportProgress(pending.length, 0, pass);
+
+            const failed = await runBatchWorkers(
+              label,
+              pass,
+              pending,
+              refetch,
+              provider,
+              fetchConcurrency,
+              (done, total, segmentId) => {
+                reportProgress(total, done, pass);
+                showStatus(
+                  `${label} pass ${pass} — ${done}/${total} — segment ${segmentId}`,
+                );
+              },
+            );
+
+            if (batchAbortRef.current) break;
+
+            const afterCount = getTargets().length;
+            const succeeded = Math.max(0, beforeCount - afterCount);
+
+            if (afterCount === 0) break;
+
+            const waitMs =
+              succeeded === 0
+                ? Math.min(120000, BATCH_PASS_DELAY_MS * pass * 2)
+                : BATCH_PASS_DELAY_MS;
+            const waitSeconds = Math.round(waitMs / 1000);
+            reportProgress(afterCount, 0, pass + 1, "waiting", waitSeconds);
+            showStatus(
+              `${label}: ${afterCount} still missing — pass ${pass + 1} in ${waitSeconds}s…`,
+            );
+            await sleep(waitMs);
+
+            if (failed.length === 0 && afterCount > 0) {
+              continue;
+            }
+          }
+        } else {
+          let pending = [...initialTargets];
+
+          while (pending.length > 0 && !batchAbortRef.current) {
+            pass += 1;
+
+            reportProgress(pending.length, 0, pass);
+
+            const failed = await runBatchWorkers(
+              label,
+              pass,
+              pending,
+              refetch,
+              provider,
+              fetchConcurrency,
+              (done, total, segmentId) => {
+                reportProgress(total, done, pass);
+                showStatus(
+                  `${label} pass ${pass} — ${done}/${total} — segment ${segmentId}`,
+                );
+              },
+            );
+
+            if (batchAbortRef.current) break;
+            if (!failed.length) break;
+
+            pending = failed;
+            const waitMs = Math.min(90000, BATCH_PASS_DELAY_MS * pass);
+            const waitSeconds = Math.round(waitMs / 1000);
+            reportProgress(failed.length, 0, pass + 1, "waiting", waitSeconds);
+            showStatus(
+              `${label}: ${failed.length} failed — retry pass ${pass + 1} in ${waitSeconds}s…`,
+            );
+            await sleep(waitMs);
+          }
+        }
+      } finally {
+        setBatchRunning(false);
+        setBatchProgress(null);
+      }
+
+      const remaining = options?.untilComplete ? getTargets().length : 0;
+
+      if (batchAbortRef.current) {
+        showStatus(`${label} cancelled.`);
+      } else if (options?.untilComplete && remaining > 0) {
+        showStatus(
+          `${label} stopped with ${remaining} segment(s) still missing.`,
+          true,
+        );
+      } else if (!options?.untilComplete && pass > 0) {
+        showStatus(`Finished ${label.toLowerCase()} — all targeted segments processed.`);
+      } else if (options?.untilComplete) {
+        showStatus(`Finished ${label.toLowerCase()} — all segments have b-roll.`);
+      }
+    },
+    [batchRunning, fetchConcurrency, runBatchWorkers, showStatus],
+  );
+
+  const fetchMissing = useCallback(async () => {
+    await runBatch(
+      "Fetching missing",
+      () => segmentsRef.current.filter((segment) => !segment.selection),
+      false,
+      "mix",
+      { untilComplete: true },
+    );
+  }, [runBatch]);
+
+  const refetchAll = useCallback(async (provider: FetchProvider = "mix") => {
+    if (!segmentsRef.current.length) return;
+    const confirmed = window.confirm(
+      `Refetch all ${segmentsRef.current.length} segments using ${provider}?`,
+    );
+    if (!confirmed) return;
+
+    const snapshot = [...segmentsRef.current];
+    await runBatch("Refetching", () => snapshot, true, provider);
+  }, [runBatch]);
+
+  const refetchReview = useCallback(
+    async (provider: FetchProvider = "mix") => {
+      const reviewTargets = segmentsRef.current.filter((segment) => {
+        const tier = segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
+        return tier === "review";
+      });
+      await runBatch("Refetching review clips", () => reviewTargets, true, provider);
+    },
+    [runBatch],
+  );
+
+  const refetchUnscored = useCallback(
+    async () => {
+      const unscoredCount = segmentsRef.current.filter((segment) => {
+        const selection = segment.selection;
+        return Boolean(selection?.url) && !selection?.confidence_source;
+      }).length;
+      if (!unscoredCount) {
+        showStatus("No unscored clips found.");
+        return;
+      }
+
+      setBatchRunning(true);
+      setBatchProgress({
+        label: "Rescoring unscored clips",
+        pass: 1,
+        done: 0,
+        total: unscoredCount,
+        status: "fetching",
+      });
+      try {
+        const payload = await apiFetch<{ updated: number }>("/api/rescore/unscored", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ai: true }),
+        });
+        await loadSegments();
+        showStatus(`Rescored ${payload.updated ?? 0} unscored clip(s).`);
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Rescore failed", true);
+      } finally {
+        setBatchProgress(null);
+        setBatchRunning(false);
+      }
+    },
+    [loadSegments, showStatus],
+  );
+
+  const startExport = useCallback(async (options?: {
+    backgroundAudio?: string | null;
+    mixAdjustments?: { narration_adjust_db: number; background_adjust_db: number };
+    resolution?: string;
+    quality?: string;
+  }) => {
+    const backgroundAudio = options?.backgroundAudio ?? null;
+    const mixAdjustments = options?.mixAdjustments ?? {
+      narration_adjust_db: 0,
+      background_adjust_db: 0,
+    };
+    const resolution = options?.resolution ?? "4k";
+    const quality = options?.quality ?? "balanced";
+    try {
+      const snapshot = await apiFetch<ExportSnapshot>("/api/export/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          background_audio: backgroundAudio,
+          narration_adjust_db: mixAdjustments.narration_adjust_db,
+          background_adjust_db: mixAdjustments.background_adjust_db,
+          resolution,
+          quality,
+        }),
+      });
+      updateExportUi(snapshot);
+      showStatus(
+        backgroundAudio
+          ? `Export started with background: ${backgroundAudio}`
+          : "Export started…",
+      );
+      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
+      void pollExportStatus();
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Export failed", true);
+    }
+  }, [
+    pollExportStatus,
+    showStatus,
+    updateExportUi,
+  ]);
+
+  const cancelExport = useCallback(async () => {
+    try {
+      const snapshot = await apiFetch<ExportSnapshot>("/api/export/cancel", {
+        method: "POST",
+      });
+      updateExportUi(snapshot);
+      showStatus("Export cancelled");
+      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Cancel failed", true);
+    }
+  }, [showStatus, updateExportUi]);
+
+  const flagClip = useCallback(
+    async (segmentId: number) => {
+      try {
+        const payload = await apiFetch<FlagClipResponse>("/api/flagged", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ segment_id: segmentId }),
+        });
+        await loadSegments();
+        if (payload.affected_count > 1) {
+          setFlagConflict({
+            segmentIds: payload.affected_segment_ids,
+            affectedCount: payload.affected_count,
+          });
+        } else {
+          showStatus("Clip flagged — excluded from future fetches");
+        }
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Flag failed", true);
+      }
+    },
+    [loadSegments, showStatus],
+  );
+
+  const dismissFlagConflict = useCallback(() => {
+    setFlagConflict(null);
+    showStatus("Flagged for future fetches only — current selections unchanged");
+  }, [showStatus]);
+
+  const refetchFlagConflictSegments = useCallback(
+    async (provider: FetchProvider = "mix") => {
+      const targets = flagConflict?.segmentIds ?? [];
+      setFlagConflict(null);
+      if (!targets.length) return;
+
+      const snapshot = [...targets];
+      const label = "Refetching flagged segments";
+      await runBatch(
+        label,
+        () =>
+          segmentsRef.current.filter((segment) => snapshot.includes(segment.segment_id)),
+        true,
+        provider,
+      );
+      showStatus(`Refetched ${snapshot.length} segment(s) after flagging`);
+    },
+    [flagConflict, runBatch, showStatus],
+  );
+
+  const seekToTimestamp = useCallback(
+    (rawInput?: string) => {
+      const raw = (rawInput ?? timestampSeekInput).trim();
+      if (!raw) {
+        showStatus("Enter a timestamp from the exported video (e.g. 1:23)", true);
+        return;
+      }
+
+      const seconds = parseTimestamp(raw);
+      if (seconds == null) {
+        showStatus("Invalid timestamp. Use 1:23, 1:02:03, or 83.5", true);
+        return;
+      }
+
+      const match = findSegmentAtExportTime(
+        segmentsRef.current,
+        seconds,
+        videoDurationRef.current,
+      );
+      if (!match) {
+        showStatus("No segment found for that timestamp", true);
+        return;
+      }
+
+      const segment = match.segment;
+      setSearchQuery("");
+      setBeatFilter("");
+      setStatusFilter("");
+      setQualityFilter("");
+      setFocusedSegmentId(segment.segment_id);
+      setTimestampSeekInput(formatTimestampClock(seconds));
+
+      showStatus(
+        `Segment ${segment.segment_id} · export ${formatTimestampClock(match.exportStart)}–${formatTimestampClock(match.exportEnd)}`,
+      );
+    },
+    [showStatus, timestampSeekInput],
+  );
+
+  useEffect(() => {
+    if (focusedSegmentId == null) return;
+
+    const clearHighlight = window.setTimeout(() => {
+      setFocusedSegmentId((current) => (current === focusedSegmentId ? null : current));
+    }, 6000);
+
+    return () => {
+      window.clearTimeout(clearHighlight);
+    };
+  }, [focusedSegmentId]);
+
+  useEffect(() => {
+    if (!segments.length) return;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("segment");
+    if (!raw) return;
+    const id = Number.parseInt(raw, 10);
+    if (!Number.isFinite(id)) return;
+    if (!segments.some((segment) => segment.segment_id === id)) return;
+    setFocusedSegmentId(id);
+  }, [segments]);
+
+  useEffect(() => {
+    void loadSegments()
+      .then(() => checkServerHealth())
+      .then(() => pollExportStatus())
+      .catch((error) => {
+        showStatus(error instanceof Error ? error.message : "Failed to load", true);
+      });
+
+    return () => {
+      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
+      if (statusTimerRef.current) window.clearTimeout(statusTimerRef.current);
+    };
+  }, [checkServerHealth, loadSegments, pollExportStatus, showStatus]);
+
+  const exportProgressText = useMemo(() => {
+    const snapshot = exportSnapshot;
+    if (snapshot.status === "idle") {
+      return "Ready to export narration + selected b-roll (GPU encoding).";
+    }
+    if (snapshot.status === "running") {
+      return `${snapshot.stage}: ${snapshot.message} (${snapshot.current}/${snapshot.total || "?"})`;
+    }
+    if (snapshot.status === "done") {
+      return `Export complete${snapshot.encoder ? ` via ${snapshot.encoder}` : ""}`;
+    }
+    if (snapshot.status === "interrupted") {
+      return snapshot.message || "Export was interrupted.";
+    }
+    if (snapshot.status === "error") {
+      return `Export failed: ${truncateExportMessage(snapshot.error || snapshot.message)}`;
+    }
+    return snapshot.message || "";
+  }, [exportSnapshot]);
+
+  const exportEtaText = useMemo(() => {
+    const snapshot = exportSnapshot;
+    if (snapshot.status === "running") {
+      const eta =
+        snapshot.eta_seconds != null
+          ? `ETA ${formatDuration(snapshot.eta_seconds)} remaining`
+          : "Calculating ETA…";
+      const elapsed = snapshot.elapsed_seconds
+        ? ` · elapsed ${formatDuration(snapshot.elapsed_seconds)}`
+        : "";
+      return `${eta}${elapsed}`;
+    }
+    if (snapshot.status === "done" && snapshot.elapsed_seconds) {
+      return `Finished in ${formatDuration(snapshot.elapsed_seconds)}`;
+    }
+    if (snapshot.status === "interrupted") {
+      return "Start a new export to continue.";
+    }
+    return "";
+  }, [exportSnapshot]);
+
+  return {
+    segments,
+    visibleSegments,
+    title,
+    projectFolder,
+    searchQuery,
+    setSearchQuery,
+    beatFilter,
+    setBeatFilter,
+    statusFilter,
+    setStatusFilter,
+    qualityFilter,
+    setQualityFilter,
+    judgmentSummary,
+    aiJudge,
+    beats,
+    customQueries,
+    setCustomQueries,
+    loadingIds,
+    batchRunning,
+    batchProgress,
+    exportRunning,
+    exportSnapshot,
+    exportProgressText,
+    exportEtaText,
+    selectedCount,
+    statusMessage,
+    statusIsError,
+    backendReady,
+    fetchConcurrency,
+    fetchSegmentWithRetry,
+    selectAlternative,
+    selectStorageClip,
+    fetchMissing,
+    refetchAll,
+    refetchReview,
+    refetchUnscored,
+    startExport,
+    cancelExport,
+    flagClip,
+    flagConflict,
+    dismissFlagConflict,
+    refetchFlagConflictSegments,
+    focusedSegmentId,
+    timestampSeekInput,
+    setTimestampSeekInput,
+    seekToTimestamp,
+  };
+}
