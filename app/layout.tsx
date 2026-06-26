@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "@/components/AppNav";
+import { ConnectionDebugBanner } from "@/components/ConnectionDebugBanner";
 import { SessionProvider } from "@/context/SessionContext";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export default function RootLayout({
         <Providers>
           <SessionProvider>
             <AppNav />
+            <ConnectionDebugBanner />
             {children}
           </SessionProvider>
         </Providers>
