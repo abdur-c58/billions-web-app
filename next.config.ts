@@ -6,7 +6,7 @@ const backendPort = process.env.BROLL_BACKEND_PORT || "8766";
 // Locally this falls back to http://127.0.0.1:<port>.
 const backendBase =
   process.env.BROLL_BACKEND_URL?.replace(/\/$/, "") ||
-  `${backendBase}`;
+  `http://127.0.0.1:${backendPort}`;
 
 const nextConfig: NextConfig = {
   experimental: {
