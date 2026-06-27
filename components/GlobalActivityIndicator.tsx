@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AudioLines, Clapperboard, Cpu } from "lucide-react";
 import { fetchActivity, type ActivityJob, type ActivitySnapshot } from "@/lib/activity";
 
@@ -33,7 +34,7 @@ function JobPill({ job }: { job: ActivityJob }) {
   const percent = clampPercent(job.progress_percent);
   const project = job.project_name || job.project_id?.slice(0, 8) || "Project";
 
-  return (
+  const pill = (
     <div
       className="relative flex min-w-[150px] items-center gap-2 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-1.5"
       title={`${job.label} · ${project} — ${job.message}`}
@@ -61,6 +62,16 @@ function JobPill({ job }: { job: ActivityJob }) {
       </span>
     </div>
   );
+
+  if (job.type === "export" && job.project_id) {
+    return (
+      <Link href={`/progress/${job.project_id}`} className="shrink-0 transition-opacity hover:opacity-90">
+        {pill}
+      </Link>
+    );
+  }
+
+  return pill;
 }
 
 function GpuPill({ utilization }: { utilization: number | null }) {

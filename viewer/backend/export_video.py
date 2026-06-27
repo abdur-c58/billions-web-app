@@ -61,17 +61,28 @@ ProgressCallback = Callable[[str, int, int, str], None]
 CancelCheck = Callable[[], bool]
 
 _active_ffmpeg_lock = threading.Lock()
-_active_ffmpeg_proc: subprocess.Popen[str] | None = None
+_active_ffmpeg_procs: dict[str, subprocess.Popen[str]] = {}
+_export_context = threading.local()
+
+
+def set_export_context(project_id: str | None) -> None:
+    _export_context.project_id = project_id
+
+
+def _current_export_project_id() -> str | None:
+    return getattr(_export_context, "project_id", None)
 
 
 class ExportCancelled(Exception):
     """Raised when an export is cancelled by the user."""
 
 
-def request_export_cancel() -> None:
-    global _active_ffmpeg_proc
+def request_export_cancel(project_id: str | None = None) -> None:
+    pid = project_id or _current_export_project_id()
+    if not pid:
+        return
     with _active_ffmpeg_lock:
-        proc = _active_ffmpeg_proc
+        proc = _active_ffmpeg_procs.get(pid)
     if proc is None or proc.poll() is not None:
         return
     proc.terminate()
@@ -103,7 +114,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_ffmpeg(args: list[str], quiet: bool = True, should_cancel: CancelCheck | None = None) -> None:
-    global _active_ffmpeg_proc
+    project_id = _current_export_project_id()
     command = ["ffmpeg", "-hide_banner", "-y", *args]
     _check_cancel(should_cancel)
     proc = subprocess.Popen(
@@ -112,8 +123,9 @@ def run_ffmpeg(args: list[str], quiet: bool = True, should_cancel: CancelCheck |
         stderr=subprocess.PIPE if quiet else None,
         text=quiet,
     )
-    with _active_ffmpeg_lock:
-        _active_ffmpeg_proc = proc
+    if project_id:
+        with _active_ffmpeg_lock:
+            _active_ffmpeg_procs[project_id] = proc
     try:
         stdout, stderr = proc.communicate()
         if should_cancel and should_cancel():
@@ -123,9 +135,10 @@ def run_ffmpeg(args: list[str], quiet: bool = True, should_cancel: CancelCheck |
             raise RuntimeError(err or "ffmpeg failed")
         _ = stdout
     finally:
-        with _active_ffmpeg_lock:
-            if _active_ffmpeg_proc is proc:
-                _active_ffmpeg_proc = None
+        if project_id:
+            with _active_ffmpeg_lock:
+                if _active_ffmpeg_procs.get(project_id) is proc:
+                    _active_ffmpeg_procs.pop(project_id, None)
 
 
 def detect_encoder(
@@ -766,6 +779,8 @@ def build_mixed_audio(
             "[a]",
             "-t",
             duration_str,
+            "-f",
+            "ipod",
             "-c:a",
             "aac",
             "-b:a",
@@ -800,6 +815,8 @@ def render_narration_audio(
             filter_complex,
             "-map",
             "[a]",
+            "-f",
+            "ipod",
             "-c:a",
             "aac",
             "-b:a",

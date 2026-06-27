@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import mimetypes
@@ -22,6 +23,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from export_job_state import (
+    clear_cancel_event,
+    compute_export_inputs_hash,
+    export_snapshot,
+    get_cancel_event,
+    list_running_exports,
+    load_all_export_states,
+    project_export_running,
+    set_cancel_event,
+    update_export_state,
+)
 from export_video import (
     EXPORT_API_VERSION,
     ExportCancelled,
@@ -34,6 +46,7 @@ from export_video import (
     probe_duration,
     render_narration_audio,
     request_export_cancel,
+    set_export_context,
     sanitize_output_name,
     summarize_export_error,
 )
@@ -94,8 +107,6 @@ HTML_FILE = ROOT / "broll_viewer.html"
 PEXELS_SEARCH_URL = "https://api.pexels.com/v1/videos/search"
 PIXABAY_VIDEO_SEARCH_URL = "https://pixabay.com/api/videos/"
 
-export_lock = threading.Lock()
-export_cancel_event = threading.Event()
 PEXELS_MAX_RETRIES = 24
 MIN_PEXELS_INTERVAL_S = 0.45
 
@@ -195,133 +206,10 @@ def get_pexels_pool() -> PexelsKeyPool:
     return pexels_pool
 
 
-def default_export_state() -> dict[str, Any]:
-    return {
-        "status": "idle",
-        "stage": "",
-        "current": 0,
-        "total": 0,
-        "message": "",
-        "output": None,
-        "encoder": None,
-        "error": None,
-        "started_at": None,
-        "updated_at": None,
-        "progress_percent": 0,
-        "elapsed_seconds": 0,
-        "eta_seconds": None,
-        "hardware": None,
-        "project_id": None,
-        "project_name": None,
-        "download_started_at": None,
-        "render_started_at": None,
-        "download_seconds": 0,
-        "render_seconds": 0,
-    }
-
-
-export_state: dict[str, Any] = default_export_state()
-
-
-def compute_progress_percent(
-    stage: str,
-    current: int,
-    total: int,
-    status: str,
-) -> int:
-    if status == "done":
-        return 100
-    if status != "running":
-        return 0
-    if stage == "prepare":
-        if total <= 0:
-            return 0
-        return min(88, max(1, int((current / total) * 88)))
-    if stage == "concat":
-        return 91
-    if stage == "audio":
-        return 94
-    if stage == "encode":
-        return 97
-    return 0
-
-
-def enrich_export_state(state: dict[str, Any]) -> dict[str, Any]:
-    enriched = dict(state)
-    status = enriched.get("status", "idle")
-    stage = enriched.get("stage", "")
-    current = int(enriched.get("current") or 0)
-    total = int(enriched.get("total") or 0)
-
-    progress_percent = compute_progress_percent(stage, current, total, status)
-    enriched["progress_percent"] = progress_percent
-
-    started_at = enriched.get("started_at")
-    if status == "running" and started_at and progress_percent > 0:
-        elapsed = max(0.0, time.time() - float(started_at))
-        enriched["elapsed_seconds"] = int(elapsed)
-        enriched["eta_seconds"] = int(elapsed * (100 - progress_percent) / progress_percent)
-    elif status == "done" and started_at:
-        enriched["elapsed_seconds"] = int(max(0.0, time.time() - float(started_at)))
-        enriched["eta_seconds"] = 0
-    else:
-        enriched["elapsed_seconds"] = int(enriched.get("elapsed_seconds") or 0)
-        enriched["eta_seconds"] = None
-
-    # Split timing: clip download phase vs. actual render phase.
-    now = time.time()
-    end_time = now if status == "running" else float(enriched.get("updated_at") or now)
-    dl_start = enriched.get("download_started_at")
-    rn_start = enriched.get("render_started_at")
-    if dl_start:
-        dl_end = float(rn_start) if rn_start else end_time
-        enriched["download_seconds"] = int(max(0.0, dl_end - float(dl_start)))
-    else:
-        enriched["download_seconds"] = int(enriched.get("download_seconds") or 0)
-    if rn_start:
-        enriched["render_seconds"] = int(max(0.0, end_time - float(rn_start)))
-    else:
-        enriched["render_seconds"] = int(enriched.get("render_seconds") or 0)
-
-    return enriched
-
-
-def load_persisted_export_state(export_status_file: Path) -> None:
-    global export_state
-    saved = read_json(export_status_file, {})
-    if not saved:
-        export_state = default_export_state()
-        return
-
-    if saved.get("status") == "running":
-        saved["status"] = "interrupted"
-        saved["stage"] = "interrupted"
-        saved["message"] = "Export was interrupted when the server restarted."
-        saved["error"] = saved["message"]
-
-    if saved.get("status") == "error":
-        raw = str(saved.get("error") or saved.get("message") or "")
-        if len(raw) > 300:
-            short = summarize_export_error(RuntimeError(raw))
-            saved["error"] = short
-            saved["message"] = short
-
-    export_state = {**default_export_state(), **saved}
-
-
-def save_export_state(export_status_file: Path) -> None:
-    export_status_file.parent.mkdir(parents=True, exist_ok=True)
-    write_json(export_status_file, export_state)
-
-
 def project_is_protected(project_id: str) -> bool:
     """True if a project has a running job and must not be deleted/pruned."""
-    with export_lock:
-        if (
-            export_state.get("status") == "running"
-            and export_state.get("project_id") == project_id
-        ):
-            return True
+    if project_export_running(project_id):
+        return True
     try:
         workspace = project_workspace(WORKSPACE_DIR, project_id)
         if timestamps_job_snapshot(workspace).get("status") == "running":
@@ -1165,9 +1053,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         self.flagged_path = paths["flagged"]
         self.cache_dir = paths["cache"]
 
-    def _save_export_state(self) -> None:
-        save_export_state(self.export_status_file)
-
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.log_date_time_string()}] {format % args}")
 
@@ -1230,20 +1115,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _export_snapshot(self) -> dict[str, Any]:
-        with export_lock:
-            return enrich_export_state(dict(export_state))
+    def _export_snapshot_for(self, project_id: str | None = None) -> dict[str, Any]:
+        pid = (project_id or self.headers.get("X-Billions-Project", "")).strip()
+        if not pid:
+            raise ValueError("Select a project first.")
+        workspace = project_workspace(WORKSPACE_DIR, pid)
+        status_file = workspace_paths(workspace)["export_status"]
+        return export_snapshot(pid, status_file)
 
     def _activity_snapshot(self) -> dict[str, Any]:
-        """Global, project-agnostic view of everything using the shared hardware.
-
-        Powers the navbar indicator: any running Whisper timestamp job (across
-        all projects) plus the single active export, each with a percentage,
-        and a GPU-only utilization read-out.
-        """
+        """Global view of all running jobs across projects (navbar indicator)."""
         jobs: list[dict[str, Any]] = []
 
-        # Whisper timestamp jobs can run for any project on the shared box.
         try:
             for project in list_projects(WORKSPACE_DIR):
                 job = project.get("timestamps_job") or {}
@@ -1262,9 +1145,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         except Exception:
             pass
 
-        # Exactly one export runs at a time (global state).
-        export = self._export_snapshot()
-        if export.get("status") == "running":
+        for export in list_running_exports():
             jobs.append(
                 {
                     "type": "export",
@@ -1278,8 +1159,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 }
             )
 
-        # GPU stats are only worth sampling (spawns nvidia-smi) when something
-        # is actually running — keeps the box quiet when idle.
         gpu = None
         if jobs:
             try:
@@ -1291,37 +1170,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         return {"jobs": jobs, "gpu": gpu, "busy": bool(jobs)}
 
-    def _set_export_state(self, **kwargs: Any) -> None:
-        with export_lock:
-            if kwargs.get("status") == "running" and export_state.get("status") != "running":
-                kwargs.setdefault("started_at", time.time())
-                kwargs.setdefault("progress_percent", 0)
-                kwargs.setdefault("elapsed_seconds", 0)
-                kwargs.setdefault("eta_seconds", None)
-            kwargs["updated_at"] = time.time()
-            export_state.update(kwargs)
-
-            # Mark phase boundaries the first time we enter each phase so the
-            # UI can show download time and render time separately.
-            now = time.time()
-            current_stage = str(export_state.get("stage", ""))
-            if current_stage == "download" and export_state.get("download_started_at") is None:
-                export_state["download_started_at"] = now
-            if (
-                current_stage in ("prepare", "concat", "audio", "encode")
-                and export_state.get("render_started_at") is None
-            ):
-                export_state["render_started_at"] = now
-
-            stage = str(export_state.get("stage", ""))
-            current = int(export_state.get("current") or 0)
-            total = int(export_state.get("total") or 0)
-            status = str(export_state.get("status", "idle"))
-            export_state["progress_percent"] = compute_progress_percent(
-                stage, current, total, status
-            )
-            self._save_export_state()
-
     def _start_export_job(
         self,
         background_audio: str | None = None,
@@ -1331,31 +1179,36 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         resolution: str = "4k",
         quality: str = "balanced",
     ) -> None:
-        with export_lock:
-            if export_state.get("status") == "running":
-                raise RuntimeError("Export already in progress")
+        project_id = self.headers.get("X-Billions-Project", "").strip()
+        if not project_id:
+            raise RuntimeError("Select a project first.")
 
-        export_cancel_event.clear()
+        workspace = self._require_workspace()
+        status_file = workspace_paths(workspace)["export_status"]
+
+        if project_export_running(project_id):
+            raise RuntimeError("Export already in progress for this project")
+
+        clear_cancel_event(project_id)
+        cancel_event = get_cancel_event(project_id)
 
         title = read_json(self.timestamps_path, {}).get("title")
         output_path = self.output_path
         if title:
             output_path = output_path.parent / sanitize_output_name(title)
 
-        # Capture which project this export belongs to so the global activity
-        # indicator can attribute it (the hardware is shared across projects).
-        project_id = self.headers.get("X-Billions-Project", "").strip() or None
         project_name = None
         try:
-            workspace = self._active_workspace()
-            if workspace is not None:
-                project_name = read_manifest(workspace).get("name")
+            project_name = read_manifest(workspace).get("name")
         except Exception:
             project_name = None
         if not project_name:
-            project_name = title or (project_id[:8] if project_id else "Project")
+            project_name = title or project_id[:8]
 
-        self._set_export_state(
+        def set_state(**kwargs: Any) -> None:
+            update_export_state(project_id, status_file, **kwargs)
+
+        set_state(
             status="running",
             stage="queued",
             current=0,
@@ -1378,30 +1231,22 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         )
 
         def on_progress(stage: str, current: int, total: int, message: str) -> None:
-            self._set_export_state(
-                stage=stage,
-                current=current,
-                total=total,
-                message=message,
-            )
+            set_state(stage=stage, current=current, total=total, message=message)
 
         def hardware_monitor_loop() -> None:
             from hardware_monitor import resolve_whisper_device, sample_hardware_stats
 
             device, device_info = resolve_whisper_device()
-            while export_state.get("status") == "running":
+            while project_export_running(project_id):
                 stats = sample_hardware_stats(device, device_info)
-                self._set_export_state(hardware=stats)
+                set_state(hardware=stats)
                 time.sleep(1.5)
 
         def worker() -> None:
+            set_export_context(project_id)
             hw_thread = threading.Thread(target=hardware_monitor_loop, daemon=True)
             hw_thread.start()
             try:
-                # Resolve (download) background audio from R2 here, inside the job,
-                # so the /api/export/start request returns immediately and the
-                # download is reported as part of the prepare phase rather than
-                # blocking the HTTP request on slow connections.
                 background_audio_path = None
                 if background_audio:
                     on_progress("download", 0, 0, "Downloading background audio…")
@@ -1418,16 +1263,21 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     on_progress=on_progress,
                     cache_dir=self.cache_dir,
                     fresh=True,
-                    should_cancel=export_cancel_event.is_set,
+                    should_cancel=cancel_event.is_set,
                     background_audio_path=background_audio_path,
                     narration_adjust_db=narration_adjust_db,
                     background_adjust_db=background_adjust_db,
                     resolution=resolution,
                     quality=quality,
                 )
-                if export_cancel_event.is_set():
+                if cancel_event.is_set():
                     return
-                self._set_export_state(
+                inputs_hash = compute_export_inputs_hash(
+                    timestamps_path=self.timestamps_path,
+                    selections_path=self.selections_path,
+                    audio_path=self.audio_path,
+                )
+                set_state(
                     status="done",
                     stage="done",
                     current=1,
@@ -1438,38 +1288,47 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     error=None,
                     progress_percent=100,
                     eta_seconds=0,
+                    inputs_hash=inputs_hash,
                 )
             except ExportCancelled:
-                if not export_cancel_event.is_set():
-                    self._set_export_state(
+                if not cancel_event.is_set():
+                    set_state(
                         status="interrupted",
                         stage="cancelled",
                         message="Export cancelled",
                         error=None,
                     )
             except Exception as exc:
-                if export_cancel_event.is_set():
+                if cancel_event.is_set():
                     return
                 summary = summarize_export_error(exc)
-                self._set_export_state(
+                set_state(
                     status="error",
                     stage="error",
                     message=summary,
                     error=summary,
                 )
             finally:
-                export_cancel_event.clear()
+                set_export_context(None)
+                clear_cancel_event(project_id)
 
         threading.Thread(target=worker, daemon=True).start()
 
     def _cancel_export_job(self) -> None:
-        with export_lock:
-            if export_state.get("status") != "running":
-                raise RuntimeError("No export in progress")
+        project_id = self.headers.get("X-Billions-Project", "").strip()
+        if not project_id:
+            raise RuntimeError("Select a project first.")
+        if not project_export_running(project_id):
+            raise RuntimeError("No export in progress for this project")
 
-        export_cancel_event.set()
-        request_export_cancel()
-        self._set_export_state(
+        workspace = self._require_workspace()
+        status_file = workspace_paths(workspace)["export_status"]
+
+        set_cancel_event(project_id)
+        request_export_cancel(project_id)
+        update_export_state(
+            project_id,
+            status_file,
             status="interrupted",
             stage="cancelled",
             message="Export cancelled",
@@ -1644,6 +1503,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     "video_duration_s": timestamps_meta.get("video_duration_s"),
                     "segments": rows,
                     "judgment_summary": summarize_judgments(rows),
+                    "export_inputs_hash": compute_export_inputs_hash(
+                        timestamps_path=self.timestamps_path,
+                        selections_path=self.selections_path,
+                        audio_path=self.audio_path,
+                    ),
                     "ai_judge": {
                         "enabled": self.use_ai_judge and bool(os.environ.get("OPENAI_API_KEY")),
                         **ai_snapshot,
@@ -1775,8 +1639,28 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
+        if parsed.path == "/api/export/inputs-hash":
+            try:
+                if not self._project_ready():
+                    raise ValueError("Project not ready.")
+                self._send_json(
+                    {
+                        "export_inputs_hash": compute_export_inputs_hash(
+                            timestamps_path=self.timestamps_path,
+                            selections_path=self.selections_path,
+                            audio_path=self.audio_path,
+                        ),
+                    }
+                )
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/export/status":
-            self._send_json(self._export_snapshot())
+            try:
+                self._send_json(self._export_snapshot_for())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
         if parsed.path == "/api/activity":
@@ -1853,7 +1737,13 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/audio/preview-file":
             try:
-                filename = (params.get("file") or [""])[0]
+                filename = Path((params.get("file") or [""])[0]).name
+                if not filename:
+                    self._send_json({"error": "Preview filename required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                if self.workspace_mode and self._active_workspace() is None:
+                    self._send_json({"error": "Select a project first."}, HTTPStatus.BAD_REQUEST)
+                    return
                 preview_path = self.cache_dir / "audio_previews" / filename
                 if not preview_path.exists():
                     self._send_json({"error": "Preview not found"}, HTTPStatus.NOT_FOUND)
@@ -1864,7 +1754,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/export/download":
-            snapshot = self._export_snapshot()
+            try:
+                snapshot = self._export_snapshot_for()
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                return
             output = snapshot.get("output")
             if snapshot.get("status") != "done" or not output:
                 self._send_json({"error": "No completed export available"}, HTTPStatus.BAD_REQUEST)
@@ -2225,13 +2119,17 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     resolution=resolution,
                     quality=quality,
                 )
-                self._send_json(self._export_snapshot())
+                self._send_json(self._export_snapshot_for())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
         if parsed.path == "/api/audio/preview":
             try:
+                if self.workspace_mode:
+                    self._require_workspace()
                 body = self._read_json_body()
                 background_audio = body.get("background_audio")
                 narration_adjust_db, background_adjust_db = parse_mix_adjustments(body)
@@ -2281,9 +2179,16 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     )
                     background_name = None
 
+                if not preview_path.exists() or preview_path.stat().st_size <= 0:
+                    raise RuntimeError("Preview render produced an empty file")
+
+                preview_bytes = preview_path.read_bytes()
+                preview_b64 = base64.b64encode(preview_bytes).decode("ascii")
+
                 self._send_json(
                     {
                         "preview_url": f"/api/audio/preview-file?file={urllib.parse.quote(preview_name)}",
+                        "preview_data_url": f"data:audio/mp4;base64,{preview_b64}",
                         "preview_seconds": preview_seconds,
                         "background_audio": background_name,
                         "narration": self.audio_path.name,
@@ -2291,13 +2196,16 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     }
                 )
             except Exception as exc:
-                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                summary = summarize_export_error(exc)
+                self._send_json({"error": summary}, HTTPStatus.BAD_REQUEST)
             return
 
         if parsed.path == "/api/export/cancel":
             try:
                 self._cancel_export_job()
-                self._send_json(self._export_snapshot())
+                self._send_json(self._export_snapshot_for())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -2538,8 +2446,7 @@ def main() -> None:
 
         threading.Thread(target=_prune_loop, daemon=True).start()
 
-    export_status_file = project_dir / ".broll_export_status.json"
-    load_persisted_export_state(export_status_file)
+    load_all_export_states(WORKSPACE_DIR)
     ensure_port_available(args.host, args.port)
 
     server = ThreadingHTTPServer((args.host, args.port), BrollViewerHandler)

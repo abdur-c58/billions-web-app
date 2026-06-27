@@ -130,6 +130,30 @@ export function uploadFormData<T>(
   });
 }
 
+/** Resolve API path — uses tunnel/backend URL when configured (Vercel + cloudflared). */
+let cachedBackendUrl: string | null | undefined;
+
+export async function resolveBrollApiUrl(path: string): Promise<string> {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (/^https?:\/\//i.test(normalized)) return normalized;
+
+  if (cachedBackendUrl === undefined) {
+    try {
+      const config = await fetch("/api/config", { cache: "no-store" }).then(
+        (response) => response.json() as Promise<{ backend_url?: string | null }>,
+      );
+      cachedBackendUrl = config.backend_url ?? null;
+    } catch {
+      cachedBackendUrl = null;
+    }
+  }
+
+  if (cachedBackendUrl) {
+    return `${cachedBackendUrl}${normalized}`;
+  }
+  return normalized;
+}
+
 /** Python b-roll API — use for large uploads to bypass Next.js proxy body limits. */
 export function getBrollBackendUrl() {
   const fromEnv = process.env.NEXT_PUBLIC_BROLL_BACKEND_URL?.replace(/\/$/, "");

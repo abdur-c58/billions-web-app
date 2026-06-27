@@ -181,6 +181,7 @@ export type SegmentsPayload = {
   segments: ViewerSegment[];
   judgment_summary?: JudgmentSummary;
   ai_judge?: AiJudgeStatus;
+  export_inputs_hash?: string;
 };
 
 export type FetchPayload = {
@@ -215,6 +216,8 @@ export type ExportSnapshot = {
   download_seconds?: number;
   render_seconds?: number;
   hardware?: SegmentationHardware | null;
+  /** Hash of selections/timestamps/audio at last successful export. */
+  inputs_hash?: string | null;
 };
 
 export type BackgroundAudioFile = {
@@ -248,6 +251,7 @@ export type AudioBalanceInfo = {
 
 export type AudioPreviewResponse = AudioBalanceInfo & {
   preview_url: string;
+  preview_data_url?: string;
   preview_seconds: number;
   background_audio: string | null;
 };

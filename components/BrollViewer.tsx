@@ -12,6 +12,7 @@ import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
+import { readStoredProject } from "@/lib/session";
 import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
@@ -29,6 +30,8 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const exportActive = ["running", "done", "error", "interrupted"].includes(
     viewer.exportSnapshot.status,
   );
+  const projectId = readStoredProject();
+  const progressHref = projectId ? `/progress/${projectId}` : "/progress";
 
   const fetchingIds = [...viewer.loadingIds].sort((a, b) => a - b);
   const showFetchActivity = fetchingIds.length > 0 || viewer.batchProgress !== null;
@@ -427,20 +430,31 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
         <div className="mt-2.5 flex flex-wrap items-center gap-2.5 overflow-visible border-t border-[rgba(255,255,255,0.06)] pt-2.5">
           {viewer.exportRunning ? (
             <Link
-              href="/progress"
+              href={progressHref}
               className="glow-btn-primary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold"
             >
               Exporting… View progress
             </Link>
           ) : (
-            <button
-              type="button"
-              disabled={viewer.batchRunning || !viewer.backendReady}
-              onClick={() => setExportConfirmOpen(true)}
-              className="glow-btn-primary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+            <span
+              className="inline-flex"
+              title={viewer.exportDisabledReason ?? undefined}
             >
-              Export final video
-            </button>
+              <button
+                type="button"
+                disabled={
+                  viewer.batchRunning ||
+                  !viewer.backendReady ||
+                  viewer.exportUnchanged
+                }
+                onClick={() => setExportConfirmOpen(true)}
+                className={`rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55 ${
+                  viewer.exportUnchanged ? "glow-btn-secondary" : "glow-btn-primary"
+                }`}
+              >
+                {viewer.exportButtonLabel}
+              </button>
+            </span>
           )}
 
           {viewer.exportRunning ? (
@@ -575,7 +589,8 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
         onConfirm={async (options) => {
           setExportConfirmOpen(false);
           await viewer.startExport(options);
-          router.push("/progress");
+          const projectId = readStoredProject();
+          router.push(projectId ? `/progress/${projectId}` : "/progress");
         }}
       />
 

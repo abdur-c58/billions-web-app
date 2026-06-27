@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Music2, Pause, Play, RotateCcw, Volume2, FolderOpen } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, resolveBrollApiUrl } from "@/lib/api";
 import { getSessionHeaders } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { StorageAudioPickModal } from "@/components/StorageAudioPickModal";
@@ -116,7 +116,8 @@ export function ExportAudioModal({
   const resolvePreviewPlaybackUrl = useCallback(
     async (url: string) => {
       releasePreviewBlobUrl();
-      const response = await fetch(url, { headers: getSessionHeaders() });
+      const fetchUrl = await resolveBrollApiUrl(url);
+      const response = await fetch(fetchUrl, { headers: getSessionHeaders() });
       if (!response.ok) {
         let message = "Preview file unavailable";
         try {
@@ -149,6 +150,22 @@ export function ExportAudioModal({
     [releasePreviewBlobUrl],
   );
 
+  const unlockAudioPlayback = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src =
+      "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA//uQxAAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+    try {
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {
+      // Browser may still block later playback — handled when play is attempted.
+    }
+    audio.removeAttribute("src");
+    audio.load();
+  }, []);
+
   const stopPreview = useCallback(() => {
     playRequestRef.current += 1;
     const audio = audioRef.current;
@@ -170,7 +187,10 @@ export function ExportAudioModal({
       audio.pause();
 
       let src = url;
-      if (!url.startsWith("blob:")) {
+      if (url.startsWith("data:")) {
+        releasePreviewBlobUrl();
+        src = url;
+      } else if (!url.startsWith("blob:")) {
         src = await resolvePreviewPlaybackUrl(url);
       }
 
@@ -185,6 +205,9 @@ export function ExportAudioModal({
       } catch (err) {
         if (requestId !== playRequestRef.current) return false;
         if (err instanceof DOMException && err.name === "AbortError") return false;
+        if (err instanceof DOMException && err.name === "NotAllowedError") {
+          throw new Error("Press play again to start the preview");
+        }
         throw err;
       }
 
@@ -196,7 +219,7 @@ export function ExportAudioModal({
       setIsPlaying(true);
       return true;
     },
-    [resolvePreviewPlaybackUrl],
+    [releasePreviewBlobUrl, resolvePreviewPlaybackUrl],
   );
 
   const loadNarration = useCallback(async () => {
@@ -313,7 +336,9 @@ export function ExportAudioModal({
     setPreviewLoading(true);
     setError(null);
     try {
-      const payload = await apiFetch<AudioPreviewResponse>("/api/audio/preview", {
+      void unlockAudioPlayback();
+      const previewApiUrl = await resolveBrollApiUrl("/api/audio/preview");
+      const payload = await apiFetch<AudioPreviewResponse>(previewApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -324,9 +349,10 @@ export function ExportAudioModal({
         }),
       });
       setBalance(payload);
-      setPreviewUrl(payload.preview_url);
+      const playbackSource = payload.preview_data_url ?? payload.preview_url;
+      setPreviewUrl(playbackSource);
       setPreviewStale(false);
-      await playAudio(payload.preview_url);
+      await playAudio(playbackSource);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Preview failed");
@@ -343,6 +369,8 @@ export function ExportAudioModal({
       stopPreview();
       return;
     }
+
+    void unlockAudioPlayback();
 
     if (!previewUrl || previewStale) {
       await handlePreview();

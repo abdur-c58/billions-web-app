@@ -56,6 +56,7 @@ export function useBrollViewer() {
   const [exportSnapshot, setExportSnapshot] = useState<ExportSnapshot>({
     status: "idle",
   });
+  const [exportInputsHash, setExportInputsHash] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusIsError, setStatusIsError] = useState(false);
   const [backendReady, setBackendReady] = useState(true);
@@ -68,6 +69,7 @@ export function useBrollViewer() {
   } | null>(null);
 
   const exportPollRef = useRef<number | null>(null);
+  const exportHashTimerRef = useRef<number | null>(null);
   const statusTimerRef = useRef<number | null>(null);
   const batchAbortRef = useRef(false);
   const customQueriesRef = useRef(customQueries);
@@ -169,6 +171,7 @@ export function useBrollViewer() {
       setAiJudge(payload.ai_judge);
     }
     setScriptFormat(payload.script_format === "folder" ? "folder" : "legacy");
+    setExportInputsHash(payload.export_inputs_hash ?? null);
     setTitle(payload.title || "Billions");
     setProjectFolder(
       payload.project_folder
@@ -906,6 +909,43 @@ export function useBrollViewer() {
   }, [segments]);
 
   useEffect(() => {
+    if (segments.length === 0) return;
+
+    if (exportHashTimerRef.current) {
+      window.clearTimeout(exportHashTimerRef.current);
+    }
+    exportHashTimerRef.current = window.setTimeout(() => {
+      void apiFetch<{ export_inputs_hash: string }>("/api/export/inputs-hash")
+        .then((payload) => setExportInputsHash(payload.export_inputs_hash))
+        .catch(() => {});
+    }, 250);
+
+    return () => {
+      if (exportHashTimerRef.current) {
+        window.clearTimeout(exportHashTimerRef.current);
+      }
+    };
+  }, [segments]);
+
+  const hasCompletedExport = useMemo(
+    () => exportSnapshot.status === "done" || Boolean(exportSnapshot.inputs_hash),
+    [exportSnapshot.inputs_hash, exportSnapshot.status],
+  );
+
+  const exportUnchanged = useMemo(() => {
+    if (!hasCompletedExport || !exportSnapshot.inputs_hash || !exportInputsHash) {
+      return false;
+    }
+    return exportInputsHash === exportSnapshot.inputs_hash;
+  }, [exportInputsHash, exportSnapshot.inputs_hash, hasCompletedExport]);
+
+  const exportButtonLabel = hasCompletedExport ? "Re-Export" : "Export final video";
+
+  const exportDisabledReason = exportUnchanged
+    ? "No changes since the last export. Update clip selections or timestamps first."
+    : null;
+
+  useEffect(() => {
     void loadSegments()
       .then(() => checkServerHealth())
       .then(() => pollExportStatus())
@@ -986,6 +1026,10 @@ export function useBrollViewer() {
     exportSnapshot,
     exportProgressText,
     exportEtaText,
+    hasCompletedExport,
+    exportUnchanged,
+    exportButtonLabel,
+    exportDisabledReason,
     selectedCount,
     statusMessage,
     statusIsError,
