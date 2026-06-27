@@ -1213,13 +1213,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         export_cancel_event.clear()
 
-        background_audio_path = None
-        if background_audio:
-            background_audio_path = resolve_r2_background_audio(
-                background_audio,
-                self.cache_dir,
-            )
-
         title = read_json(self.timestamps_path, {}).get("title")
         output_path = self.output_path
         if title:
@@ -1262,6 +1255,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             hw_thread = threading.Thread(target=hardware_monitor_loop, daemon=True)
             hw_thread.start()
             try:
+                # Resolve (download) background audio from R2 here, inside the job,
+                # so the /api/export/start request returns immediately and the
+                # download is reported as part of the prepare phase rather than
+                # blocking the HTTP request on slow connections.
+                background_audio_path = None
+                if background_audio:
+                    on_progress("prepare", 0, 0, "Downloading background audio…")
+                    background_audio_path = resolve_r2_background_audio(
+                        background_audio,
+                        self.cache_dir,
+                    )
+
                 result = export_video(
                     audio_path=self.audio_path,
                     timestamps_path=self.timestamps_path,

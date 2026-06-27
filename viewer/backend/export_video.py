@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 import threading
+import time
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -271,13 +272,37 @@ def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str
     return rows
 
 
-def download_clip(url: str, dest: Path) -> None:
+def download_clip(url: str, dest: Path, *, retries: int = 3) -> None:
+    # Already cached from a previous run / prefetch pass.
     if dest.exists() and dest.stat().st_size > 0:
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Stream to a .part temp file and only rename into place on success. This
+    # keeps memory flat (no whole-file read) and guarantees a half-finished
+    # download on a flaky/slow link can never be mistaken for a valid cache hit.
     request = urllib.request.Request(url, headers={"User-Agent": "Billions-Export/1.0"})
-    with urllib.request.urlopen(request, timeout=120) as response:
-        dest.write_bytes(response.read())
+    last_error: Exception | None = None
+    for attempt in range(1, retries + 1):
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                with open(tmp, "wb") as handle:
+                    shutil.copyfileobj(response, handle, length=1024 * 1024)
+            if tmp.stat().st_size == 0:
+                raise RuntimeError("downloaded file was empty")
+            tmp.replace(dest)
+            return
+        except Exception as exc:  # noqa: BLE001 - retried below, re-raised if final
+            last_error = exc
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+            if attempt < retries:
+                time.sleep(min(2 ** attempt, 8))
+    raise RuntimeError(f"Failed to download clip after {retries} attempts: {last_error}")
 
 
 def prefetch_clips(
