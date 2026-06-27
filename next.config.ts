@@ -11,7 +11,8 @@ const backendBase =
 const nextConfig: NextConfig = {
   experimental: {
     // Project audio uploads are proxied to the Python backend via rewrites.
-    proxyClientMaxBodySize: "100mb",
+    // Long narration MP3s (2h+) can exceed 100MB.
+    proxyClientMaxBodySize: "500mb",
   },
   async rewrites() {
     return [

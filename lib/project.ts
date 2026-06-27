@@ -1,4 +1,4 @@
-import { apiFetch, getBrollBackendUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import type { ScriptFormat } from "@/lib/types";
 
 export type ProjectStatus = {
@@ -68,8 +68,9 @@ export async function uploadScriptFile(file: File) {
 export async function uploadAudioFile(file: File) {
   const form = new FormData();
   form.append("file", file);
-  // Upload directly to Python — avoids Next.js rewrite proxy 100MB body cap.
-  return apiFetch<ProjectStatus>(`${getBrollBackendUrl()}/api/project/upload/audio`, {
+  // Same-origin proxy (/api/project/* rewrite) so uploads work on Vercel + tunnel.
+  // Direct backend URL only works locally; the browser cannot reach :8766 from Vercel.
+  return apiFetch<ProjectStatus>("/api/project/upload/audio", {
     method: "POST",
     body: form,
   });
