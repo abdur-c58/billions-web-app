@@ -164,9 +164,11 @@ export function useBrollViewer() {
         exportPollRef.current = window.setTimeout(() => {
           void pollExportStatus();
         }, 1000);
-      } else if (snapshot.status === "done") {
-        // Sync the live hash so exportUnchanged is accurate immediately.
-        await refreshExportInputsHash();
+      } else if (snapshot.status === "done" && snapshot.inputs_hash) {
+        // Use the hash stored in the completed snapshot as the reference point.
+        // This guarantees exportUnchanged = true right after a successful export
+        // without a separate round-trip that may compute a slightly different value.
+        setExportInputsHash(snapshot.inputs_hash);
       }
     } catch (error) {
       showStatus(error instanceof Error ? error.message : "Export status failed", true);
