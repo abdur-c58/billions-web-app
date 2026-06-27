@@ -39,6 +39,7 @@ def default_export_state() -> dict[str, Any]:
         "download_seconds": 0,
         "render_seconds": 0,
         "inputs_hash": None,
+        "r2_key": None,
     }
 
 

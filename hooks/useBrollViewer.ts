@@ -928,8 +928,8 @@ export function useBrollViewer() {
   }, [segments]);
 
   const hasCompletedExport = useMemo(
-    () => exportSnapshot.status === "done" || Boolean(exportSnapshot.inputs_hash),
-    [exportSnapshot.inputs_hash, exportSnapshot.status],
+    () => exportSnapshot.status === "done",
+    [exportSnapshot.status],
   );
 
   const exportUnchanged = useMemo(() => {

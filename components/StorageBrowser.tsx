@@ -16,7 +16,7 @@ import {
   Download,
   FolderKanban,
 } from "lucide-react";
-import { isMediaItemType, ROOT_STORAGE_FOLDERS, type StorageItem } from "@/lib/r2";
+import { EXPORTED_VIDEOS_FOLDER, isMediaItemType, ROOT_STORAGE_FOLDERS, ALL_ROOT_FOLDERS, type StorageItem } from "@/lib/r2";
 import { StorageDeleteModal } from "@/components/StorageDeleteModal";
 import { StorageMoveModal } from "@/components/StorageMoveModal";
 import { StoragePreviewModal } from "@/components/StoragePreviewModal";
@@ -104,7 +104,7 @@ function uploadFileWithProgress(
 }
 
 const ROOT_FOLDER_META: Record<
-  (typeof ROOT_STORAGE_FOLDERS)[number],
+  (typeof ALL_ROOT_FOLDERS)[number],
   { description: string; icon: typeof Music; accent: string }
 > = {
   Audio: {
@@ -121,6 +121,11 @@ const ROOT_FOLDER_META: Record<
     description: "Everything else",
     icon: HardDrive,
     accent: "border-[var(--border-hover)] bg-[var(--surface-raised)] hover:border-[#71717a]",
+  },
+  "Exported Videos": {
+    description: "Rendered exports · auto-deleted after 7 days without a download",
+    icon: FolderKanban,
+    accent: "border-[#e8c06a]/40 bg-[#1f1a0d] hover:border-[#e8c06a]/60",
   },
 };
 
@@ -185,7 +190,7 @@ function RootFolderCard({
   item: StorageItem;
   onOpen: (item: StorageItem) => void;
 }) {
-  const meta = ROOT_FOLDER_META[item.name as (typeof ROOT_STORAGE_FOLDERS)[number]];
+  const meta = ROOT_FOLDER_META[item.name as (typeof ALL_ROOT_FOLDERS)[number]];
   const Icon = meta?.icon ?? Folder;
 
   return (
@@ -264,6 +269,14 @@ function GalleryItemCard({
             {!isFolder && item.lastModified ? ` · ${formatDate(item.lastModified)}` : ""}
             {isMedia ? " · Click to preview" : ""}
           </p>
+          {item.expiresAt ? (
+            <p
+              className={`text-xs ${item.expiringSoon ? "font-semibold text-red-400" : "text-[var(--muted)]"}`}
+              title="Auto-deleted after 7 days without a download"
+            >
+              {item.expiringSoon ? "⚠ " : ""}Expires {formatDate(item.expiresAt)}
+            </p>
+          ) : null}
         </div>
       </button>
       <div className="flex items-center justify-end gap-1 border-t border-[var(--border)] px-3 py-2">
@@ -349,6 +362,14 @@ function ListItemRow({
       </button>
       <span className="hidden text-sm text-[var(--muted)] sm:inline">
         {isFolder ? "Folder" : formatDate(item.lastModified)}
+        {item.expiresAt && !isFolder ? (
+          <span
+            className={`ml-2 text-xs ${item.expiringSoon ? "font-semibold text-red-400" : "text-[var(--muted)]"}`}
+            title="Auto-deleted after 7 days without a download"
+          >
+            · {item.expiringSoon ? "⚠ " : ""}expires {formatDate(item.expiresAt)}
+          </span>
+        ) : null}
       </span>
       <span className="text-sm text-[var(--muted)]">{formatSize(item.size)}</span>
       {item.protected ? (

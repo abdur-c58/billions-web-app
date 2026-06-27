@@ -81,7 +81,10 @@ from project_manager import (
 )
 from storage_r2 import (
     list_r2_background_audio,
+    purge_stale_exported_videos,
     resolve_r2_background_audio,
+    touch_exported_video_access,
+    upload_exported_video,
     validate_audio_storage_key,
 )
 from user_sessions import (
@@ -554,7 +557,7 @@ def mixed_search(query: str, page: int = 1, per_page: int = 15) -> dict[str, Any
 
 
 
-ROOT_STORAGE_FOLDERS = ("Audio", "B-Roll", "Other")
+ROOT_STORAGE_FOLDERS = ("Audio", "B-Roll", "Other", "Exported Videos")
 VIDEO_EXTENSIONS = {
     ".mp4",
     ".webm",
@@ -1228,6 +1231,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             render_started_at=None,
             download_seconds=0,
             render_seconds=0,
+            inputs_hash=None,
         )
 
         def on_progress(stage: str, current: int, total: int, message: str) -> None:
@@ -1277,6 +1281,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     selections_path=self.selections_path,
                     audio_path=self.audio_path,
                 )
+                # Upload to R2 "Exported Videos/" folder asynchronously.
+                r2_key: str | None = None
+                try:
+                    r2_key = upload_exported_video(
+                        Path(result["output"]),
+                        project_name or project_id[:8],
+                    )
+                except Exception as r2_exc:
+                    print(f"[export-r2] Upload skipped: {r2_exc}")
                 set_state(
                     status="done",
                     stage="done",
@@ -1289,6 +1302,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     progress_percent=100,
                     eta_seconds=0,
                     inputs_hash=inputs_hash,
+                    r2_key=r2_key,
                 )
             except ExportCancelled:
                 if not cancel_event.is_set():
@@ -1763,6 +1777,14 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             if snapshot.get("status") != "done" or not output:
                 self._send_json({"error": "No completed export available"}, HTTPStatus.BAD_REQUEST)
                 return
+            # Touch R2 last-downloaded timestamp (non-blocking).
+            r2_key = snapshot.get("r2_key")
+            if r2_key:
+                threading.Thread(
+                    target=touch_exported_video_access,
+                    args=(r2_key,),
+                    daemon=True,
+                ).start()
             self._send_file(Path(output))
             return
 
@@ -2443,6 +2465,10 @@ def main() -> None:
             while True:
                 time.sleep(3600)
                 prune_inactive_projects()
+                try:
+                    purge_stale_exported_videos()
+                except Exception as exc:
+                    print(f"[export-r2] Purge error: {exc}")
 
         threading.Thread(target=_prune_loop, daemon=True).start()
 

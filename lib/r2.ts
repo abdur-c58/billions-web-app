@@ -2,6 +2,7 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -32,6 +33,8 @@ export const AUDIO_EXTENSIONS = new Set([
 export const MEDIA_EXTENSIONS = new Set([...VIDEO_EXTENSIONS, ...AUDIO_EXTENSIONS]);
 
 export const ROOT_STORAGE_FOLDERS = ["Audio", "B-Roll", "Other"] as const;
+export const EXPORTED_VIDEOS_FOLDER = "Exported Videos";
+export const ALL_ROOT_FOLDERS = [...ROOT_STORAGE_FOLDERS, EXPORTED_VIDEOS_FOLDER] as const;
 
 export type StorageItem = {
   key: string;
@@ -40,6 +43,10 @@ export type StorageItem = {
   size: number | null;
   lastModified: string | null;
   protected?: boolean;
+  /** ISO date after which the file will be auto-purged (Exported Videos only) */
+  expiresAt?: string | null;
+  /** Whether expiry is within 24 hours */
+  expiringSoon?: boolean;
 };
 
 function getR2Client() {
@@ -81,12 +88,12 @@ export function classifyKey(key: string): StorageItem["type"] {
 
 export function isProtectedRootFolder(key: string): boolean {
   const normalized = normalizePrefix(key);
-  return ROOT_STORAGE_FOLDERS.some((name) => normalized === `${name}/`);
+  return ALL_ROOT_FOLDERS.some((name) => normalized === `${name}/`);
 }
 
 export async function ensureRootFolders() {
   const { client, bucket } = getR2Client();
-  for (const name of ROOT_STORAGE_FOLDERS) {
+  for (const name of ALL_ROOT_FOLDERS) {
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -106,10 +113,10 @@ function sortStorageItems(items: StorageItem[], prefix: string) {
     });
   }
 
-  const protectedOrder = new Map(ROOT_STORAGE_FOLDERS.map((name, index) => [name, index]));
+  const protectedOrder = new Map(ALL_ROOT_FOLDERS.map((name, index) => [name, index]));
   return items.sort((a, b) => {
-    const aProtected = protectedOrder.get(a.name as (typeof ROOT_STORAGE_FOLDERS)[number]);
-    const bProtected = protectedOrder.get(b.name as (typeof ROOT_STORAGE_FOLDERS)[number]);
+    const aProtected = protectedOrder.get(a.name as (typeof ALL_ROOT_FOLDERS)[number]);
+    const bProtected = protectedOrder.get(b.name as (typeof ALL_ROOT_FOLDERS)[number]);
     if (aProtected != null && bProtected != null) return aProtected - bProtected;
     if (aProtected != null) return -1;
     if (bProtected != null) return 1;
@@ -148,24 +155,46 @@ export async function listStorage(prefix = "") {
       type: "folder" as const,
       size: null,
       lastModified: null,
-      protected: normalized === "" && ROOT_STORAGE_FOLDERS.includes(name as (typeof ROOT_STORAGE_FOLDERS)[number]),
+      protected: normalized === "" && ALL_ROOT_FOLDERS.includes(name as (typeof ALL_ROOT_FOLDERS)[number]),
     };
   });
 
-  const files: StorageItem[] = (response.Contents || [])
-    .filter((entry) => entry.Key && entry.Key !== normalized)
-    .filter((entry) => !entry.Key!.startsWith(".project/"))
-    .map((entry) => {
-      const key = entry.Key || "";
-      const name = key.slice(normalized.length);
-      return {
-        key,
-        name,
-        type: classifyKey(name),
-        size: entry.Size ?? null,
-        lastModified: entry.LastModified?.toISOString() ?? null,
-      };
-    });
+  const isExportedVideosFolder = normalized === `${EXPORTED_VIDEOS_FOLDER}/`;
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+  const files: StorageItem[] = await Promise.all(
+    (response.Contents || [])
+      .filter((entry) => entry.Key && entry.Key !== normalized)
+      .filter((entry) => !entry.Key!.startsWith(".project/"))
+      .map(async (entry) => {
+        const key = entry.Key || "";
+        const name = key.slice(normalized.length);
+        let expiresAt: string | null = null;
+        let expiringSoon = false;
+        if (isExportedVideosFolder && !key.endsWith("/")) {
+          try {
+            const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+            const meta = head.Metadata ?? {};
+            const lastDl = Number(meta["last-downloaded"] ?? meta["uploaded-at"] ?? 0);
+            if (lastDl) {
+              const expiry = new Date(lastDl * 1000 + WEEK_MS);
+              expiresAt = expiry.toISOString();
+              expiringSoon = expiry.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+            }
+          } catch {
+            // Metadata unavailable — skip expiry info.
+          }
+        }
+        return {
+          key,
+          name,
+          type: classifyKey(name),
+          size: entry.Size ?? null,
+          lastModified: entry.LastModified?.toISOString() ?? null,
+          ...(isExportedVideosFolder && { expiresAt, expiringSoon }),
+        };
+      }),
+  );
 
   return {
     prefix: normalized,
@@ -202,7 +231,7 @@ export function assertReadableStorageKey(key: string) {
     throw new Error("Invalid file key.");
   }
   const root = key.split("/")[0];
-  if (!ROOT_STORAGE_FOLDERS.includes(root as (typeof ROOT_STORAGE_FOLDERS)[number])) {
+  if (!ALL_ROOT_FOLDERS.includes(root as (typeof ALL_ROOT_FOLDERS)[number])) {
     throw new Error("File is not in the storage library.");
   }
 }
