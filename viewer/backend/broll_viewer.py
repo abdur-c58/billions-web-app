@@ -77,6 +77,7 @@ from user_sessions import (
     migrate_legacy_workspace,
     migrate_user_scoped_projects,
     project_workspace,
+    read_manifest,
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -208,6 +209,8 @@ def default_export_state() -> dict[str, Any]:
         "elapsed_seconds": 0,
         "eta_seconds": None,
         "hardware": None,
+        "project_id": None,
+        "project_name": None,
     }
 
 
@@ -1179,6 +1182,63 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         with export_lock:
             return enrich_export_state(dict(export_state))
 
+    def _activity_snapshot(self) -> dict[str, Any]:
+        """Global, project-agnostic view of everything using the shared hardware.
+
+        Powers the navbar indicator: any running Whisper timestamp job (across
+        all projects) plus the single active export, each with a percentage,
+        and a GPU-only utilization read-out.
+        """
+        jobs: list[dict[str, Any]] = []
+
+        # Whisper timestamp jobs can run for any project on the shared box.
+        try:
+            for project in list_projects(WORKSPACE_DIR):
+                job = project.get("timestamps_job") or {}
+                if job.get("status") == "running":
+                    jobs.append(
+                        {
+                            "type": "whisper",
+                            "label": "Transcribing",
+                            "project_id": project.get("id"),
+                            "project_name": project.get("name"),
+                            "progress_percent": int(job.get("progress_percent") or 0),
+                            "message": job.get("message") or "Generating timestamps…",
+                            "stage": job.get("stage"),
+                        }
+                    )
+        except Exception:
+            pass
+
+        # Exactly one export runs at a time (global state).
+        export = self._export_snapshot()
+        if export.get("status") == "running":
+            jobs.append(
+                {
+                    "type": "export",
+                    "label": "Rendering",
+                    "project_id": export.get("project_id"),
+                    "project_name": export.get("project_name"),
+                    "progress_percent": int(export.get("progress_percent") or 0),
+                    "message": export.get("message") or "Exporting video…",
+                    "stage": export.get("stage"),
+                    "eta_seconds": export.get("eta_seconds"),
+                }
+            )
+
+        # GPU stats are only worth sampling (spawns nvidia-smi) when something
+        # is actually running — keeps the box quiet when idle.
+        gpu = None
+        if jobs:
+            try:
+                from hardware_monitor import gpu_snapshot
+
+                gpu = gpu_snapshot()
+            except Exception:
+                gpu = None
+
+        return {"jobs": jobs, "gpu": gpu, "busy": bool(jobs)}
+
     def _set_export_state(self, **kwargs: Any) -> None:
         with export_lock:
             if kwargs.get("status") == "running" and export_state.get("status") != "running":
@@ -1218,6 +1278,19 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         if title:
             output_path = output_path.parent / sanitize_output_name(title)
 
+        # Capture which project this export belongs to so the global activity
+        # indicator can attribute it (the hardware is shared across projects).
+        project_id = self.headers.get("X-Billions-Project", "").strip() or None
+        project_name = None
+        try:
+            workspace = self._active_workspace()
+            if workspace is not None:
+                project_name = read_manifest(workspace).get("name")
+        except Exception:
+            project_name = None
+        if not project_name:
+            project_name = title or (project_id[:8] if project_id else "Project")
+
         self._set_export_state(
             status="running",
             stage="prepare",
@@ -1232,6 +1305,8 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             elapsed_seconds=0,
             eta_seconds=None,
             hardware=None,
+            project_id=project_id,
+            project_name=project_name,
         )
 
         def on_progress(stage: str, current: int, total: int, message: str) -> None:
@@ -1633,6 +1708,10 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/export/status":
             self._send_json(self._export_snapshot())
+            return
+
+        if parsed.path == "/api/activity":
+            self._send_json(self._activity_snapshot())
             return
 
         if parsed.path == "/api/audio/background":

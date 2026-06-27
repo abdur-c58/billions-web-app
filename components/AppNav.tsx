@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clapperboard, HardDrive } from "lucide-react";
 import { useSession } from "@/context/SessionContext";
+import { GlobalActivityIndicator } from "@/components/GlobalActivityIndicator";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -49,6 +50,7 @@ export function AppNav() {
             );
           })}
         </div>
+        <GlobalActivityIndicator />
       </div>
     </nav>
   );

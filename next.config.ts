@@ -56,6 +56,10 @@ const nextConfig: NextConfig = {
         destination: `${backendBase}/api/export/:path*`,
       },
       {
+        source: "/api/activity",
+        destination: `${backendBase}/api/activity`,
+      },
+      {
         source: "/api/duplicates",
         destination: `${backendBase}/api/duplicates`,
       },

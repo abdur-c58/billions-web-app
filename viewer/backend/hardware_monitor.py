@@ -99,6 +99,27 @@ def _nvidia_smi_stats() -> dict[str, int | str | None]:
     return stats
 
 
+def gpu_snapshot() -> dict[str, Any] | None:
+    """Lightweight GPU-only snapshot for the global activity indicator.
+
+    Returns None when no NVIDIA GPU/driver is available so callers can simply
+    omit GPU info rather than rendering empty fields.
+    """
+    stats = _nvidia_smi_stats()
+    util = stats.get("gpu_util_percent")
+    mem_used = stats.get("gpu_memory_used_mb")
+    mem_total = stats.get("gpu_memory_total_mb")
+    name = _nvidia_gpu_name()
+    if util is None and mem_total is None and name is None:
+        return None
+    return {
+        "name": name,
+        "utilization_percent": util,
+        "memory_used_mb": mem_used,
+        "memory_total_mb": mem_total,
+    }
+
+
 def sample_hardware_stats(active_device: str, device_info: dict[str, Any] | None = None) -> dict[str, Any]:
     """Snapshot CPU/RAM and (when on CUDA) GPU utilization."""
     base = dict(device_info or {})
