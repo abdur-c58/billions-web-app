@@ -127,33 +127,66 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
           </li>
 
           <li className={`glow-setup-step ${setup.status?.audio_uploaded ? "is-done" : step === "import_audio" ? "is-active" : ""}`}>
-            <div className="flex items-center gap-3">
-              <FileAudio className="h-5 w-5 text-[var(--accent)]" />
-              <div className="flex-1">
-                <p className="font-semibold">2. Import script.mp3</p>
-                <p className="text-sm text-[var(--muted)]">
-                  {setup.status?.audio_uploaded
-                    ? "Narration audio uploaded"
-                    : "Upload the narration MP3 that matches the script."}
-                </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <FileAudio className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+                <div className="flex-1">
+                  <p className="font-semibold">2. Import script.mp3</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    {setup.audioUploadProgress != null
+                      ? "Uploading narration…"
+                      : setup.status?.audio_uploaded
+                        ? "Narration audio uploaded"
+                        : "Upload the narration MP3 that matches the script."}
+                  </p>
+                </div>
+                <label
+                  className={`glow-btn-secondary shrink-0 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
+                    setup.status?.script_uploaded && setup.audioUploadProgress == null
+                      ? "cursor-pointer"
+                      : "cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  {setup.audioUploadProgress != null ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading…
+                    </span>
+                  ) : (
+                    "Choose file"
+                  )}
+                  <input
+                    type="file"
+                    accept=".mp3,audio/mpeg,audio/mp3"
+                    className="hidden"
+                    disabled={
+                      !setup.status?.script_uploaded ||
+                      setup.busy ||
+                      timestampsRunning ||
+                      setup.audioUploadProgress != null
+                    }
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void setup.importAudio(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
               </div>
-              <label
-                className={`glow-btn-secondary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
-                  setup.status?.script_uploaded ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-                }`}
-              >
-                Choose file
-                <input
-                  type="file"
-                  accept=".mp3,audio/mpeg,audio/mp3"
-                  className="hidden"
-                  disabled={!setup.status?.script_uploaded || setup.busy || timestampsRunning}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void setup.importAudio(file);
-                  }}
-                />
-              </label>
+              {setup.audioUploadProgress != null ? (
+                <div className="pl-8">
+                  <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
+                    <span>Uploading to server</span>
+                    <span className="tabular-nums">{setup.audioUploadProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-150 ease-out"
+                      style={{ width: `${setup.audioUploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
           </li>
 

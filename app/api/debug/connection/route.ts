@@ -42,6 +42,7 @@ export async function GET() {
       effective_backend_url: backendUrl,
       NEXT_PUBLIC_BROLL_BACKEND_URL: publicBackendUrl,
       NEXT_PUBLIC_BROLL_BACKEND_PORT: publicBackendPort,
+      audio_upload_url: backendUrl ? `${backendUrl}/api/project/upload/audio` : null,
     },
     backend_reachable: backendReachable,
     backend_health_status: backendHealthStatus,

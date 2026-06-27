@@ -12,6 +12,7 @@ type ConnectionDebug = {
     effective_backend_url: string;
     NEXT_PUBLIC_BROLL_BACKEND_URL: string | null;
     NEXT_PUBLIC_BROLL_BACKEND_PORT: string;
+    audio_upload_url: string | null;
   };
   backend_reachable: boolean | null;
   backend_health_status: number | null;

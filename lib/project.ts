@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, uploadFormData } from "@/lib/api";
 import type { ScriptFormat } from "@/lib/types";
 
 export type ProjectStatus = {
@@ -65,15 +65,32 @@ export async function uploadScriptFile(file: File) {
   });
 }
 
-export async function uploadAudioFile(file: File) {
+/** Resolve where large audio uploads should go (direct tunnel vs local proxy). */
+let cachedAudioUploadUrl: string | null | undefined;
+
+async function resolveAudioUploadUrl(): Promise<string> {
+  if (cachedAudioUploadUrl !== undefined) {
+    return cachedAudioUploadUrl ?? "/api/project/upload/audio";
+  }
+  try {
+    const config = await fetch("/api/config", { cache: "no-store" }).then(
+      (response) => response.json() as Promise<{ audio_upload_url?: string | null }>,
+    );
+    cachedAudioUploadUrl = config.audio_upload_url ?? null;
+  } catch {
+    cachedAudioUploadUrl = null;
+  }
+  return cachedAudioUploadUrl ?? "/api/project/upload/audio";
+}
+
+export async function uploadAudioFile(
+  file: File,
+  onProgress?: (percent: number) => void,
+) {
   const form = new FormData();
   form.append("file", file);
-  // Same-origin proxy (/api/project/* rewrite) so uploads work on Vercel + tunnel.
-  // Direct backend URL only works locally; the browser cannot reach :8766 from Vercel.
-  return apiFetch<ProjectStatus>("/api/project/upload/audio", {
-    method: "POST",
-    body: form,
-  });
+  const url = await resolveAudioUploadUrl();
+  return uploadFormData<ProjectStatus>(url, form, onProgress);
 }
 
 export async function uploadTimestampsFile(file: File) {

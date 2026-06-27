@@ -16,6 +16,7 @@ export function useProjectSetup(projectId: string | null) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audioUploadProgress, setAudioUploadProgress] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const sessionReady = Boolean(projectId);
@@ -97,13 +98,15 @@ export function useProjectSetup(projectId: string | null) {
   const importAudio = useCallback(async (file: File) => {
     setBusy(true);
     setError(null);
+    setAudioUploadProgress(0);
     try {
-      const next = await uploadAudioFile(file);
+      const next = await uploadAudioFile(file, (percent) => setAudioUploadProgress(percent));
       setStatus(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Audio upload failed");
     } finally {
       setBusy(false);
+      setAudioUploadProgress(null);
     }
   }, []);
 
@@ -144,5 +147,6 @@ export function useProjectSetup(projectId: string | null) {
     importTimestamps,
     segmentTimestamps,
     viewerReady: Boolean(status?.viewer_ready),
+    audioUploadProgress,
   };
 }

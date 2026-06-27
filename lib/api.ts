@@ -27,10 +27,11 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}): Promi
       },
     });
   } catch {
-    throw new ApiError(
-      "Cannot reach broll API on port 8766. Run: npm run dev:all",
-      0,
-    );
+    const isDirectBackend = /^https?:\/\//i.test(url);
+    const hint = isDirectBackend
+      ? "Check that cloudflared is running and BROLL_BACKEND_URL on Vercel matches the current tunnel URL."
+      : "Run npm run dev:all (Next.js :3001 + Python API :8766), or use the Vercel deployment with a live tunnel.";
+    throw new ApiError(`Cannot reach broll API (${url}). ${hint}`, 0);
   }
 
   let payload: Record<string, unknown> = {};
@@ -77,6 +78,56 @@ export function retryDelayMs(attempt: number, error: unknown): number {
 
 export async function sleep(ms: number) {
   await new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+/** POST multipart form data with upload progress (fetch has no upload progress events). */
+export function uploadFormData<T>(
+  url: string,
+  form: FormData,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+
+    const sessionHeaders = getSessionHeaders();
+    for (const [key, value] of Object.entries(sessionHeaders)) {
+      xhr.setRequestHeader(key, value);
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+      }
+    };
+
+    xhr.onload = () => {
+      let payload: Record<string, unknown> = {};
+      try {
+        payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
+      } catch {
+        payload = {};
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(payload as T);
+        return;
+      }
+      const message =
+        (typeof payload.error === "string" && payload.error) ||
+        (xhr.status >= 500 ? "Broll API offline. Check backend and tunnel." : `Request failed (${xhr.status})`);
+      reject(new ApiError(message, xhr.status));
+    };
+
+    xhr.onerror = () => {
+      const isDirectBackend = /^https?:\/\//i.test(url);
+      const hint = isDirectBackend
+        ? "Check that cloudflared is running and BROLL_BACKEND_URL matches the tunnel URL."
+        : "Run npm run dev:all (Next.js :3001 + Python API :8766).";
+      reject(new ApiError(`Cannot reach broll API (${url}). ${hint}`, 0));
+    };
+
+    xhr.send(form);
+  });
 }
 
 /** Python b-roll API — use for large uploads to bypass Next.js proxy body limits. */

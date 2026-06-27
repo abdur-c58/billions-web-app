@@ -1180,7 +1180,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             "http://localhost:3001,http://127.0.0.1:3001",
         )
         allowed_origins = {item.strip() for item in allowed.split(",") if item.strip()}
-        return origin if origin in allowed_origins else None
+        if origin in allowed_origins:
+            return origin
+        # Vercel deployments upload audio directly to the tunnel (bypasses body limits).
+        if origin.endswith(".vercel.app") and os.environ.get("BROLL_ALLOW_VERCEL_CORS", "1") == "1":
+            return origin
+        return None
 
     def end_headers(self) -> None:
         origin = self._allowed_cors_origin()
