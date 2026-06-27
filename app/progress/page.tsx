@@ -68,6 +68,11 @@ export default function ProgressPage() {
   const percentLabel = `${percent}%`;
   const isComplete = percent >= 100;
   const showHardware = snapshot.status === "running" || Boolean(snapshot.hardware);
+  const isDownloading = snapshot.stage === "download";
+  const downloadSeconds = snapshot.download_seconds ?? 0;
+  const renderSeconds = snapshot.render_seconds ?? 0;
+  const showTimings =
+    snapshot.status === "running" || snapshot.status === "done" || downloadSeconds > 0 || renderSeconds > 0;
   const etaText = useMemo(() => {
     if (snapshot.status === "running") {
       return snapshot.eta_seconds != null
@@ -160,6 +165,30 @@ export default function ProgressPage() {
         <p className="mt-8 w-full px-4 text-center text-[clamp(0.95rem,1.8vw,1.4rem)] text-[var(--muted)]">
           {etaText}
         </p>
+        {showTimings ? (
+          <div className="mt-4 flex items-center gap-3 text-[0.85rem]">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 ${
+                isDownloading
+                  ? "border-white/20 bg-white/10 text-white/90"
+                  : "border-white/10 bg-white/5 text-white/60"
+              }`}
+            >
+              <span className="text-white/40">Downloads</span>
+              <span className="font-semibold tabular-nums">{formatDuration(downloadSeconds)}</span>
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 ${
+                !isDownloading && snapshot.status === "running"
+                  ? "border-[#e8c06a]/40 bg-[#e8c06a]/10 text-[#e8c06a]"
+                  : "border-white/10 bg-white/5 text-white/60"
+              }`}
+            >
+              <span className="opacity-60">Render</span>
+              <span className="font-semibold tabular-nums">{formatDuration(renderSeconds)}</span>
+            </span>
+          </div>
+        ) : null}
         {error ? (
           <p className="mt-2 w-full px-4 text-center text-[0.9rem] text-[#ffc9c9]">{error}</p>
         ) : snapshot.message ? (

@@ -101,6 +101,9 @@ export type ProjectSummary = {
   name: string;
   created_at?: number | null;
   updated_at?: number | null;
+  last_activity?: number | null;
+  expires_at?: number | null;
+  ttl_seconds?: number;
   viewer_ready: boolean;
   next_step: ProjectStatus["next_step"];
   title: string | null;
@@ -122,5 +125,13 @@ export async function createProject(name?: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name: name || undefined }),
+  });
+}
+
+export async function deleteProject(projectId: string) {
+  return apiFetch<{ ok: boolean; deleted: string }>("/api/project/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_id: projectId }),
   });
 }

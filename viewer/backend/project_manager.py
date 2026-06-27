@@ -85,6 +85,12 @@ def _get_timestamps_state(workspace: Path) -> dict[str, Any]:
         return _get_timestamps_state_unlocked(workspace)
 
 
+def forget_timestamps_state(workspace: Path) -> None:
+    """Drop cached segmentation job state (used when a project is deleted)."""
+    with _timestamps_lock:
+        _timestamps_states.pop(_workspace_key(workspace), None)
+
+
 def workspace_paths(workspace: Path) -> dict[str, Path]:
     workspace.mkdir(parents=True, exist_ok=True)
     return {

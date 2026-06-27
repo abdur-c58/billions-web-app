@@ -20,6 +20,41 @@ PROJECT_MANIFEST_NAME = "project.json"
 STALE_JOB_SECONDS = 15 * 60
 PROJECT_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
 
+# Projects are auto-pruned after a week of inactivity to save local disk.
+# Only the local project workspace (incl. its downloaded clip cache) is
+# removed — nothing in R2 storage is ever touched.
+PROJECT_TTL_SECONDS = 7 * 24 * 60 * 60
+
+# Files whose mtime reflects real activity on a project (uploads, b-roll
+# selections, exports, segmentation jobs).
+_ACTIVITY_FILES = (
+    "project.json",
+    "script.json",
+    "script.mp3",
+    "segment_timestamps.json",
+    "broll_selections.json",
+    ".broll_export_status.json",
+    ".broll_flagged.json",
+    ".timestamps_job.json",
+)
+
+
+def project_last_activity(workspace: Path, manifest: dict[str, Any] | None = None) -> float | None:
+    """Most recent activity timestamp for a project (epoch seconds)."""
+    times: list[float] = []
+    manifest = manifest if manifest is not None else read_manifest(workspace)
+    updated = manifest.get("updated_at")
+    if isinstance(updated, (int, float)):
+        times.append(float(updated))
+    for name in _ACTIVITY_FILES:
+        path = workspace / name
+        try:
+            if path.exists():
+                times.append(path.stat().st_mtime)
+        except OSError:
+            continue
+    return max(times) if times else None
+
 
 def projects_root(workspace_root: Path) -> Path:
     root = workspace_root / "projects"
@@ -115,11 +150,17 @@ def project_summary(workspace_root: Path, project_id: str) -> dict[str, Any]:
     job = status.get("timestamps_job", {})
     name = manifest.get("name") or status.get("title") or f"Project {project_id[:8]}"
 
+    last_activity = project_last_activity(workspace, manifest)
+    expires_at = (last_activity + PROJECT_TTL_SECONDS) if last_activity else None
+
     return {
         "id": project_id,
         "name": name,
         "created_at": manifest.get("created_at"),
         "updated_at": manifest.get("updated_at"),
+        "last_activity": last_activity,
+        "expires_at": expires_at,
+        "ttl_seconds": PROJECT_TTL_SECONDS,
         "viewer_ready": status.get("viewer_ready", False),
         "next_step": status.get("next_step"),
         "title": status.get("title"),
@@ -165,6 +206,66 @@ def create_project(
         manifest["created_by"] = created_by
     touch_manifest(workspace, **manifest)
     return project_summary(workspace_root, project_id)
+
+
+def delete_project(workspace_root: Path, project_id: str) -> None:
+    """Remove a project's local workspace (incl. its downloaded clip cache).
+
+    R2 storage is never touched — only the local project folder is deleted.
+    """
+    workspace = project_workspace(workspace_root, project_id)
+    resolved = workspace.resolve()
+    root = projects_root(workspace_root).resolve()
+    # Safety: never delete outside the projects root.
+    if root not in resolved.parents:
+        raise ValueError("Refusing to delete project outside the projects root.")
+    if resolved.exists():
+        shutil.rmtree(resolved, ignore_errors=True)
+    # Drop any in-memory segmentation job state for this workspace.
+    try:
+        from project_manager import forget_timestamps_state
+
+        forget_timestamps_state(workspace)
+    except Exception:
+        pass
+
+
+def prune_stale_projects(
+    workspace_root: Path,
+    *,
+    ttl_seconds: float = PROJECT_TTL_SECONDS,
+    is_protected: Any = None,
+) -> list[str]:
+    """Delete projects inactive longer than ttl_seconds. Returns deleted ids.
+
+    `is_protected(project_id)` may be supplied to skip projects with an active
+    job (export/segmentation) so we never delete something mid-run.
+    """
+    root = projects_root(workspace_root)
+    now = time.time()
+    deleted: list[str] = []
+    if not root.exists():
+        return deleted
+
+    for child in root.iterdir():
+        if not child.is_dir() or not PROJECT_ID_RE.match(child.name):
+            continue
+        project_id = child.name
+        if callable(is_protected) and is_protected(project_id):
+            continue
+        last_activity = project_last_activity(child)
+        if last_activity is None:
+            continue
+        if now - last_activity <= ttl_seconds:
+            continue
+        try:
+            delete_project(workspace_root, project_id)
+            deleted.append(project_id)
+            print(f"[projects] Pruned inactive project {project_id}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[projects] Failed to prune {project_id}: {exc}")
+
+    return deleted
 
 
 def migrate_legacy_workspace(workspace_root: Path) -> None:

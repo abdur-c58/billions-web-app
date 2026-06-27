@@ -212,6 +212,8 @@ export type ExportSnapshot = {
   progress_percent?: number;
   elapsed_seconds?: number;
   eta_seconds?: number | null;
+  download_seconds?: number;
+  render_seconds?: number;
   hardware?: SegmentationHardware | null;
 };
 

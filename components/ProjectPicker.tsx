@@ -1,9 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FolderOpen, Loader2, Plus, Sparkles } from "lucide-react";
-import { createProject, fetchProjectList, type ProjectSummary } from "@/lib/project";
+import { FolderOpen, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  createProject,
+  deleteProject,
+  fetchProjectList,
+  type ProjectSummary,
+} from "@/lib/project";
 import { useSession } from "@/context/SessionContext";
+import { cn } from "@/lib/utils";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function formatExpiry(expiresAt: number, now: number): string {
+  const remaining = expiresAt * 1000 - now;
+  if (remaining <= 0) return "Deleting soon";
+  const days = Math.floor(remaining / DAY_MS);
+  const hours = Math.floor((remaining % DAY_MS) / (60 * 60 * 1000));
+  if (days >= 1) return `Auto-deletes in ${days}d ${hours}h`;
+  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+  if (hours >= 1) return `Auto-deletes in ${hours}h ${minutes}m`;
+  return `Auto-deletes in ${minutes}m`;
+}
 
 function stepLabel(project: ProjectSummary) {
   if (project.viewer_ready) return "Ready for b-roll";
@@ -28,6 +47,14 @@ export function ProjectPicker() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -61,6 +88,20 @@ export function ProjectPicker() {
       setError(err instanceof Error ? err.message : "Failed to create project");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleDelete = async (project: ProjectSummary) => {
+    setDeletingId(project.id);
+    setError(null);
+    try {
+      await deleteProject(project.id);
+      setConfirmId(null);
+      setProjects((prev) => prev.filter((item) => item.id !== project.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete project");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -98,14 +139,26 @@ export function ProjectPicker() {
           <ul className="mt-8 space-y-3">
             {projects.map((project) => {
               const running = project.timestamps_job.status === "running";
+              const expiresAt = project.expires_at ?? null;
+              const remainingMs = expiresAt ? expiresAt * 1000 - now : null;
+              const expiringSoon = remainingMs != null && remainingMs < DAY_MS;
+              const confirming = confirmId === project.id;
+              const deleting = deletingId === project.id;
               return (
                 <li key={project.id}>
-                  <button
-                    type="button"
-                    onClick={() => openProject(project)}
-                    className="glow-setup-step flex w-full flex-col gap-2 rounded-[var(--radius-lg)] p-4 text-left transition-colors hover:border-[var(--accent)] sm:flex-row sm:items-center"
+                  <div
+                    className={cn(
+                      "glow-setup-step flex w-full flex-col gap-2 rounded-[var(--radius-lg)] p-4 transition-colors sm:flex-row sm:items-center",
+                      expiringSoon
+                        ? "border-[rgba(255,107,107,0.55)] bg-[rgba(255,107,107,0.06)]"
+                        : "hover:border-[var(--accent)]",
+                    )}
                   >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openProject(project)}
+                      className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                    >
                       {project.viewer_ready ? (
                         <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
                       ) : (
@@ -114,6 +167,16 @@ export function ProjectPicker() {
                       <div className="min-w-0">
                         <p className="truncate font-semibold">{project.name}</p>
                         <p className="text-sm text-[var(--muted)]">{stepLabel(project)}</p>
+                        {expiresAt ? (
+                          <p
+                            className={cn(
+                              "mt-1 text-[11px]",
+                              expiringSoon ? "font-medium text-[#ffb3b3]" : "text-[var(--muted)]/70",
+                            )}
+                          >
+                            {formatExpiry(expiresAt, now)}
+                          </p>
+                        ) : null}
                         {running ? (
                           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-raised)]">
                             <div
@@ -125,13 +188,50 @@ export function ProjectPicker() {
                           </div>
                         ) : null}
                       </div>
+                    </button>
+                    <div className="flex items-center gap-3 sm:shrink-0">
+                      <span className="text-xs text-[var(--muted)]">
+                        {project.viewer_ready
+                          ? `${project.aligned_segments}/${project.segment_count} segments`
+                          : project.title || project.id.slice(0, 8)}
+                      </span>
+                      {confirming ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(project)}
+                            disabled={deleting}
+                            className="inline-flex items-center gap-1 rounded-[8px] border border-[rgba(255,107,107,0.45)] bg-[rgba(255,107,107,0.12)] px-2.5 py-1.5 text-xs font-semibold text-[#ffc9c9] transition-colors hover:bg-[rgba(255,107,107,0.2)] disabled:opacity-55"
+                          >
+                            {deleting ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            Delete
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(null)}
+                            disabled={deleting}
+                            className="rounded-[8px] border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmId(project.id)}
+                          aria-label={`Delete ${project.name}`}
+                          title="Delete project"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-[var(--border)] text-[var(--muted)] transition-colors hover:border-[rgba(255,107,107,0.5)] hover:text-[#ffc9c9]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
-                    <span className="text-xs text-[var(--muted)] sm:shrink-0">
-                      {project.viewer_ready
-                        ? `${project.aligned_segments}/${project.segment_count} segments`
-                        : project.title || project.id.slice(0, 8)}
-                    </span>
-                  </button>
+                  </div>
                 </li>
               );
             })}

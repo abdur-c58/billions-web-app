@@ -73,10 +73,12 @@ from storage_r2 import (
 )
 from user_sessions import (
     create_project,
+    delete_project,
     list_projects,
     migrate_legacy_workspace,
     migrate_user_scoped_projects,
     project_workspace,
+    prune_stale_projects,
     read_manifest,
 )
 
@@ -211,6 +213,10 @@ def default_export_state() -> dict[str, Any]:
         "hardware": None,
         "project_id": None,
         "project_name": None,
+        "download_started_at": None,
+        "render_started_at": None,
+        "download_seconds": 0,
+        "render_seconds": 0,
     }
 
 
@@ -262,6 +268,21 @@ def enrich_export_state(state: dict[str, Any]) -> dict[str, Any]:
         enriched["elapsed_seconds"] = int(enriched.get("elapsed_seconds") or 0)
         enriched["eta_seconds"] = None
 
+    # Split timing: clip download phase vs. actual render phase.
+    now = time.time()
+    end_time = now if status == "running" else float(enriched.get("updated_at") or now)
+    dl_start = enriched.get("download_started_at")
+    rn_start = enriched.get("render_started_at")
+    if dl_start:
+        dl_end = float(rn_start) if rn_start else end_time
+        enriched["download_seconds"] = int(max(0.0, dl_end - float(dl_start)))
+    else:
+        enriched["download_seconds"] = int(enriched.get("download_seconds") or 0)
+    if rn_start:
+        enriched["render_seconds"] = int(max(0.0, end_time - float(rn_start)))
+    else:
+        enriched["render_seconds"] = int(enriched.get("render_seconds") or 0)
+
     return enriched
 
 
@@ -291,6 +312,32 @@ def load_persisted_export_state(export_status_file: Path) -> None:
 def save_export_state(export_status_file: Path) -> None:
     export_status_file.parent.mkdir(parents=True, exist_ok=True)
     write_json(export_status_file, export_state)
+
+
+def project_is_protected(project_id: str) -> bool:
+    """True if a project has a running job and must not be deleted/pruned."""
+    with export_lock:
+        if (
+            export_state.get("status") == "running"
+            and export_state.get("project_id") == project_id
+        ):
+            return True
+    try:
+        workspace = project_workspace(WORKSPACE_DIR, project_id)
+        if timestamps_job_snapshot(workspace).get("status") == "running":
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def prune_inactive_projects() -> list[str]:
+    """Remove projects past their inactivity TTL, skipping any with active jobs."""
+    try:
+        return prune_stale_projects(WORKSPACE_DIR, is_protected=project_is_protected)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[projects] Prune sweep failed: {exc}")
+        return []
 
 
 def _apply_env_file(path: Path, *, override: bool = False) -> None:
@@ -1249,6 +1296,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             kwargs["updated_at"] = time.time()
             export_state.update(kwargs)
 
+            # Mark phase boundaries the first time we enter each phase so the
+            # UI can show download time and render time separately.
+            now = time.time()
+            current_stage = str(export_state.get("stage", ""))
+            if current_stage == "download" and export_state.get("download_started_at") is None:
+                export_state["download_started_at"] = now
+            if (
+                current_stage in ("prepare", "concat", "audio", "encode")
+                and export_state.get("render_started_at") is None
+            ):
+                export_state["render_started_at"] = now
+
             stage = str(export_state.get("stage", ""))
             current = int(export_state.get("current") or 0)
             total = int(export_state.get("total") or 0)
@@ -1293,7 +1352,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         self._set_export_state(
             status="running",
-            stage="prepare",
+            stage="queued",
             current=0,
             total=0,
             message="Starting export…",
@@ -1307,6 +1366,10 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             hardware=None,
             project_id=project_id,
             project_name=project_name,
+            download_started_at=None,
+            render_started_at=None,
+            download_seconds=0,
+            render_seconds=0,
         )
 
         def on_progress(stage: str, current: int, total: int, message: str) -> None:
@@ -1336,7 +1399,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 # blocking the HTTP request on slow connections.
                 background_audio_path = None
                 if background_audio:
-                    on_progress("prepare", 0, 0, "Downloading background audio…")
+                    on_progress("download", 0, 0, "Downloading background audio…")
                     background_audio_path = resolve_r2_background_audio(
                         background_audio,
                         self.cache_dir,
@@ -1441,6 +1504,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/project/list":
             try:
+                prune_inactive_projects()
                 projects = list_projects(WORKSPACE_DIR)
                 running = next(
                     (p for p in projects if p.get("timestamps_job", {}).get("status") == "running"),
@@ -1865,6 +1929,28 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 workspace = project_workspace(WORKSPACE_DIR, project["id"])
                 load_timestamps_job_state(workspace)
                 self._send_json(project)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/project/delete":
+            try:
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                project_id = str(
+                    body.get("project_id")
+                    or self.headers.get("X-Billions-Project", "")
+                ).strip()
+                if not project_id:
+                    self._send_json({"error": "project_id required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                if project_is_protected(project_id):
+                    self._send_json(
+                        {"error": "Project has a running job and can't be deleted."},
+                        HTTPStatus.CONFLICT,
+                    )
+                    return
+                delete_project(WORKSPACE_DIR, project_id)
+                self._send_json({"ok": True, "deleted": project_id})
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -2433,11 +2519,19 @@ def main() -> None:
         migrate_legacy_workspace(WORKSPACE_DIR)
         migrate_user_scoped_projects(WORKSPACE_DIR)
         load_all_timestamps_job_states(WORKSPACE_DIR)
+        prune_inactive_projects()
         for project in list_projects(WORKSPACE_DIR):
             try:
                 restore_workspace_from_r2(project_workspace(WORKSPACE_DIR, project["id"]))
             except Exception as exc:
                 print(f"[project-r2] Restore skipped for {project['id']}: {exc}")
+
+        def _prune_loop() -> None:
+            while True:
+                time.sleep(3600)
+                prune_inactive_projects()
+
+        threading.Thread(target=_prune_loop, daemon=True).start()
 
     export_status_file = project_dir / ".broll_export_status.json"
     load_persisted_export_state(export_status_file)

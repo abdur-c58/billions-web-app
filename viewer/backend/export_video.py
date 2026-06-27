@@ -337,7 +337,7 @@ def prefetch_clips(
     total = len(jobs)
     done = 0
     if on_progress:
-        on_progress("prepare", 0, total, f"Downloading {total} clip(s)…")
+        on_progress("download", 0, total, f"Downloading {total} clip(s)…")
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
@@ -351,7 +351,7 @@ def prefetch_clips(
                 future.result()
                 done += 1
                 if on_progress:
-                    on_progress("prepare", done, total, f"Downloaded {done}/{total} clip(s)")
+                    on_progress("download", done, total, f"Downloaded {done}/{total} clip(s)")
         finally:
             if should_cancel and should_cancel():
                 for future in futures:
@@ -741,10 +741,13 @@ def build_mixed_audio(
     narration_gain_db = gains["narration_gain_db"]
     background_gain_db = gains["background_gain_db"]
 
+    # Loop the background track at the demuxer level (-stream_loop) instead of
+    # buffering it in memory with aloop. aloop=size=2e9 tries to hold billions
+    # of samples in RAM and fails ("Error while filtering: Invalid argument")
+    # on long exports; -stream_loop streams the loop with flat memory use.
     filter_complex = (
         f"[0:a]volume={narration_gain_db}dB,atrim=0:{duration_str}[narr];"
-        f"[1:a]aloop=loop=-1:size=2e+09,atrim=0:{duration_str},"
-        f"volume={background_gain_db}dB[bg];"
+        f"[1:a]volume={background_gain_db}dB[bg];"
         f"[narr][bg]amix=inputs=2:duration=first:dropout_transition=0[a]"
     )
 
@@ -753,12 +756,16 @@ def build_mixed_audio(
         [
             "-i",
             str(narration_path),
+            "-stream_loop",
+            "-1",
             "-i",
             str(background_path),
             "-filter_complex",
             filter_complex,
             "-map",
             "[a]",
+            "-t",
+            duration_str,
             "-c:a",
             "aac",
             "-b:a",
@@ -808,13 +815,24 @@ def summarize_export_error(exc: Exception, max_len: int = 200) -> str:
     if not text:
         return "Export failed"
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    for line in reversed(lines):
-        lower = line.lower()
-        if any(
-            token in lower
-            for token in ("error", "failed", "cannot", "not found", "conversion failed")
-        ):
+
+    # "Conversion failed!" / "ffmpeg failed" are generic trailers — the useful
+    # cause is usually a line above them. Prefer a specific error line and only
+    # fall back to the generic trailer when nothing better is found.
+    generic = {"conversion failed!", "conversion failed", "ffmpeg failed"}
+    tokens = (
+        "error", "failed", "cannot", "not found", "invalid argument",
+        "no space", "out of memory", "permission denied", "killed",
+    )
+    candidates = [
+        line for line in reversed(lines)
+        if any(token in line.lower() for token in tokens)
+    ]
+    for line in candidates:
+        if line.lower().rstrip(".!") not in generic:
             return line[:max_len]
+    if candidates:
+        return candidates[0][:max_len]
     if len(text) > max_len:
         return text[: max_len - 3] + "..."
     return text
@@ -874,15 +892,16 @@ def export_video(
     work_dir = cache_dir if cache_dir else ROOT / ".export_cache"
     work_dir.mkdir(parents=True, exist_ok=True)
 
+    # Pull every source clip down up front, concurrently, so GPU encoding
+    # never blocks on a network download between segments. Done before the
+    # cache clear so the download phase is timed on its own (stage "download").
+    prefetch_clips(segments, cache_dir, should_cancel=should_cancel, on_progress=on_progress)
+    _check_cancel(should_cancel)
+
     if fresh:
         progress("prepare", 0, 1, "Clearing export cache…")
         clear_export_work_cache(work_dir, output_path)
         _check_cancel(should_cancel)
-
-    # Pull every source clip down up front, concurrently, so GPU encoding
-    # never blocks on a network download between segments.
-    prefetch_clips(segments, cache_dir, should_cancel=should_cancel, on_progress=on_progress)
-    _check_cancel(should_cancel)
 
     progress("prepare", 0, len(segments), "Starting segment render…")
     segment_files: list[Path] = []
