@@ -19,6 +19,7 @@ import subprocess
 import threading
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
@@ -181,6 +182,70 @@ def encoder_args(
     ]
 
 
+# Cached result of the one-time GPU-filter capability probe.
+_gpu_scale_support: bool | None = None
+
+
+def _ffmpeg_capability(args: list[str]) -> str:
+    try:
+        return subprocess.run(
+            ["ffmpeg", "-hide_banner", *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+    except OSError:
+        return ""
+
+
+def gpu_scale_available(encoder_name: str) -> bool:
+    """Detect whether the full NVDEC -> scale_cuda -> NVENC path is usable.
+
+    Result is cached for the process. Falls back to False on any doubt so the
+    CPU scaler is used instead (slower but always correct).
+    """
+    global _gpu_scale_support
+    if _gpu_scale_support is not None:
+        return _gpu_scale_support
+
+    if encoder_name != "h264_nvenc":
+        _gpu_scale_support = False
+        return False
+
+    hwaccels = _ffmpeg_capability(["-hwaccels"])
+    filters = _ffmpeg_capability(["-filters"])
+    if "cuda" not in hwaccels or "scale_cuda" not in filters:
+        print("[export] GPU scaling unavailable (no cuda hwaccel / scale_cuda); using CPU scaler.")
+        _gpu_scale_support = False
+        return False
+
+    # Functional probe: upload a tiny frame to CUDA, scale it, download, encode.
+    # Mirrors the production filter graph so a build that lists but can't run
+    # scale_cuda still falls back cleanly.
+    probe = subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-y",
+            "-init_hw_device", "cuda=cu:0", "-filter_hw_device", "cu",
+            "-f", "lavfi", "-i", "color=c=black:s=640x360:r=5",
+            "-t", "0.2",
+            "-vf",
+            "format=nv12,hwupload_cuda,"
+            "scale_cuda=1280:720:force_original_aspect_ratio=increase,"
+            "hwdownload,format=nv12,crop=1280:720",
+            "-c:v", "h264_nvenc", "-f", "null", "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    _gpu_scale_support = probe.returncode == 0
+    if _gpu_scale_support:
+        print("[export] GPU scaling enabled (NVDEC + scale_cuda + NVENC).")
+    else:
+        print("[export] GPU scaling probe failed; using CPU scaler.")
+    return _gpu_scale_support
+
+
 def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str, Any]]:
     timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
     selections = json.loads(selections_path.read_text(encoding="utf-8")).get("segments", {})
@@ -215,6 +280,59 @@ def download_clip(url: str, dest: Path) -> None:
         dest.write_bytes(response.read())
 
 
+def prefetch_clips(
+    segments: list[dict[str, Any]],
+    cache_dir: Path | None,
+    *,
+    should_cancel: CancelCheck | None = None,
+    on_progress: ProgressCallback | None = None,
+) -> None:
+    """Download all source clips concurrently before encoding starts.
+
+    Network transfers overlap with each other (and are off the GPU critical
+    path) so the encoder never stalls waiting on a download mid-render.
+    """
+    clip_cache_dir = (cache_dir / "clips") if cache_dir else CLIP_CACHE_DIR
+    clip_cache_dir.mkdir(parents=True, exist_ok=True)
+
+    jobs: dict[str | int, tuple[str, Path]] = {}
+    for segment in segments:
+        selection = segment.get("selection")
+        if not selection or not selection.get("url"):
+            continue
+        video_id = selection_cache_id(selection)
+        dest = clip_cache_dir / f"{video_id}.mp4"
+        if dest.exists() and dest.stat().st_size > 0:
+            continue
+        jobs.setdefault(video_id, (clip_source_url(selection), dest))
+
+    if not jobs:
+        return
+
+    total = len(jobs)
+    done = 0
+    if on_progress:
+        on_progress("prepare", 0, total, f"Downloading {total} clip(s)…")
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {
+            pool.submit(download_clip, url, dest): video_id
+            for video_id, (url, dest) in jobs.items()
+        }
+        try:
+            for future in as_completed(futures):
+                if should_cancel and should_cancel():
+                    raise ExportCancelled("Export cancelled")
+                future.result()
+                done += 1
+                if on_progress:
+                    on_progress("prepare", done, total, f"Downloaded {done}/{total} clip(s)")
+        finally:
+            if should_cancel and should_cancel():
+                for future in futures:
+                    future.cancel()
+
+
 def clip_source_url(selection: dict[str, Any]) -> str:
     provider = str(selection.get("provider") or "").strip().lower()
     storage_key = str(selection.get("storage_key") or "").strip()
@@ -245,6 +363,15 @@ def scale_filter(width: int = WIDTH, height: int = HEIGHT, fps: int = FPS) -> st
     return (
         f"scale={width}:{height}:force_original_aspect_ratio=increase,"
         f"crop={width}:{height},fps={fps}"
+    )
+
+
+def gpu_scale_filter(width: int = WIDTH, height: int = HEIGHT, fps: int = FPS) -> str:
+    # Heavy resample runs on the GPU (scale_cuda); only the cheap crop/fps
+    # happens on the CPU after a single hwdownload. NVENC re-uploads to encode.
+    return (
+        f"scale_cuda={width}:{height}:force_original_aspect_ratio=increase,"
+        f"hwdownload,format=nv12,crop={width}:{height},fps={fps}"
     )
 
 
@@ -324,29 +451,71 @@ def render_segment_clip(
         video_id = selection_cache_id(selection)
         source_path = clip_cache_dir / f"{video_id}.mp4"
         download_clip(clip_source_url(selection), source_path)
-        vf_parts = [scale_filter(out_width, out_height)]
-        credit_filter = build_credit_filter(selection)
-        if credit_filter:
-            vf_parts.append(credit_filter)
 
-        run_ffmpeg(
-            [
-                "-stream_loop",
-                "-1",
-                "-i",
-                str(source_path),
-                "-t",
-                duration_str,
-                "-vf",
-                ",".join(vf_parts),
-                "-an",
-                *enc_args,
-                "-pix_fmt",
-                "yuv420p",
-                str(out_path),
-            ],
-            should_cancel=should_cancel,
-        )
+        use_gpu = gpu_scale_available(encoder)
+        credit_filter = build_credit_filter(selection)
+
+        if use_gpu:
+            vf_parts = [gpu_scale_filter(out_width, out_height)]
+            if credit_filter:
+                # drawtext needs planar frames in system memory.
+                vf_parts.append("format=yuv420p")
+                vf_parts.append(credit_filter)
+            input_args = [
+                "-hwaccel", "cuda",
+                "-hwaccel_output_format", "cuda",
+                "-stream_loop", "-1",
+                "-i", str(source_path),
+            ]
+        else:
+            vf_parts = [scale_filter(out_width, out_height)]
+            if credit_filter:
+                vf_parts.append(credit_filter)
+            input_args = [
+                "-stream_loop", "-1",
+                "-i", str(source_path),
+            ]
+
+        try:
+            run_ffmpeg(
+                [
+                    *input_args,
+                    "-t",
+                    duration_str,
+                    "-vf",
+                    ",".join(vf_parts),
+                    "-an",
+                    *enc_args,
+                    "-pix_fmt",
+                    "yuv420p",
+                    str(out_path),
+                ],
+                should_cancel=should_cancel,
+            )
+        except RuntimeError:
+            # GPU graph failed at runtime — disable it and retry on the CPU path
+            # once so a single bad clip doesn't abort the whole export.
+            if not use_gpu:
+                raise
+            global _gpu_scale_support
+            _gpu_scale_support = False
+            print("[export] GPU render failed for a clip; falling back to CPU scaler.")
+            cpu_vf = [scale_filter(out_width, out_height)]
+            if credit_filter:
+                cpu_vf.append(credit_filter)
+            run_ffmpeg(
+                [
+                    "-stream_loop", "-1",
+                    "-i", str(source_path),
+                    "-t", duration_str,
+                    "-vf", ",".join(cpu_vf),
+                    "-an",
+                    *enc_args,
+                    "-pix_fmt", "yuv420p",
+                    str(out_path),
+                ],
+                should_cancel=should_cancel,
+            )
         return out_path
 
     run_ffmpeg(
@@ -684,6 +853,11 @@ def export_video(
         progress("prepare", 0, 1, "Clearing export cache…")
         clear_export_work_cache(work_dir, output_path)
         _check_cancel(should_cancel)
+
+    # Pull every source clip down up front, concurrently, so GPU encoding
+    # never blocks on a network download between segments.
+    prefetch_clips(segments, cache_dir, should_cancel=should_cancel, on_progress=on_progress)
+    _check_cancel(should_cancel)
 
     progress("prepare", 0, len(segments), "Starting segment render…")
     segment_files: list[Path] = []
