@@ -55,8 +55,10 @@ def compute_export_inputs_hash(
         if path.exists():
             hasher.update(path.read_bytes())
     if audio_path.exists():
-        stat = audio_path.stat()
-        hasher.update(f"audio:{stat.st_mtime_ns}:{stat.st_size}".encode())
+        # Hash up to the first 4 MB of audio — enough to detect any replacement
+        # without reading a full 100+ MB file on every request.
+        with audio_path.open("rb") as fh:
+            hasher.update(fh.read(4 * 1024 * 1024))
     return hasher.hexdigest()[:32]
 
 

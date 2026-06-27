@@ -147,6 +147,15 @@ export function useBrollViewer() {
     setExportRunning(snapshot.status === "running");
   }, []);
 
+  const refreshExportInputsHash = useCallback(async () => {
+    try {
+      const payload = await apiFetch<{ export_inputs_hash: string }>("/api/export/inputs-hash");
+      setExportInputsHash(payload.export_inputs_hash);
+    } catch {
+      // Non-fatal — keep existing hash.
+    }
+  }, []);
+
   const pollExportStatus = useCallback(async () => {
     try {
       const snapshot = await apiFetch<ExportSnapshot>("/api/export/status");
@@ -155,11 +164,14 @@ export function useBrollViewer() {
         exportPollRef.current = window.setTimeout(() => {
           void pollExportStatus();
         }, 1000);
+      } else if (snapshot.status === "done") {
+        // Sync the live hash so exportUnchanged is accurate immediately.
+        await refreshExportInputsHash();
       }
     } catch (error) {
       showStatus(error instanceof Error ? error.message : "Export status failed", true);
     }
-  }, [showStatus, updateExportUi]);
+  }, [showStatus, updateExportUi, refreshExportInputsHash]);
 
   const loadSegments = useCallback(async () => {
     const payload = await apiFetch<SegmentsPayload>("/api/segments");
