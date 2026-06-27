@@ -201,12 +201,17 @@ def export_snapshot(project_id: str, status_file: Path) -> dict[str, Any]:
 
 
 def update_export_state(project_id: str, status_file: Path, **kwargs: Any) -> dict[str, Any]:
+    # Callers sometimes pass project_id/project_name as kwargs for convenience;
+    # remove them to avoid a "multiple values" error — we always set them explicitly.
+    kwargs.pop("project_id", None)
+    kwargs.pop("project_name", None)
+
     with _export_lock:
         state = _export_states.get(project_id)
         if state is None:
             state = default_export_state()
-            state["project_id"] = project_id
             _export_states[project_id] = state
+        state["project_id"] = project_id
 
         if kwargs.get("status") == "running" and state.get("status") != "running":
             kwargs.setdefault("started_at", time.time())
