@@ -40,6 +40,7 @@ def default_export_state() -> dict[str, Any]:
         "render_seconds": 0,
         "inputs_hash": None,
         "r2_key": None,
+        "youtube_description": None,
     }
 
 
@@ -201,10 +202,9 @@ def export_snapshot(project_id: str, status_file: Path) -> dict[str, Any]:
 
 
 def update_export_state(project_id: str, status_file: Path, **kwargs: Any) -> dict[str, Any]:
-    # Callers sometimes pass project_id/project_name as kwargs for convenience;
-    # remove them to avoid a "multiple values" error — we always set them explicitly.
+    # project_id is already the positional arg — remove it from kwargs if a caller
+    # accidentally passed it as a keyword arg too (avoids "multiple values" TypeError).
     kwargs.pop("project_id", None)
-    kwargs.pop("project_name", None)
 
     with _export_lock:
         state = _export_states.get(project_id)

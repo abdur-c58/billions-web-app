@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Flag, Clapperboard, Clock, Download, FolderOpen, Loader2, RefreshCw, Search } from "lucide-react";
+import { Check, Clapperboard, Clock, Copy, Download, Flag, FolderOpen, Loader2, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportAudioModal } from "@/components/ExportAudioModal";
@@ -25,6 +25,8 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [folderFetchBusy, setFolderFetchBusy] = useState(false);
   const [folderFetchPlan, setFolderFetchPlan] = useState<FolderFetchPlan | null>(null);
   const [folderFetchError, setFolderFetchError] = useState<string | null>(null);
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [copiedDescription, setCopiedDescription] = useState("");
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
@@ -32,6 +34,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   );
   const projectId = readStoredProject();
   const progressHref = projectId ? `/progress/${projectId}` : "/progress";
+  const downloadProjectId = viewer.exportSnapshot.project_id || projectId || "";
 
   const fetchingIds = [...viewer.loadingIds].sort((a, b) => a - b);
   const showFetchActivity = fetchingIds.length > 0 || viewer.batchProgress !== null;
@@ -153,6 +156,22 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     },
     [storagePickerSegmentId, viewer],
   );
+
+  const handleCopyDescription = useCallback(async () => {
+    const description = (viewer.exportSnapshot.youtube_description || "").trim();
+    if (!description) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(description);
+      setCopiedDescription(description);
+      setDescriptionModalOpen(true);
+    } catch {
+      // Falls back to the existing toast channel for copy failures.
+      setCopiedDescription(description);
+      setDescriptionModalOpen(true);
+    }
+  }, [viewer.exportSnapshot.youtube_description]);
 
   return (
     <div className="glow-page w-full text-[var(--foreground)]">
@@ -482,15 +501,35 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
           </Link>
 
           <a
-            href="/api/export/download"
+            href={`/api/export/download?project=${encodeURIComponent(downloadProjectId)}`}
             className={`glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
-              viewer.exportSnapshot.status === "done" ? "" : "pointer-events-none opacity-55"
+              viewer.exportSnapshot.status === "done" && downloadProjectId
+                ? ""
+                : "pointer-events-none opacity-55"
             }`}
+            title={
+              downloadProjectId
+                ? undefined
+                : "Project context missing. Re-open this project and export again."
+            }
             download
           >
             <Download className="h-4 w-4" />
             Download MP4
           </a>
+
+          <button
+            type="button"
+            onClick={() => void handleCopyDescription()}
+            disabled={
+              viewer.exportSnapshot.status !== "done" ||
+              !viewer.exportSnapshot.youtube_description
+            }
+            className="inline-flex items-center gap-2 rounded-[10px] bg-yellow-400 px-3.5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <Copy className="h-4 w-4" />
+            Copy description
+          </button>
 
           <div className="min-w-[200px] flex-1 overflow-visible text-[0.86rem] text-[var(--muted)]">
             <span>{viewer.exportProgressText}</span>
@@ -605,6 +644,56 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
             }`}
           >
             {viewer.statusMessage}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {descriptionModalOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-[2px]"
+            onClick={() => setDescriptionModalOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className="w-full max-w-[760px] rounded-2xl border border-white/10 bg-[#11131a] p-5 shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-label="YouTube description copied"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-emerald-300/25 bg-emerald-500/10">
+                  <Check className="size-5 text-emerald-300" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold text-white">
+                    Description copied to clipboard
+                  </h3>
+                  <p className="mt-1 text-sm text-white/65">
+                    This is the exact text copied from the completed export.
+                  </p>
+                </div>
+              </div>
+              <pre className="mt-4 max-h-[46vh] overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-relaxed text-white/90 whitespace-pre-wrap">
+                {copiedDescription}
+              </pre>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDescriptionModalOpen(false)}
+                  className="glow-btn-primary rounded-[10px] px-4 py-2 text-sm font-semibold"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         ) : null}
       </AnimatePresence>

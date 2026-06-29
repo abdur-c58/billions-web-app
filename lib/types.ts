@@ -220,6 +220,7 @@ export type ExportSnapshot = {
   inputs_hash?: string | null;
   /** R2 key of the uploaded export file. */
   r2_key?: string | null;
+  youtube_description?: string | null;
   project_id?: string | null;
   project_name?: string | null;
 };
