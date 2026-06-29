@@ -58,12 +58,22 @@ def _format_hashtags(tags: list[str]) -> str:
     return " ".join(formatted)
 
 
-def _openai_youtube_copy(*, title: str, narration: str) -> tuple[str, list[str]]:
+def _openai_youtube_copy(
+    *,
+    title: str,
+    narration: str,
+    include_emojis: bool = True,
+) -> tuple[str, list[str]]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is missing")
 
     display_title = title or "Untitled video"
+    emoji_rule = (
+        "- Use a few relevant emojis (roughly 3–6 across the whole description)\n"
+        if include_emojis
+        else "- Do NOT use any emojis anywhere in the description\n"
+    )
     prompt = (
         "Write a YouTube video description for this documentary-style video.\n\n"
         f"Title: {display_title}\n\n"
@@ -71,7 +81,7 @@ def _openai_youtube_copy(*, title: str, narration: str) -> tuple[str, list[str]]
         f"{narration or display_title}\n\n"
         "Output rules:\n"
         "- Natural English only — write for viewers, not producers\n"
-        "- Use a few relevant emojis (roughly 3–6 across the whole description)\n"
+        f"{emoji_rule}"
         "- The first 200 characters MUST pack in strong SEO keywords for this topic\n"
         "- 2–4 short paragraphs: hook, what viewers learn, why it matters, soft CTA\n"
         "- Do NOT mention beats, segments, JSON, chapters, timestamps, b-roll, "
@@ -124,6 +134,7 @@ def build_youtube_description(
     timestamps_path: Path,
     selections_path: Path,
     project_name: str,
+    include_emojis: bool = True,
 ) -> str:
     """Build a copy-paste YouTube description (body + hashtag line)."""
     del timestamps_path, selections_path  # narration-only; no export metadata in copy
@@ -132,7 +143,11 @@ def build_youtube_description(
     if not title:
         title = str(project_name or "").strip() or "Video"
 
-    description, tags = _openai_youtube_copy(title=title, narration=narration)
+    description, tags = _openai_youtube_copy(
+        title=title,
+        narration=narration,
+        include_emojis=include_emojis,
+    )
     hashtag_line = _format_hashtags(tags)
     if hashtag_line:
         return f"{description}\n\n{hashtag_line}"

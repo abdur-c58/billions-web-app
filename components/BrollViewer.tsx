@@ -10,10 +10,13 @@ import { FlagClipModal } from "@/components/FlagClipModal";
 import { StorageClipSelectModal } from "@/components/StorageClipSelectModal";
 import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
 import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
+
+const DESCRIPTION_EMOJIS_KEY = "broll-description-emojis";
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
   const viewer = useBrollViewer();
@@ -27,6 +30,10 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [folderFetchError, setFolderFetchError] = useState<string | null>(null);
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [copiedDescription, setCopiedDescription] = useState("");
+  const [descriptionCopied, setDescriptionCopied] = useState(false);
+  const [includeEmojis, setIncludeEmojis] = useState(true);
+  const [regeneratingDescription, setRegeneratingDescription] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
@@ -35,6 +42,30 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const projectId = readStoredProject();
   const progressHref = projectId ? `/progress/${projectId}` : "/progress";
   const downloadProjectId = viewer.exportSnapshot.project_id || projectId || "";
+
+  useEffect(() => {
+    try {
+      setIncludeEmojis(localStorage.getItem(DESCRIPTION_EMOJIS_KEY) !== "false");
+    } catch {
+      setIncludeEmojis(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DESCRIPTION_EMOJIS_KEY, includeEmojis ? "true" : "false");
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [includeEmojis]);
+
+  useEffect(() => {
+    if (!descriptionModalOpen || regeneratingDescription) return;
+    const description = (viewer.exportSnapshot.youtube_description || "").trim();
+    if (description) {
+      setCopiedDescription(description);
+    }
+  }, [descriptionModalOpen, regeneratingDescription, viewer.exportSnapshot.youtube_description]);
 
   const fetchingIds = [...viewer.loadingIds].sort((a, b) => a - b);
   const showFetchActivity = fetchingIds.length > 0 || viewer.batchProgress !== null;
@@ -159,19 +190,41 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
 
   const handleCopyDescription = useCallback(async () => {
     const description = (viewer.exportSnapshot.youtube_description || "").trim();
+    setCopiedDescription(description);
+    setDescriptionCopied(false);
+    setRegenerateError(null);
+    setDescriptionModalOpen(true);
     if (!description) {
       return;
     }
     try {
       await navigator.clipboard.writeText(description);
-      setCopiedDescription(description);
-      setDescriptionModalOpen(true);
+      setDescriptionCopied(true);
     } catch {
-      // Falls back to the existing toast channel for copy failures.
-      setCopiedDescription(description);
-      setDescriptionModalOpen(true);
+      setDescriptionCopied(false);
     }
   }, [viewer.exportSnapshot.youtube_description]);
+
+  const handleRegenerateDescription = useCallback(async () => {
+    setRegeneratingDescription(true);
+    setRegenerateError(null);
+    try {
+      const next = await viewer.regenerateDescription(includeEmojis);
+      setCopiedDescription(next);
+      if (next) {
+        try {
+          await navigator.clipboard.writeText(next);
+          setDescriptionCopied(true);
+        } catch {
+          setDescriptionCopied(false);
+        }
+      }
+    } catch (err) {
+      setRegenerateError(err instanceof Error ? err.message : "Failed to regenerate description");
+    } finally {
+      setRegeneratingDescription(false);
+    }
+  }, [includeEmojis, viewer.regenerateDescription]);
 
   return (
     <div className="glow-page w-full text-[var(--foreground)]">
@@ -521,10 +574,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
           <button
             type="button"
             onClick={() => void handleCopyDescription()}
-            disabled={
-              viewer.exportSnapshot.status !== "done" ||
-              !viewer.exportSnapshot.youtube_description
-            }
+            disabled={viewer.exportSnapshot.status !== "done"}
             className="inline-flex items-center gap-2 rounded-[10px] bg-yellow-400 px-3.5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <Copy className="h-4 w-4" />
@@ -674,17 +724,47 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-semibold text-white">
-                    Description copied to clipboard
+                    {descriptionCopied
+                      ? "Description copied to clipboard"
+                      : copiedDescription
+                        ? "YouTube description"
+                        : "Generate YouTube description"}
                   </h3>
                   <p className="mt-1 text-sm text-white/65">
-                    This is the exact text copied from the completed export.
+                    {copiedDescription
+                      ? "Edit options below or regenerate with OpenAI."
+                      : "No description yet. Regenerate to create one from your script."}
                   </p>
                 </div>
               </div>
-              <pre className="mt-4 max-h-[46vh] overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-relaxed text-white/90 whitespace-pre-wrap">
-                {copiedDescription}
+              <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/80">
+                <Checkbox
+                  checked={includeEmojis}
+                  onCheckedChange={(checked) => setIncludeEmojis(checked === true)}
+                  disabled={regeneratingDescription}
+                />
+                Include emojis
+              </label>
+              <pre className="mt-3 max-h-[46vh] overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-relaxed text-white/90 whitespace-pre-wrap">
+                {copiedDescription || "No description generated yet."}
               </pre>
-              <div className="mt-4 flex justify-end">
+              {regenerateError ? (
+                <p className="mt-3 text-sm text-[#ffc9c9]">{regenerateError}</p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleRegenerateDescription()}
+                  disabled={regeneratingDescription}
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {regeneratingDescription ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Regenerate
+                </button>
                 <button
                   type="button"
                   onClick={() => setDescriptionModalOpen(false)}

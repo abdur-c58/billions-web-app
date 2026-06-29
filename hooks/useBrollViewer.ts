@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, isRetryableFetchError, retryDelayMs, sleep } from "@/lib/api";
+import { regenerateYoutubeDescription } from "@/lib/export";
 import { formatDuration, truncateExportMessage } from "@/lib/format";
 import { findSegmentAtExportTime, formatTimestampClock, parseTimestamp } from "@/lib/timestamp";
 import type {
@@ -170,6 +171,18 @@ export function useBrollViewer() {
       showStatus(error instanceof Error ? error.message : "Export status failed", true);
     }
   }, [showStatus, updateExportUi]);
+
+  const regenerateDescription = useCallback(
+    async (includeEmojis: boolean) => {
+      const snapshot = await regenerateYoutubeDescription(includeEmojis);
+      updateExportUi(snapshot);
+      if (snapshot.status === "done" && snapshot.inputs_hash) {
+        setExportInputsHash(snapshot.inputs_hash);
+      }
+      return (snapshot.youtube_description || "").trim();
+    },
+    [updateExportUi],
+  );
 
   const loadSegments = useCallback(async () => {
     const payload = await apiFetch<SegmentsPayload>("/api/segments");
@@ -1063,6 +1076,7 @@ export function useBrollViewer() {
     refetchUnscored,
     startExport,
     cancelExport,
+    regenerateDescription,
     flagClip,
     flagConflict,
     dismissFlagConflict,

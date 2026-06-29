@@ -1127,6 +1127,34 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         status_file = workspace_paths(workspace)["export_status"]
         return export_snapshot(pid, status_file)
 
+    def _regenerate_youtube_description(self, *, include_emojis: bool = True) -> dict[str, Any]:
+        project_id = self.headers.get("X-Billions-Project", "").strip()
+        if not project_id:
+            raise ValueError("Select a project first.")
+        workspace = self._require_workspace()
+        if not self.script_path.exists():
+            raise ValueError("Script not found for this project.")
+
+        project_name = None
+        try:
+            project_name = read_manifest(workspace).get("name")
+        except Exception:
+            project_name = None
+        if not project_name:
+            title = read_json(self.timestamps_path, {}).get("title")
+            project_name = title or project_id[:8]
+
+        youtube_description = build_youtube_description(
+            script_path=self.script_path,
+            timestamps_path=self.timestamps_path,
+            selections_path=self.selections_path,
+            project_name=project_name,
+            include_emojis=include_emojis,
+        )
+        status_file = workspace_paths(workspace)["export_status"]
+        update_export_state(project_id, status_file, youtube_description=youtube_description)
+        return self._export_snapshot_for(project_id)
+
     def _activity_snapshot(self) -> dict[str, Any]:
         """Global view of all running jobs across projects (navbar indicator)."""
         jobs: list[dict[str, Any]] = []
@@ -2240,6 +2268,22 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 self._cancel_export_job()
                 self._send_json(self._export_snapshot_for())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/export/youtube-description":
+            try:
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                include_emojis = body.get("include_emojis", True)
+                if isinstance(include_emojis, str):
+                    include_emojis = include_emojis.lower() not in {"0", "false", "no"}
+                else:
+                    include_emojis = bool(include_emojis)
+                snapshot = self._regenerate_youtube_description(include_emojis=include_emojis)
+                self._send_json(snapshot)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
