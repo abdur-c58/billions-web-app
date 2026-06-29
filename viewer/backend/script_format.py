@@ -40,6 +40,30 @@ def detect_script_format(script_data: dict[str, Any]) -> str:
     return "legacy"
 
 
+def iter_content_segments(script_data: dict[str, Any]) -> list[tuple[int, str]]:
+    """Return narration text segments sorted by segment_id (format-agnostic)."""
+    segments: list[tuple[int, str]] = []
+    for beat_block in script_data.get("script", []):
+        for segment in beat_block.get("segments", []):
+            if "content" not in segment:
+                continue
+            text = str(segment["content"]).strip()
+            if not text:
+                continue
+            segment_id = int(segment.get("segment_id", len(segments) + 1))
+            segments.append((segment_id, text))
+    segments.sort(key=lambda item: item[0])
+    return segments
+
+
+def build_narration_transcript(script_data: dict[str, Any], *, separator: str = " ") -> str:
+    """Join all segment content into one narration string."""
+    parts = [text for _, text in iter_content_segments(script_data)]
+    if not parts:
+        raise ValueError("No segment content found in script.")
+    return separator.join(parts)
+
+
 def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
     segments: list[dict[str, Any]] = []
     for beat_block in script_data.get("script", []):

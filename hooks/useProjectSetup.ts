@@ -11,6 +11,7 @@ import {
   type ProjectStatus,
 } from "@/lib/project";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
+import { fetchScriptTranscript } from "@/lib/script";
 
 export function useProjectSetup(projectId: string | null) {
   const [status, setStatus] = useState<ProjectStatus | null>(null);
@@ -18,6 +19,8 @@ export function useProjectSetup(projectId: string | null) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioUploadProgress, setAudioUploadProgress] = useState<number | null>(null);
+  const [copyingTranscript, setCopyingTranscript] = useState(false);
+  const [transcriptNotice, setTranscriptNotice] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const sessionReady = Boolean(projectId);
@@ -88,6 +91,7 @@ export function useProjectSetup(projectId: string | null) {
   const importScript = useCallback(async (file: File) => {
     setBusy(true);
     setError(null);
+    setTranscriptNotice(null);
     try {
       const next = await uploadScriptFile(file);
       setStatus(next);
@@ -139,6 +143,25 @@ export function useProjectSetup(projectId: string | null) {
     }
   }, []);
 
+  const copyTranscript = useCallback(async () => {
+    setCopyingTranscript(true);
+    setTranscriptNotice(null);
+    setError(null);
+    try {
+      const payload = await fetchScriptTranscript();
+      await navigator.clipboard.writeText(payload.transcript);
+      setTranscriptNotice(
+        `Copied ${payload.segment_count} segments (${payload.word_count.toLocaleString()} words) to clipboard.`,
+      );
+      return payload;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to copy transcript");
+      return null;
+    } finally {
+      setCopyingTranscript(false);
+    }
+  }, []);
+
   return {
     status,
     loading,
@@ -149,6 +172,9 @@ export function useProjectSetup(projectId: string | null) {
     importAudio,
     importTimestamps,
     segmentTimestamps,
+    copyTranscript,
+    copyingTranscript,
+    transcriptNotice,
     viewerReady: Boolean(status?.viewer_ready),
     audioUploadProgress,
   };

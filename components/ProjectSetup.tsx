@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
 import type { ProjectStatus } from "@/lib/project";
@@ -84,9 +84,10 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
 
         <ol className="mt-8 space-y-4">
           <li className={`glow-setup-step ${setup.status?.script_uploaded ? "is-done" : step === "import_script" ? "is-active" : ""}`}>
-            <div className="flex items-center gap-3">
-              <FileJson className="h-5 w-5 text-[var(--accent)]" />
-              <div className="flex-1">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <FileJson className="h-5 w-5 text-[var(--accent)]" />
+                <div className="flex-1">
                 <p className="font-semibold">1. Import script.json</p>
                 <p className="text-sm text-[var(--muted)]">
                   {setup.status?.script_uploaded
@@ -110,19 +111,40 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                   </p>
                 ) : null}
               </div>
-              <label className="glow-btn-secondary cursor-pointer rounded-[10px] px-3.5 py-2.5 text-sm font-semibold">
-                Choose file
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  className="hidden"
-                  disabled={setup.busy || timestampsRunning}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void setup.importScript(file);
-                  }}
-                />
-              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {setup.status?.script_uploaded ? (
+                  <button
+                    type="button"
+                    onClick={() => void setup.copyTranscript()}
+                    disabled={setup.busy || setup.copyingTranscript || timestampsRunning}
+                    className="glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    {setup.copyingTranscript ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    Copy transcript
+                  </button>
+                ) : null}
+                <label className="glow-btn-secondary cursor-pointer rounded-[10px] px-3.5 py-2.5 text-sm font-semibold">
+                  Choose file
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    disabled={setup.busy || timestampsRunning}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void setup.importScript(file);
+                    }}
+                  />
+                </label>
+              </div>
+              </div>
+              {setup.transcriptNotice ? (
+                <p className="text-sm text-emerald-300 sm:pl-8">{setup.transcriptNotice}</p>
+              ) : null}
             </div>
           </li>
 

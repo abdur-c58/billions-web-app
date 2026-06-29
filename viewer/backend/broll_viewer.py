@@ -1451,6 +1451,29 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
+        if parsed.path == "/api/project/script/transcript":
+            try:
+                from script_format import build_narration_transcript, iter_content_segments
+
+                if not self.script_path.exists():
+                    raise ValueError("Upload script.json first.")
+                script_data = read_json(self.script_path, {})
+                transcript = build_narration_transcript(script_data)
+                segment_count = len(iter_content_segments(script_data))
+                word_count = len(transcript.split())
+                self._send_json(
+                    {
+                        "transcript": transcript,
+                        "segment_count": segment_count,
+                        "word_count": word_count,
+                    }
+                )
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/whisper/hardware":
             try:
                 from hardware_monitor import resolve_whisper_device, sample_hardware_stats
