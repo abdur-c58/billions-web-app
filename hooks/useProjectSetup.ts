@@ -10,6 +10,7 @@ import {
   uploadTimestampsFile,
   type ProjectStatus,
 } from "@/lib/project";
+import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 
 export function useProjectSetup(projectId: string | null) {
   const [status, setStatus] = useState<ProjectStatus | null>(null);
@@ -81,6 +82,8 @@ export function useProjectSetup(projectId: string | null) {
       if (pollRef.current) window.clearTimeout(pollRef.current);
     };
   }, [pollTimestamps, refresh, sessionReady, projectId]);
+
+  usePolling(() => void refresh(), STATUS_POLL_MS, sessionReady);
 
   const importScript = useCallback(async (file: File) => {
     setBusy(true);

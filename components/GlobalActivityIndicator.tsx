@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AudioLines, Clapperboard, Cpu } from "lucide-react";
 import { fetchActivity, type ActivityJob, type ActivitySnapshot } from "@/lib/activity";
+import { STATUS_POLL_MS } from "@/hooks/usePolling";
 
-const POLL_INTERVAL_MS = 2500;
+const POLL_INTERVAL_MS = STATUS_POLL_MS;
 
 const JOB_STYLES: Record<
   ActivityJob["type"],

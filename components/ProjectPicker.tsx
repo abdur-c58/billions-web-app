@@ -10,6 +10,7 @@ import {
 } from "@/lib/project";
 import { useSession } from "@/context/SessionContext";
 import { cn } from "@/lib/utils";
+import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -56,23 +57,29 @@ export function ProjectPicker() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const payload = await fetchProjectList();
       setProjects(payload.projects);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load projects");
-      setProjects([]);
+      if (!options?.silent) {
+        setError(err instanceof Error ? err.message : "Failed to load projects");
+        setProjects([]);
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  usePolling(() => refresh({ silent: true }), STATUS_POLL_MS);
 
   const openProject = (project: ProjectSummary) => {
     session.selectProject(project.id, project.name);

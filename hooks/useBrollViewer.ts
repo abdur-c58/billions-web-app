@@ -17,6 +17,9 @@ import type {
   ViewerSegment,
 } from "@/lib/types";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
+import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
+
+const EXPORT_POLL_MS = 2000;
 
 const BATCH_DELAY_MS = 250;
 const BATCH_PASS_DELAY_MS = 3000;
@@ -68,7 +71,7 @@ export function useBrollViewer() {
     affectedCount: number;
   } | null>(null);
 
-  const exportPollRef = useRef<number | null>(null);
+  const batchRunningRef = useRef(false);
   const exportHashTimerRef = useRef<number | null>(null);
   const statusTimerRef = useRef<number | null>(null);
   const batchAbortRef = useRef(false);
@@ -160,20 +163,13 @@ export function useBrollViewer() {
     try {
       const snapshot = await apiFetch<ExportSnapshot>("/api/export/status");
       updateExportUi(snapshot);
-      if (snapshot.status === "running") {
-        exportPollRef.current = window.setTimeout(() => {
-          void pollExportStatus();
-        }, 1000);
-      } else if (snapshot.status === "done" && snapshot.inputs_hash) {
-        // Use the hash stored in the completed snapshot as the reference point.
-        // This guarantees exportUnchanged = true right after a successful export
-        // without a separate round-trip that may compute a slightly different value.
+      if (snapshot.status === "done" && snapshot.inputs_hash) {
         setExportInputsHash(snapshot.inputs_hash);
       }
     } catch (error) {
       showStatus(error instanceof Error ? error.message : "Export status failed", true);
     }
-  }, [showStatus, updateExportUi, refreshExportInputsHash]);
+  }, [showStatus, updateExportUi]);
 
   const loadSegments = useCallback(async () => {
     const payload = await apiFetch<SegmentsPayload>("/api/segments");
@@ -787,7 +783,6 @@ export function useBrollViewer() {
           ? `Export started with background: ${backgroundAudio}`
           : "Export started…",
       );
-      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
       void pollExportStatus();
     } catch (error) {
       showStatus(error instanceof Error ? error.message : "Export failed", true);
@@ -805,7 +800,6 @@ export function useBrollViewer() {
       });
       updateExportUi(snapshot);
       showStatus("Export cancelled");
-      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
     } catch (error) {
       showStatus(error instanceof Error ? error.message : "Cancel failed", true);
     }
@@ -959,6 +953,8 @@ export function useBrollViewer() {
     ? "No changes since the last export. Update clip selections or timestamps first."
     : null;
 
+  batchRunningRef.current = batchRunning;
+
   useEffect(() => {
     void loadSegments()
       .then(() => checkServerHealth())
@@ -968,10 +964,17 @@ export function useBrollViewer() {
       });
 
     return () => {
-      if (exportPollRef.current) window.clearTimeout(exportPollRef.current);
       if (statusTimerRef.current) window.clearTimeout(statusTimerRef.current);
     };
   }, [checkServerHealth, loadSegments, pollExportStatus, showStatus]);
+
+  usePolling(async () => {
+    if (!batchRunningRef.current) {
+      await loadSegments();
+    }
+  }, STATUS_POLL_MS);
+
+  usePolling(() => pollExportStatus(), EXPORT_POLL_MS);
 
   const exportProgressText = useMemo(() => {
     const snapshot = exportSnapshot;
