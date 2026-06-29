@@ -67,6 +67,7 @@ from broll_judge import (
     pick_best_candidate,
     summarize_judgments,
 )
+from youtube_description import build_youtube_description
 from project_manager import (
     load_all_timestamps_job_states,
     load_timestamps_job_state,
@@ -366,107 +367,6 @@ def enrich_export_timing(rows: list[dict[str, Any]]) -> None:
         timing["export_end_seconds"] = round(export_end, 3)
         row["timing"] = timing
         cursor = export_end
-
-
-def _format_chapter_time(seconds: float | int) -> str:
-    total = max(0, int(seconds))
-    minutes, secs = divmod(total, 60)
-    hours, minutes = divmod(minutes, 60)
-    if hours > 0:
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
-    return f"{minutes:02d}:{secs:02d}"
-
-
-def build_youtube_description(
-    *,
-    script_path: Path,
-    timestamps_path: Path,
-    selections_path: Path,
-    project_name: str,
-) -> str:
-    """Build a reusable YouTube description from script + timestamps + selections."""
-    rows = build_segment_rows(script_path, timestamps_path, selections_path)
-    script_data = read_json(script_path, {})
-    title = str(script_data.get("title") or project_name or "Billions video").strip()
-    if not title:
-        title = "Billions video"
-
-    beat_summaries: list[str] = []
-    seen_beats: set[int] = set()
-    for row in rows:
-        beat = int(row.get("beat") or 0)
-        if beat in seen_beats:
-            continue
-        seen_beats.add(beat)
-        label = str(row.get("label") or "").strip()
-        content = str(row.get("content") or "").strip()
-        snippet = content[:120] + ("…" if len(content) > 120 else "")
-        if label:
-            beat_summaries.append(f"- Beat {beat}: {label} — {snippet}")
-        else:
-            beat_summaries.append(f"- Beat {beat}: {snippet}")
-        if len(beat_summaries) >= 6:
-            break
-
-    chapters: list[str] = []
-    for row in rows:
-        timing = row.get("timing") or {}
-        start = timing.get("export_start_seconds")
-        if start is None:
-            continue
-        label = str(row.get("label") or row.get("description") or row.get("content") or "").strip()
-        if not label:
-            continue
-        safe_label = " ".join(label.split())
-        chapters.append(f"{_format_chapter_time(float(start))} {safe_label[:110]}")
-        if len(chapters) >= 18:
-            break
-    if not chapters:
-        chapters = ["00:00 Intro"]
-
-    provider_counts: dict[str, int] = {"pexels": 0, "pixabay": 0, "storage": 0, "other": 0}
-    categories: dict[str, int] = {}
-    selected_count = 0
-    for row in rows:
-        selection = row.get("selection") or {}
-        if selection.get("url"):
-            selected_count += 1
-            provider = str(selection.get("provider") or "other").lower()
-            if provider not in provider_counts:
-                provider = "other"
-            provider_counts[provider] += 1
-        category = str(row.get("category") or "").strip().lower()
-        if category:
-            categories[category] = categories.get(category, 0) + 1
-
-    top_tags = sorted(categories.items(), key=lambda item: item[1], reverse=True)[:3]
-    hashtags = [f"#{re.sub(r'[^a-zA-Z0-9]+', '', tag.title())}" for tag, _ in top_tags if tag]
-    hashtags.extend(["#youtube", "#contentcreation"])
-
-    provider_text = (
-        f"Pexels {provider_counts['pexels']}, Pixabay {provider_counts['pixabay']}, "
-        f"Storage {provider_counts['storage']}"
-    )
-
-    lines: list[str] = [
-        title,
-        "",
-        "In this video, we break down the topic in a clear, structured way with visual b-roll support.",
-        "",
-        "What is covered:",
-        *(beat_summaries or ["- Full breakdown across key beats and segments"]),
-        "",
-        "Chapters:",
-        *chapters,
-        "",
-        f"B-roll sources used: {provider_text}",
-        f"Selected clips: {selected_count}/{len(rows)} segments",
-        "",
-        "If this helped, like and subscribe for more videos.",
-        "",
-        " ".join(dict.fromkeys(hashtags)),
-    ]
-    return "\n".join(lines).strip()
 
 
 def pick_video_file(video_files: list[dict[str, Any]]) -> dict[str, Any] | None:
