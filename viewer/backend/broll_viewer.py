@@ -68,6 +68,7 @@ from broll_judge import (
     summarize_judgments,
 )
 from youtube_description import build_youtube_description
+from youtube_thumbnail_prompts import build_thumbnail_prompts
 from project_manager import (
     load_all_timestamps_job_states,
     load_timestamps_job_state,
@@ -1159,6 +1160,31 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         )
         status_file = workspace_paths(workspace)["export_status"]
         update_export_state(project_id, status_file, youtube_description=youtube_description)
+        return self._export_snapshot_for(project_id)
+
+    def _regenerate_thumbnail_prompts(self) -> dict[str, Any]:
+        project_id = self.headers.get("X-Billions-Project", "").strip()
+        if not project_id:
+            raise ValueError("Select a project first.")
+        workspace = self._require_workspace()
+        if not self.script_path.exists():
+            raise ValueError("Script not found for this project.")
+
+        project_name = None
+        try:
+            project_name = read_manifest(workspace).get("name")
+        except Exception:
+            project_name = None
+        if not project_name:
+            title = read_json(self.timestamps_path, {}).get("title")
+            project_name = title or project_id[:8]
+
+        thumbnail_prompts = build_thumbnail_prompts(
+            script_path=self.script_path,
+            project_name=project_name,
+        )
+        status_file = workspace_paths(workspace)["export_status"]
+        update_export_state(project_id, status_file, thumbnail_prompts=thumbnail_prompts)
         return self._export_snapshot_for(project_id)
 
     def _activity_snapshot(self) -> dict[str, Any]:
@@ -2320,6 +2346,16 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     include_emojis=include_emojis,
                     include_chapters=include_chapters,
                 )
+                self._send_json(snapshot)
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/export/thumbnail-prompts":
+            try:
+                snapshot = self._regenerate_thumbnail_prompts()
                 self._send_json(snapshot)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)

@@ -20,3 +20,11 @@ export async function regenerateYoutubeDescription(
     }),
   });
 }
+
+export async function regenerateThumbnailPrompts(): Promise<ExportSnapshot> {
+  return apiFetch<ExportSnapshot>("/api/export/thumbnail-prompts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+}

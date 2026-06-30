@@ -221,8 +221,17 @@ export type ExportSnapshot = {
   /** R2 key of the uploaded export file. */
   r2_key?: string | null;
   youtube_description?: string | null;
+  thumbnail_prompts?: ThumbnailPrompt[] | null;
   project_id?: string | null;
   project_name?: string | null;
+};
+
+export type ThumbnailPrompt = {
+  label: string;
+  style: string;
+  visual_approach?: string;
+  rationale: string;
+  prompt: string;
 };
 
 export type BackgroundAudioFile = {

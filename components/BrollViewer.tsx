@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Clapperboard, Clock, Copy, Download, Flag, FolderOpen, Loader2, RefreshCw, Search } from "lucide-react";
+import { Check, Clapperboard, Clock, Copy, Download, Flag, FolderOpen, Image, Loader2, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportAudioModal } from "@/components/ExportAudioModal";
@@ -15,7 +15,7 @@ import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { resolveBrollApiUrl } from "@/lib/api";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
-import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
+import type { FolderFetchPlan, FolderShortageStrategy, ThumbnailPrompt } from "@/lib/types";
 
 const DESCRIPTION_EMOJIS_KEY = "broll-description-emojis";
 const DESCRIPTION_CHAPTERS_KEY = "broll-description-chapters";
@@ -37,6 +37,11 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [includeChapters, setIncludeChapters] = useState(false);
   const [regeneratingDescription, setRegeneratingDescription] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
+  const [thumbnailPrompts, setThumbnailPrompts] = useState<ThumbnailPrompt[]>([]);
+  const [regeneratingThumbnails, setRegeneratingThumbnails] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState<string | null>(null);
+  const [copiedThumbnailLabel, setCopiedThumbnailLabel] = useState<string | null>(null);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
@@ -89,6 +94,14 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
       setCopiedDescription(description);
     }
   }, [descriptionModalOpen, regeneratingDescription, viewer.exportSnapshot.youtube_description]);
+
+  useEffect(() => {
+    if (!thumbnailModalOpen || regeneratingThumbnails) return;
+    const cached = viewer.exportSnapshot.thumbnail_prompts;
+    if (cached?.length) {
+      setThumbnailPrompts(cached);
+    }
+  }, [thumbnailModalOpen, regeneratingThumbnails, viewer.exportSnapshot.thumbnail_prompts]);
 
   const fetchingIds = [...viewer.loadingIds].sort((a, b) => a - b);
   const showFetchActivity = fetchingIds.length > 0 || viewer.batchProgress !== null;
@@ -248,6 +261,41 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
       setRegeneratingDescription(false);
     }
   }, [includeChapters, includeEmojis, viewer.regenerateDescription]);
+
+  const runThumbnailGeneration = useCallback(async () => {
+    setRegeneratingThumbnails(true);
+    setThumbnailError(null);
+    setCopiedThumbnailLabel(null);
+    try {
+      const prompts = await viewer.regenerateThumbnails();
+      setThumbnailPrompts(prompts);
+    } catch (err) {
+      setThumbnailError(err instanceof Error ? err.message : "Failed to generate thumbnail prompts");
+    } finally {
+      setRegeneratingThumbnails(false);
+    }
+  }, [viewer.regenerateThumbnails]);
+
+  const handleOpenThumbnailPrompts = useCallback(() => {
+    setThumbnailError(null);
+    setCopiedThumbnailLabel(null);
+    setThumbnailModalOpen(true);
+    const cached = viewer.exportSnapshot.thumbnail_prompts;
+    if (cached?.length) {
+      setThumbnailPrompts(cached);
+      return;
+    }
+    void runThumbnailGeneration();
+  }, [runThumbnailGeneration, viewer.exportSnapshot.thumbnail_prompts]);
+
+  const handleCopyThumbnailPrompt = useCallback(async (item: ThumbnailPrompt) => {
+    try {
+      await navigator.clipboard.writeText(item.prompt);
+      setCopiedThumbnailLabel(item.label);
+    } catch {
+      setCopiedThumbnailLabel(null);
+    }
+  }, []);
 
   return (
     <div className="glow-page w-full text-[var(--foreground)]">
@@ -604,6 +652,15 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
             Copy description
           </button>
 
+          <button
+            type="button"
+            onClick={() => void handleOpenThumbnailPrompts()}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-violet-300/30 bg-violet-500/15 px-3.5 py-2.5 text-sm font-semibold text-violet-100 transition-colors hover:bg-violet-500/25"
+          >
+            <Image className="h-4 w-4" />
+            Thumbnail prompts
+          </button>
+
           <div className="min-w-[200px] flex-1 overflow-visible text-[0.86rem] text-[var(--muted)]">
             <span>{viewer.exportProgressText}</span>
             {exportActive ? (
@@ -801,6 +858,115 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
                 <button
                   type="button"
                   onClick={() => setDescriptionModalOpen(false)}
+                  className="glow-btn-primary rounded-[10px] px-4 py-2 text-sm font-semibold"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {thumbnailModalOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-[2px]"
+            onClick={() => setThumbnailModalOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className="w-full max-w-[900px] rounded-2xl border border-white/10 bg-[#11131a] p-5 shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-label="YouTube thumbnail prompts"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-violet-300/25 bg-violet-500/10">
+                  <Image className="size-5 text-violet-300" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold text-white">YouTube thumbnail prompts (A/B)</h3>
+                  <p className="mt-1 text-sm text-white/65">
+                    Two paste-ready AI image prompts using proven thumbnail formats. Test both on YouTube.
+                  </p>
+                </div>
+              </div>
+
+              {regeneratingThumbnails && thumbnailPrompts.length === 0 ? (
+                <div className="mt-6 flex items-center justify-center gap-2 py-12 text-sm text-white/70">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating thumbnail prompts…
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {thumbnailPrompts.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex min-h-0 flex-col rounded-xl border border-white/10 bg-black/25 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/90">
+                            Variation {item.label}
+                          </p>
+                          <p className="mt-0.5 text-sm font-semibold text-white">{item.style}</p>
+                          {item.visual_approach ? (
+                            <p className="mt-0.5 text-xs text-white/55">{item.visual_approach}</p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyThumbnailPrompt(item)}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                        >
+                          {copiedThumbnailLabel === item.label ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-300" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                          {copiedThumbnailLabel === item.label ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      {item.rationale ? (
+                        <p className="mt-2 text-xs leading-relaxed text-white/60">{item.rationale}</p>
+                      ) : null}
+                      <pre className="mt-2 max-h-[34vh] flex-1 overflow-auto rounded-lg border border-white/10 bg-black/35 p-2.5 text-[11px] leading-relaxed text-white/90 whitespace-pre-wrap">
+                        {item.prompt}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {thumbnailError ? (
+                <p className="mt-3 text-sm text-[#ffc9c9]">{thumbnailError}</p>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => void runThumbnailGeneration()}
+                  disabled={regeneratingThumbnails}
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {regeneratingThumbnails ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Regenerate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setThumbnailModalOpen(false)}
                   className="glow-btn-primary rounded-[10px] px-4 py-2 text-sm font-semibold"
                 >
                   Done

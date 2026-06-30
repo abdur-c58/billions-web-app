@@ -41,6 +41,7 @@ def default_export_state() -> dict[str, Any]:
         "inputs_hash": None,
         "r2_key": None,
         "youtube_description": None,
+        "thumbnail_prompts": None,
     }
 
 
