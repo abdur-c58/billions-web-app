@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent
-EXPORT_API_VERSION = 6  # bump when export pipeline changes (6 = resolution + quality params)
+EXPORT_API_VERSION = 8  # bump when export pipeline changes (8 = youtube GPU render + postpass)
 DEFAULT_OUTPUT = ROOT / "final_video.mp4"
 CLIP_CACHE_DIR = ROOT / ".broll_cache"
 SEGMENT_CACHE_DIR = ROOT / ".export_cache" / "segments"
@@ -43,17 +43,30 @@ DEFAULT_RESOLUTION = "4k"
 # Approximate file sizes for a 2-hour video at each preset:
 #   high       ~8M  maxrate  →  ~7.2 GB
 #   balanced   ~4M  maxrate  →  ~3.6 GB
-#   compressed ~2.5M maxrate →  ~2.2 GB  (matches CapCut 2500kbps VBR)
-QUALITY_PRESETS: dict[str, dict[str, str | int]] = {
+#   compressed ~2.5M maxrate →  ~2.2 GB
+#   youtube    GPU render (balanced) + libx264 postpass → ~2.2 GB
+QUALITY_PRESETS: dict[str, dict[str, str | int | float | bool]] = {
     "high":       {"crf": 18, "maxrate": "8M",    "bufsize": "16M"},
     "balanced":   {"crf": 22, "maxrate": "4M",    "bufsize": "8M"},
     "compressed": {"crf": 26, "maxrate": "2500k", "bufsize": "5M"},
+    "youtube": {
+        "render_as": "balanced",
+        "postpass": True,
+        "crf": 26,
+        "maxrate": "2500k",
+        "bufsize": "5M",
+        "x264_preset": "medium",
+        "loudness_target_db": -14.0,
+        "faststart": True,
+        "audio_bitrate": "192k",
+    },
 }
-DEFAULT_QUALITY = "balanced"
+DEFAULT_QUALITY = "youtube"
 
 # Legacy constants kept for any direct callers.
 WIDTH, HEIGHT = RESOLUTION_MAP[DEFAULT_RESOLUTION]
 NARRATION_TARGET_DB = -16.0
+YOUTUBE_LOUDNESS_TARGET_DB = -14.0
 BACKGROUND_UNDER_NARRATION_DB = 22.0
 MAX_MIX_ADJUST_DB = 12.0
 
@@ -146,9 +159,19 @@ def detect_encoder(
     crf: int = 22,
     maxrate: str = "4M",
     bufsize: str = "8M",
+    *,
+    x264_preset: str = "fast",
+    h264_level: str | None = None,
 ) -> tuple[str, list[str]]:
     if preferred != "auto":
-        return preferred, encoder_args(preferred, crf, maxrate, bufsize)
+        return preferred, encoder_args(
+            preferred,
+            crf,
+            maxrate,
+            bufsize,
+            x264_preset=x264_preset,
+            h264_level=h264_level,
+        )
 
     encoders = subprocess.run(
         ["ffmpeg", "-hide_banner", "-encoders"],
@@ -160,10 +183,24 @@ def detect_encoder(
     for name in ("h264_nvenc", "h264_amf", "h264_qsv"):
         if name in encoders:
             print(f"Using GPU encoder: {name}")
-            return name, encoder_args(name, crf, maxrate, bufsize)
+            return name, encoder_args(
+                name,
+                crf,
+                maxrate,
+                bufsize,
+                x264_preset=x264_preset,
+                h264_level=h264_level,
+            )
 
     print("No GPU encoder found, falling back to libx264")
-    return "libx264", encoder_args("libx264", crf, maxrate, bufsize)
+    return "libx264", encoder_args(
+        "libx264",
+        crf,
+        maxrate,
+        bufsize,
+        x264_preset=x264_preset,
+        h264_level=h264_level,
+    )
 
 
 def encoder_args(
@@ -171,6 +208,9 @@ def encoder_args(
     crf: int = 22,
     maxrate: str = "4M",
     bufsize: str = "8M",
+    *,
+    x264_preset: str = "fast",
+    h264_level: str | None = None,
 ) -> list[str]:
     if encoder == "h264_nvenc":
         return [
@@ -189,11 +229,14 @@ def encoder_args(
             "-c:v", "h264_qsv", "-preset", "medium",
             "-global_quality", str(crf), "-maxrate", maxrate,
         ]
-    # libx264: use -crf for quality floor + -maxrate to cap ceiling
-    return [
-        "-c:v", "libx264", "-preset", "fast",
+    args = [
+        "-c:v", "libx264", "-preset", x264_preset,
         "-crf", str(crf), "-maxrate", maxrate, "-bufsize", bufsize,
+        "-profile:v", "high",
     ]
+    if h264_level:
+        args.extend(["-level", h264_level])
+    return args
 
 
 # Cached result of the one-time GPU-filter capability probe.
@@ -605,32 +648,34 @@ def mux_audio(
     output_path: Path,
     enc_args: list[str],
     *,
+    audio_bitrate: str = "192k",
+    faststart: bool = False,
     should_cancel: CancelCheck | None = None,
 ) -> None:
     # Segments are already GPU/CPU encoded — copy the video stream to avoid a second
     # full-length re-encode (very slow and can OOM on long exports).
     _ = enc_args
-    run_ffmpeg(
-        [
-            "-i",
-            str(video_path),
-            "-i",
-            str(audio_path),
-            "-map",
-            "0:v:0",
-            "-map",
-            "1:a:0",
-            "-c:v",
-            "copy",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "192k",
-            "-shortest",
-            str(output_path),
-        ],
-        should_cancel=should_cancel,
-    )
+    command = [
+        "-i",
+        str(video_path),
+        "-i",
+        str(audio_path),
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        audio_bitrate,
+        "-shortest",
+    ]
+    if faststart:
+        command.extend(["-movflags", "+faststart"])
+    command.append(str(output_path))
+    run_ffmpeg(command, should_cancel=should_cancel)
 
 
 def add_faststart(input_path: Path, *, should_cancel: CancelCheck | None = None) -> None:
@@ -650,6 +695,71 @@ def add_faststart(input_path: Path, *, should_cancel: CancelCheck | None = None)
         )
         temp = input_path.with_suffix(".faststart.mp4")
         temp.replace(input_path)
+
+
+def apply_youtube_postpass(
+    output_path: Path,
+    preset: dict[str, str | int | float | bool],
+    *,
+    out_height: int,
+    should_cancel: CancelCheck | None = None,
+) -> None:
+    """Re-encode a finished export for YouTube, overwriting the source file."""
+    if not output_path.exists() or output_path.stat().st_size == 0:
+        raise FileNotFoundError(f"Export file not found: {output_path}")
+
+    crf = int(preset["crf"])
+    maxrate = str(preset["maxrate"])
+    bufsize = str(preset["bufsize"])
+    x264_preset = str(preset.get("x264_preset") or "medium")
+    audio_bitrate = str(preset.get("audio_bitrate") or "192k")
+    loudness_i = float(preset.get("loudness_target_db") or YOUTUBE_LOUDNESS_TARGET_DB)
+    h264_level = "5.1" if out_height >= 2160 else "4.2"
+
+    temp_path = output_path.with_name(f"{output_path.stem}.youtube.tmp.mp4")
+    if temp_path.exists():
+        temp_path.unlink()
+
+    audio_filter = f"loudnorm=I={loudness_i}:TP=-1.5:LRA=11"
+    try:
+        run_ffmpeg(
+            [
+                "-i",
+                str(output_path),
+                "-c:v",
+                "libx264",
+                "-preset",
+                x264_preset,
+                "-crf",
+                str(crf),
+                "-maxrate",
+                maxrate,
+                "-bufsize",
+                bufsize,
+                "-profile:v",
+                "high",
+                "-level",
+                h264_level,
+                "-pix_fmt",
+                "yuv420p",
+                "-af",
+                audio_filter,
+                "-c:a",
+                "aac",
+                "-b:a",
+                audio_bitrate,
+                "-movflags",
+                "+faststart",
+                str(temp_path),
+            ],
+            should_cancel=should_cancel,
+        )
+        if not temp_path.exists() or temp_path.stat().st_size == 0:
+            raise RuntimeError("YouTube post-pass produced an empty file")
+        temp_path.replace(output_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink(missing_ok=True)
 
 
 def probe_duration(audio_path: Path) -> float:
@@ -688,9 +798,13 @@ def clamp_mix_adjust_db(value: float) -> float:
     return max(-MAX_MIX_ADJUST_DB, min(MAX_MIX_ADJUST_DB, float(value)))
 
 
-def compute_solo_narration_gains(narration_path: Path) -> dict[str, float]:
+def compute_solo_narration_gains(
+    narration_path: Path,
+    *,
+    narration_target_db: float = NARRATION_TARGET_DB,
+) -> dict[str, float]:
     narration_mean_db = probe_mean_volume(narration_path)
-    narration_gain_db = NARRATION_TARGET_DB - narration_mean_db
+    narration_gain_db = narration_target_db - narration_mean_db
     return {
         "narration_mean_db": round(narration_mean_db, 2),
         "background_mean_db": 0.0,
@@ -719,12 +833,14 @@ def apply_mix_adjustments(
 def compute_mix_gains(
     narration_path: Path,
     background_path: Path,
+    *,
+    narration_target_db: float = NARRATION_TARGET_DB,
 ) -> dict[str, float]:
     narration_mean_db = probe_mean_volume(narration_path)
     background_mean_db = probe_mean_volume(background_path)
-    narration_gain_db = NARRATION_TARGET_DB - narration_mean_db
+    narration_gain_db = narration_target_db - narration_mean_db
     background_gain_db = (
-        NARRATION_TARGET_DB - BACKGROUND_UNDER_NARRATION_DB
+        narration_target_db - BACKGROUND_UNDER_NARRATION_DB
     ) - background_mean_db
     return {
         "narration_mean_db": round(narration_mean_db, 2),
@@ -899,13 +1015,43 @@ def export_video(
 
     res_key = resolution.lower().replace(" ", "")
     out_width, out_height = RESOLUTION_MAP.get(res_key, RESOLUTION_MAP[DEFAULT_RESOLUTION])
-    preset = QUALITY_PRESETS.get(quality.lower(), QUALITY_PRESETS[DEFAULT_QUALITY])
-    crf = int(preset["crf"])
-    maxrate = str(preset["maxrate"])
-    bufsize = str(preset["bufsize"])
-    print(f"Export settings: {out_width}x{out_height} @ CRF {crf}, maxrate {maxrate} ({quality})")
+    quality_key = quality.lower()
+    preset = QUALITY_PRESETS.get(quality_key, QUALITY_PRESETS[DEFAULT_QUALITY])
+    use_postpass = bool(preset.get("postpass"))
+    render_quality_key = str(preset.get("render_as") or quality_key)
+    render_preset = (
+        QUALITY_PRESETS.get(render_quality_key, QUALITY_PRESETS["balanced"])
+        if use_postpass
+        else preset
+    )
 
-    encoder_name, enc_args = detect_encoder(encoder, crf=crf, maxrate=maxrate, bufsize=bufsize)
+    crf = int(render_preset["crf"])
+    maxrate = str(render_preset["maxrate"])
+    bufsize = str(render_preset["bufsize"])
+    preset_encoder = str(render_preset.get("encoder") or encoder)
+    x264_preset = str(render_preset.get("x264_preset") or "fast")
+    audio_bitrate = str(render_preset.get("audio_bitrate") or "192k")
+    use_faststart = bool(render_preset.get("faststart")) and not use_postpass
+    loudness_target = float(
+        render_preset.get("loudness_target_db")
+        if render_preset.get("loudness_target_db") is not None
+        else NARRATION_TARGET_DB
+    )
+    h264_level = None
+    print(
+        f"Export settings: {out_width}x{out_height} @ CRF {crf}, maxrate {maxrate} "
+        f"({quality_key}{' + youtube postpass' if use_postpass else ''})"
+    )
+
+    encoder_name, enc_args = detect_encoder(
+        preset_encoder,
+        crf=crf,
+        maxrate=maxrate,
+        bufsize=bufsize,
+        x264_preset=x264_preset,
+        h264_level=h264_level,
+    )
+    render_encoder_name = encoder_name
     work_dir = cache_dir if cache_dir else ROOT / ".export_cache"
     work_dir.mkdir(parents=True, exist_ok=True)
 
@@ -968,7 +1114,11 @@ def export_video(
             raise FileNotFoundError(f"Background audio not found: {background_audio_path}")
         progress("audio", 0, 1, "Balancing narration and background audio…")
         mixed_audio_path = work_dir / "mixed_audio.m4a"
-        base_gains = compute_mix_gains(audio_path, background_audio_path)
+        base_gains = compute_mix_gains(
+            audio_path,
+            background_audio_path,
+            narration_target_db=loudness_target,
+        )
         mix_gains = apply_mix_adjustments(
             base_gains,
             narration_adjust_db=narr_adj,
@@ -985,7 +1135,10 @@ def export_video(
         progress("audio", 1, 1, "Background audio mixed")
     elif abs(narr_adj) > 0.01:
         progress("audio", 0, 1, "Adjusting narration level…")
-        base_gains = compute_solo_narration_gains(audio_path)
+        base_gains = compute_solo_narration_gains(
+            audio_path,
+            narration_target_db=loudness_target,
+        )
         mix_gains = apply_mix_adjustments(
             base_gains,
             narration_adjust_db=narr_adj,
@@ -1001,7 +1154,10 @@ def export_video(
         mux_audio_path = adjusted_narration_path
         progress("audio", 1, 1, "Narration level adjusted")
     else:
-        base_gains = compute_solo_narration_gains(audio_path)
+        base_gains = compute_solo_narration_gains(
+            audio_path,
+            narration_target_db=loudness_target,
+        )
         mix_gains = apply_mix_adjustments(
             base_gains,
             narration_adjust_db=0.0,
@@ -1020,10 +1176,33 @@ def export_video(
             progress("audio", 1, 1, "Narration normalized")
 
     progress("encode", 0, 1, f"Muxing audio with {encoder_name}…")
-    mux_audio(video_only, mux_audio_path, output_path, enc_args, should_cancel=should_cancel)
-    if output_path.exists() and output_path.stat().st_size < 500 * 1024 * 1024:
+    mux_audio(
+        video_only,
+        mux_audio_path,
+        output_path,
+        enc_args,
+        audio_bitrate=audio_bitrate,
+        faststart=use_faststart,
+        should_cancel=should_cancel,
+    )
+    if (
+        not use_faststart
+        and output_path.exists()
+        and output_path.stat().st_size < 500 * 1024 * 1024
+    ):
         progress("encode", 1, 1, "Optimizing for download…")
         add_faststart(output_path, should_cancel=should_cancel)
+
+    if use_postpass:
+        progress("youtube", 0, 1, "Optimizing for YouTube upload…")
+        apply_youtube_postpass(
+            output_path,
+            preset,
+            out_height=out_height,
+            should_cancel=should_cancel,
+        )
+        progress("youtube", 1, 1, "YouTube export ready")
+        encoder_name = f"{render_encoder_name}+libx264"
 
     return {
         "output": str(output_path.resolve()),
