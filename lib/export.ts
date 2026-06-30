@@ -9,10 +9,14 @@ export async function fetchExportStatus(projectId: string): Promise<ExportSnapsh
 
 export async function regenerateYoutubeDescription(
   includeEmojis: boolean,
+  includeChapters: boolean,
 ): Promise<ExportSnapshot> {
   return apiFetch<ExportSnapshot>("/api/export/youtube-description", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ include_emojis: includeEmojis }),
+    body: JSON.stringify({
+      include_emojis: includeEmojis,
+      include_chapters: includeChapters,
+    }),
   });
 }

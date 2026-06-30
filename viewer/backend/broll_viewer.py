@@ -1127,7 +1127,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         status_file = workspace_paths(workspace)["export_status"]
         return export_snapshot(pid, status_file)
 
-    def _regenerate_youtube_description(self, *, include_emojis: bool = True) -> dict[str, Any]:
+    def _regenerate_youtube_description(
+        self,
+        *,
+        include_emojis: bool = True,
+        include_chapters: bool = False,
+    ) -> dict[str, Any]:
         project_id = self.headers.get("X-Billions-Project", "").strip()
         if not project_id:
             raise ValueError("Select a project first.")
@@ -1150,6 +1155,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             selections_path=self.selections_path,
             project_name=project_name,
             include_emojis=include_emojis,
+            include_chapters=include_chapters,
         )
         status_file = workspace_paths(workspace)["export_status"]
         update_export_state(project_id, status_file, youtube_description=youtube_description)
@@ -2305,7 +2311,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     include_emojis = include_emojis.lower() not in {"0", "false", "no"}
                 else:
                     include_emojis = bool(include_emojis)
-                snapshot = self._regenerate_youtube_description(include_emojis=include_emojis)
+                include_chapters = body.get("include_chapters", False)
+                if isinstance(include_chapters, str):
+                    include_chapters = include_chapters.lower() not in {"0", "false", "no"}
+                else:
+                    include_chapters = bool(include_chapters)
+                snapshot = self._regenerate_youtube_description(
+                    include_emojis=include_emojis,
+                    include_chapters=include_chapters,
+                )
                 self._send_json(snapshot)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)

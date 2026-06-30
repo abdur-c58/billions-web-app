@@ -173,8 +173,8 @@ export function useBrollViewer() {
   }, [showStatus, updateExportUi]);
 
   const regenerateDescription = useCallback(
-    async (includeEmojis: boolean) => {
-      const snapshot = await regenerateYoutubeDescription(includeEmojis);
+    async (includeEmojis: boolean, includeChapters: boolean) => {
+      const snapshot = await regenerateYoutubeDescription(includeEmojis, includeChapters);
       updateExportUi(snapshot);
       if (snapshot.status === "done" && snapshot.inputs_hash) {
         setExportInputsHash(snapshot.inputs_hash);

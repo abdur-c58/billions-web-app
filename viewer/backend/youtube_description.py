@@ -10,6 +10,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from youtube_chapters import build_youtube_chapters_block
+
 OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
 DESCRIPTION_MODEL = "gpt-4o-mini"
 
@@ -135,9 +137,10 @@ def build_youtube_description(
     selections_path: Path,
     project_name: str,
     include_emojis: bool = True,
+    include_chapters: bool = False,
 ) -> str:
-    """Build a copy-paste YouTube description (body + hashtag line)."""
-    del timestamps_path, selections_path  # narration-only; no export metadata in copy
+    """Build a copy-paste YouTube description (body + optional chapters + hashtags)."""
+    del selections_path
 
     title, narration = _script_context(script_path)
     if not title:
@@ -148,7 +151,21 @@ def build_youtube_description(
         narration=narration,
         include_emojis=include_emojis,
     )
+
+    parts = [description]
+    if include_chapters:
+        try:
+            parts.append(
+                build_youtube_chapters_block(
+                    script_path=script_path,
+                    timestamps_path=timestamps_path,
+                    project_name=project_name,
+                )
+            )
+        except Exception as exc:
+            print(f"[export] Chapter generation skipped: {exc}")
+
     hashtag_line = _format_hashtags(tags)
     if hashtag_line:
-        return f"{description}\n\n{hashtag_line}"
-    return description
+        parts.append(hashtag_line)
+    return "\n\n".join(parts).strip()

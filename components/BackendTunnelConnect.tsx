@@ -127,20 +127,22 @@ export function BackendTunnelConnect() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] grid place-items-center bg-black/65 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[90] grid place-items-center bg-black/75 p-4"
             onClick={() => setOpen(false)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.98, y: 6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: 4 }}
-              className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#11131a] p-5 shadow-2xl"
+              className="glow-card w-full max-w-lg rounded-[var(--radius-lg)] bg-[var(--card)] p-5 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-white">Connect backend tunnel</h3>
-                  <p className="mt-1 text-sm text-white/60">
+                  <h3 className="text-base font-semibold text-[var(--foreground)]">
+                    Connect backend tunnel
+                  </h3>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
                     Paste your trycloudflare URL once — it is saved in R2 and shared across
                     devices.
                   </p>
@@ -148,26 +150,27 @@ export function BackendTunnelConnect() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-md p-1 text-white/50 hover:bg-white/10 hover:text-white"
+                  className="glow-btn-secondary rounded-[var(--radius-sm)] p-2"
+                  aria-label="Close"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {loading ? (
-                <p className="mt-4 inline-flex items-center gap-2 text-sm text-white/60">
+                <p className="mt-4 inline-flex items-center gap-2 text-sm text-[var(--muted)]">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading current backend…
                 </p>
               ) : (
                 <div className="mt-4 space-y-3">
                   {connected ? (
-                    <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-sm">
-                      <p className="font-medium text-white/85">Current backend</p>
-                      <p className="mt-1 break-all font-mono text-xs text-white/70">
+                    <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-raised)] p-3 text-sm">
+                      <p className="font-medium text-[var(--foreground)]">Current backend</p>
+                      <p className="mt-1 break-all font-mono text-xs text-[var(--muted)]">
                         {config?.backend_url}
                       </p>
-                      <p className="mt-2 text-xs text-white/45">
+                      <p className="mt-2 text-xs text-[var(--muted)]">
                         Source: {config?.tunnel_source || "unknown"}
                         {config?.tunnel_updated_at
                           ? ` · updated ${new Date(config.tunnel_updated_at).toLocaleString()}`
@@ -186,7 +189,7 @@ export function BackendTunnelConnect() {
                     </div>
                   ) : null}
 
-                  <label className="block text-xs font-medium uppercase tracking-wide text-white/45">
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                     Cloudflare tunnel URL
                   </label>
                   <input
@@ -194,11 +197,11 @@ export function BackendTunnelConnect() {
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     placeholder="https://something-random.trycloudflare.com"
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none ring-0 placeholder:text-white/30 focus:border-white/25"
+                    className="w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--border-hover)]"
                   />
-                  <p className="text-xs text-white/40">
+                  <p className="text-xs text-[var(--muted)]">
                     Run{" "}
-                    <code className="text-white/60">
+                    <code className="text-[var(--foreground)]">
                       cloudflared tunnel --url http://127.0.0.1:8766
                     </code>{" "}
                     locally, then paste the https link shown in the terminal.

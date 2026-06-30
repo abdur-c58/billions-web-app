@@ -18,6 +18,7 @@ import { readStoredProject } from "@/lib/session";
 import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
 
 const DESCRIPTION_EMOJIS_KEY = "broll-description-emojis";
+const DESCRIPTION_CHAPTERS_KEY = "broll-description-chapters";
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
   const viewer = useBrollViewer();
@@ -33,6 +34,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [copiedDescription, setCopiedDescription] = useState("");
   const [descriptionCopied, setDescriptionCopied] = useState(false);
   const [includeEmojis, setIncludeEmojis] = useState(true);
+  const [includeChapters, setIncludeChapters] = useState(false);
   const [regeneratingDescription, setRegeneratingDescription] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
@@ -57,8 +59,10 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   useEffect(() => {
     try {
       setIncludeEmojis(localStorage.getItem(DESCRIPTION_EMOJIS_KEY) !== "false");
+      setIncludeChapters(localStorage.getItem(DESCRIPTION_CHAPTERS_KEY) === "true");
     } catch {
       setIncludeEmojis(true);
+      setIncludeChapters(false);
     }
   }, []);
 
@@ -69,6 +73,14 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
       // Ignore storage failures.
     }
   }, [includeEmojis]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DESCRIPTION_CHAPTERS_KEY, includeChapters ? "true" : "false");
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [includeChapters]);
 
   useEffect(() => {
     if (!descriptionModalOpen || regeneratingDescription) return;
@@ -220,7 +232,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     setRegeneratingDescription(true);
     setRegenerateError(null);
     try {
-      const next = await viewer.regenerateDescription(includeEmojis);
+      const next = await viewer.regenerateDescription(includeEmojis, includeChapters);
       setCopiedDescription(next);
       if (next) {
         try {
@@ -235,7 +247,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     } finally {
       setRegeneratingDescription(false);
     }
-  }, [includeEmojis, viewer.regenerateDescription]);
+  }, [includeChapters, includeEmojis, viewer.regenerateDescription]);
 
   return (
     <div className="glow-page w-full text-[var(--foreground)]">
@@ -748,14 +760,24 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
                   </p>
                 </div>
               </div>
-              <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/80">
-                <Checkbox
-                  checked={includeEmojis}
-                  onCheckedChange={(checked) => setIncludeEmojis(checked === true)}
-                  disabled={regeneratingDescription}
-                />
-                Include emojis
-              </label>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/80">
+                  <Checkbox
+                    checked={includeEmojis}
+                    onCheckedChange={(checked) => setIncludeEmojis(checked === true)}
+                    disabled={regeneratingDescription}
+                  />
+                  Include emojis
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/80">
+                  <Checkbox
+                    checked={includeChapters}
+                    onCheckedChange={(checked) => setIncludeChapters(checked === true)}
+                    disabled={regeneratingDescription}
+                  />
+                  Include chapters
+                </label>
+              </div>
               <pre className="mt-3 max-h-[46vh] overflow-auto rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-relaxed text-white/90 whitespace-pre-wrap">
                 {copiedDescription || "No description generated yet."}
               </pre>
