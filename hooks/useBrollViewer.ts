@@ -777,7 +777,7 @@ export function useBrollViewer() {
       background_adjust_db: 0,
     };
     const resolution = options?.resolution ?? "4k";
-    const quality = options?.quality ?? "youtube";
+    const quality = options?.quality ?? "balanced";
     try {
       const snapshot = await apiFetch<ExportSnapshot>("/api/export/start", {
         method: "POST",

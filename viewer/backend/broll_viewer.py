@@ -1209,7 +1209,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         narration_adjust_db: float = 0.0,
         background_adjust_db: float = 0.0,
         resolution: str = "4k",
-        quality: str = "youtube",
+        quality: str = "balanced",
     ) -> None:
         project_id = self.headers.get("X-Billions-Project", "").strip()
         if not project_id:
@@ -2198,7 +2198,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     raise ValueError("background_audio must be an R2 storage key string or null")
                 narration_adjust_db, background_adjust_db = parse_mix_adjustments(body)
                 resolution = str(body.get("resolution") or "4k").strip().lower()
-                quality = str(body.get("quality") or "youtube").strip().lower()
+                quality = str(body.get("quality") or "balanced").strip().lower()
                 self._start_export_job(
                     background_audio=background_audio or None,
                     narration_adjust_db=narration_adjust_db,

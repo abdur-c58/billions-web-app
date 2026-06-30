@@ -84,7 +84,7 @@ export function ExportAudioModal({
 }: ExportAudioModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [resolution, setResolution] = useState<ExportResolution>("4k");
-  const [quality, setQuality] = useState<ExportQuality>("youtube");
+  const [quality, setQuality] = useState<ExportQuality>("balanced");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [narrationName, setNarrationName] = useState("");
@@ -281,8 +281,6 @@ export function ExportAudioModal({
       setBrowseOpen(false);
       setNarrationAdjustDb(0);
       setBackgroundAdjustDb(0);
-      setResolution("4k");
-      setQuality("youtube");
       setError(null);
       return;
     }
@@ -619,24 +617,9 @@ export function ExportAudioModal({
                   <p className="mb-3 text-xs font-medium uppercase tracking-wide text-white/45">Quality</p>
                   <div className="grid grid-cols-3 gap-2">
                     {([
-                      {
-                        key: "youtube",
-                        label: "YouTube",
-                        sub: "GPU + libx264 pass",
-                        hint: "Recommended",
-                      },
-                      {
-                        key: "balanced",
-                        label: "Balanced",
-                        sub: "≤4 Mbps · ~3.5 GB/2hr",
-                        hint: "",
-                      },
-                      {
-                        key: "high",
-                        label: "High",
-                        sub: "≤8 Mbps · ~7 GB/2hr",
-                        hint: "",
-                      },
+                      { key: "high",       label: "High",      sub: "≤8 Mbps · ~7 GB/2hr",   hint: "" },
+                      { key: "balanced",   label: "Balanced",  sub: "≤4 Mbps · ~3.5 GB/2hr", hint: "Recommended" },
+                      { key: "compressed", label: "CapCut",    sub: "≤2.5 Mbps · ~2.2 GB/2hr", hint: "CapCut-style" },
                     ] as { key: ExportQuality; label: string; sub: string; hint: string }[]).map(({ key, label, sub, hint }) => (
                       <button
                         key={key}
@@ -660,8 +643,7 @@ export function ExportAudioModal({
                     ))}
                   </div>
                   <p className="mt-2.5 text-xs text-white/35">
-                    YouTube renders on GPU first, then runs one libx264 pass (-14 LUFS,
-                    faststart) and replaces the export file in place.
+                    All presets use VBR with a hard bitrate ceiling (2500Kbps)
                   </p>
                 </div>
               </div>

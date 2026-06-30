@@ -267,7 +267,7 @@ export type AudioMixAdjustments = {
 };
 
 export type ExportResolution = "1080p" | "1440p" | "4k";
-export type ExportQuality = "high" | "balanced" | "compressed" | "youtube";
+export type ExportQuality = "high" | "balanced" | "compressed";
 
 export type ExportAudioOptions = {
   backgroundAudio: string | null; // R2 key under Audio/
