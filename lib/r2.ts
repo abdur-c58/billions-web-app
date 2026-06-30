@@ -5,9 +5,9 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
-  S3Client,
 } from "@aws-sdk/client-s3";
 import { Readable } from "node:stream";
+import { getR2Client } from "@/lib/r2-client";
 
 export const VIDEO_EXTENSIONS = new Set([
   ".mp4",
@@ -48,28 +48,6 @@ export type StorageItem = {
   /** Whether expiry is within 24 hours */
   expiringSoon?: boolean;
 };
-
-function getR2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET_NAME;
-
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    throw new Error(
-      "R2 is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME.",
-    );
-  }
-
-  return {
-    client: new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    }),
-    bucket,
-  };
-}
 
 export function normalizePrefix(prefix: string) {
   const trimmed = prefix.trim().replace(/^\/+/, "");
@@ -142,10 +120,10 @@ export async function listStorage(prefix = "") {
   );
 
   const folders: StorageItem[] = (response.CommonPrefixes || [])
-    .filter((entry) => {
-      const key = entry.Prefix || "";
-      return !key.startsWith(".project/");
-    })
+      .filter((entry) => {
+        const key = entry.Prefix || "";
+        return !key.startsWith(".project/") && !key.startsWith(".config/");
+      })
     .map((entry) => {
     const key = entry.Prefix || "";
     const name = key.slice(normalized.length).replace(/\/$/, "");
@@ -166,6 +144,7 @@ export async function listStorage(prefix = "") {
     (response.Contents || [])
       .filter((entry) => entry.Key && entry.Key !== normalized)
       .filter((entry) => !entry.Key!.startsWith(".project/"))
+      .filter((entry) => !entry.Key!.startsWith(".config/"))
       .map(async (entry) => {
         const key = entry.Key || "";
         const name = key.slice(normalized.length);

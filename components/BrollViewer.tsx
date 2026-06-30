@@ -12,6 +12,7 @@ import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
+import { resolveBrollApiUrl } from "@/lib/api";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
 import type { FolderFetchPlan, FolderShortageStrategy } from "@/lib/types";
@@ -42,6 +43,16 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const projectId = readStoredProject();
   const progressHref = projectId ? `/progress/${projectId}` : "/progress";
   const downloadProjectId = viewer.exportSnapshot.project_id || projectId || "";
+  const [downloadHref, setDownloadHref] = useState("");
+
+  useEffect(() => {
+    if (!downloadProjectId) {
+      setDownloadHref("");
+      return;
+    }
+    const path = `/api/export/download?project=${encodeURIComponent(downloadProjectId)}`;
+    void resolveBrollApiUrl(path).then(setDownloadHref);
+  }, [downloadProjectId]);
 
   useEffect(() => {
     try {
@@ -554,9 +565,9 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
           </Link>
 
           <a
-            href={`/api/export/download?project=${encodeURIComponent(downloadProjectId)}`}
+            href={downloadHref || undefined}
             className={`glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
-              viewer.exportSnapshot.status === "done" && downloadProjectId
+              viewer.exportSnapshot.status === "done" && downloadProjectId && downloadHref
                 ? ""
                 : "pointer-events-none opacity-55"
             }`}

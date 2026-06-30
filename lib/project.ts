@@ -1,4 +1,4 @@
-import { apiFetch, uploadFormData } from "@/lib/api";
+import { apiFetch, invalidateBackendUrlCache, uploadFormData } from "@/lib/api";
 import type { ScriptFormat } from "@/lib/types";
 
 export type ProjectStatus = {
@@ -67,6 +67,11 @@ export async function uploadScriptFile(file: File) {
 
 /** Resolve where large audio uploads should go (direct tunnel vs local proxy). */
 let cachedAudioUploadUrl: string | null | undefined;
+
+export function invalidateAudioUploadUrlCache() {
+  cachedAudioUploadUrl = undefined;
+  invalidateBackendUrlCache();
+}
 
 async function resolveAudioUploadUrl(): Promise<string> {
   if (cachedAudioUploadUrl !== undefined) {

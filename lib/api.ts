@@ -17,9 +17,11 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}): Promi
       ? Object.fromEntries(options.headers.entries())
       : (options.headers as Record<string, string> | undefined) ?? {};
 
+  const resolvedUrl = await resolveBrollApiUrl(url);
+
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(resolvedUrl, {
       ...options,
       headers: {
         ...sessionHeaders,
@@ -27,11 +29,11 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}): Promi
       },
     });
   } catch {
-    const isDirectBackend = /^https?:\/\//i.test(url);
+    const isDirectBackend = /^https?:\/\//i.test(resolvedUrl);
     const hint = isDirectBackend
-      ? "Check that cloudflared is running and BROLL_BACKEND_URL on Vercel matches the current tunnel URL."
-      : "Run npm run dev:all (Next.js :3001 + Python API :8766), or use the Vercel deployment with a live tunnel.";
-    throw new ApiError(`Cannot reach broll API (${url}). ${hint}`, 0);
+      ? "Open Backend in the nav, paste your current trycloudflare URL, and click Connect."
+      : "Run npm run dev:all (Next.js :3001 + Python API :8766), or connect a tunnel from the Vercel app.";
+    throw new ApiError(`Cannot reach broll API (${resolvedUrl}). ${hint}`, 0);
   }
 
   let payload: Record<string, unknown> = {};
@@ -133,6 +135,20 @@ export function uploadFormData<T>(
 /** Resolve API path — uses tunnel/backend URL when configured (Vercel + cloudflared). */
 let cachedBackendUrl: string | null | undefined;
 
+export function invalidateBackendUrlCache() {
+  cachedBackendUrl = undefined;
+}
+
+function shouldUseDirectBackend(backendUrl: string): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") return false;
+  if (host.endsWith(".vercel.app")) return true;
+  const backendIsLocal =
+    backendUrl.includes("127.0.0.1") || backendUrl.includes("localhost");
+  return !backendIsLocal;
+}
+
 export async function resolveBrollApiUrl(path: string): Promise<string> {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   if (/^https?:\/\//i.test(normalized)) return normalized;
@@ -148,7 +164,7 @@ export async function resolveBrollApiUrl(path: string): Promise<string> {
     }
   }
 
-  if (cachedBackendUrl) {
+  if (cachedBackendUrl && shouldUseDirectBackend(cachedBackendUrl)) {
     return `${cachedBackendUrl}${normalized}`;
   }
   return normalized;
