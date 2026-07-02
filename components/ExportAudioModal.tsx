@@ -6,6 +6,7 @@ import { Loader2, Music2, Pause, Play, RotateCcw, Volume2, FolderOpen } from "lu
 import { apiFetch, resolveBrollApiUrl } from "@/lib/api";
 import { getSessionHeaders } from "@/lib/session";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StorageAudioPickModal } from "@/components/StorageAudioPickModal";
 import type {
   AudioBalanceInfo,
@@ -651,13 +652,11 @@ export function ExportAudioModal({
 
                 <div className="rounded-xl border border-white/10 bg-black/25 p-4">
                   <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/85">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={includeSubtitles}
-                      onChange={(event) => setIncludeSubtitles(event.target.checked)}
-                      className="h-4 w-4 rounded border-white/20 bg-black/30"
+                      onCheckedChange={(checked) => setIncludeSubtitles(checked === true)}
                     />
-                    Include subtitles (white text with black stroke)
+                    Include subtitles
                   </label>
                   <p className="mt-2 text-xs text-white/45">
                     Subtitles are auto-generated from Whisper timing with sentence-level refinement.
