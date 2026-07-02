@@ -283,4 +283,5 @@ export type ExportAudioOptions = {
   mixAdjustments: AudioMixAdjustments;
   resolution: ExportResolution;
   quality: ExportQuality;
+  includeSubtitles: boolean;
 };

@@ -776,6 +776,7 @@ export function useBrollViewer() {
     mixAdjustments?: { narration_adjust_db: number; background_adjust_db: number };
     resolution?: string;
     quality?: string;
+    includeSubtitles?: boolean;
   }) => {
     const backgroundAudio = options?.backgroundAudio ?? null;
     const mixAdjustments = options?.mixAdjustments ?? {
@@ -784,6 +785,7 @@ export function useBrollViewer() {
     };
     const resolution = options?.resolution ?? "4k";
     const quality = options?.quality ?? "balanced";
+    const includeSubtitles = Boolean(options?.includeSubtitles);
     try {
       const snapshot = await apiFetch<ExportSnapshot>("/api/export/start", {
         method: "POST",
@@ -794,6 +796,7 @@ export function useBrollViewer() {
           background_adjust_db: mixAdjustments.background_adjust_db,
           resolution,
           quality,
+          include_subtitles: includeSubtitles,
         }),
       });
       updateExportUi(snapshot);

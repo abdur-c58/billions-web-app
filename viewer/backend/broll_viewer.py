@@ -1242,6 +1242,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         background_adjust_db: float = 0.0,
         resolution: str = "4k",
         quality: str = "balanced",
+        include_subtitles: bool = False,
     ) -> None:
         project_id = self.headers.get("X-Billions-Project", "").strip()
         if not project_id:
@@ -1334,6 +1335,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     background_adjust_db=background_adjust_db,
                     resolution=resolution,
                     quality=quality,
+                    include_subtitles=include_subtitles,
                 )
                 if cancel_event.is_set():
                     return
@@ -2231,12 +2233,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 narration_adjust_db, background_adjust_db = parse_mix_adjustments(body)
                 resolution = str(body.get("resolution") or "4k").strip().lower()
                 quality = str(body.get("quality") or "balanced").strip().lower()
+                include_subtitles = body.get("include_subtitles", False)
+                if isinstance(include_subtitles, str):
+                    include_subtitles = include_subtitles.lower() not in {"0", "false", "no"}
+                else:
+                    include_subtitles = bool(include_subtitles)
                 self._start_export_job(
                     background_audio=background_audio or None,
                     narration_adjust_db=narration_adjust_db,
                     background_adjust_db=background_adjust_db,
                     resolution=resolution,
                     quality=quality,
+                    include_subtitles=include_subtitles,
                 )
                 self._send_json(self._export_snapshot_for())
             except ValueError as exc:

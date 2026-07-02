@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Clapperboard, Clock, Copy, Download, Flag, FolderOpen, Image, Loader2, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
@@ -42,6 +42,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [regeneratingThumbnails, setRegeneratingThumbnails] = useState(false);
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [copiedThumbnailLabel, setCopiedThumbnailLabel] = useState<string | null>(null);
+  const thumbnailGenerationRef = useRef(false);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
@@ -263,6 +264,8 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   }, [includeChapters, includeEmojis, viewer.regenerateDescription]);
 
   const runThumbnailGeneration = useCallback(async () => {
+    if (thumbnailGenerationRef.current) return;
+    thumbnailGenerationRef.current = true;
     setRegeneratingThumbnails(true);
     setThumbnailError(null);
     setCopiedThumbnailLabel(null);
@@ -272,6 +275,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     } catch (err) {
       setThumbnailError(err instanceof Error ? err.message : "Failed to generate thumbnail prompts");
     } finally {
+      thumbnailGenerationRef.current = false;
       setRegeneratingThumbnails(false);
     }
   }, [viewer.regenerateThumbnails]);

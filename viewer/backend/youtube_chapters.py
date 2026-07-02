@@ -5,12 +5,11 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
 
-OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
+from openai_http import openai_json_message
+
 CHAPTER_MODEL = "gpt-4o-mini"
 
 _TEASE_PATTERN = re.compile(
@@ -182,36 +181,13 @@ def _openai_chapter_titles(
         'Return JSON only: {"chapters":[{"beat":1,"title":"Intro"}, ...]}'
     )
 
-    body = json.dumps(
-        {
-            "model": CHAPTER_MODEL,
-            "temperature": 0.2,
-            "max_tokens": 1200,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "user", "content": prompt}],
-        }
-    ).encode("utf-8")
-
-    request = urllib.request.Request(
-        OPENAI_CHAT_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "Billions-BrollViewer/1.0",
-        },
-        method="POST",
+    parsed = openai_json_message(
+        model=CHAPTER_MODEL,
+        prompt=prompt,
+        temperature=0.2,
+        max_tokens=1200,
+        timeout=90,
     )
-
-    try:
-        with urllib.request.urlopen(request, timeout=90) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenAI API error {exc.code}: {raw}") from exc
-
-    message = payload["choices"][0]["message"]["content"]
-    parsed = json.loads(message)
     raw_items = parsed.get("chapters") or []
     if not isinstance(raw_items, list) or not raw_items:
         return _heuristic_chapter_titles(chapters)

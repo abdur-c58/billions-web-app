@@ -85,6 +85,7 @@ export function ExportAudioModal({
   const [step, setStep] = useState<1 | 2>(1);
   const [resolution, setResolution] = useState<ExportResolution>("4k");
   const [quality, setQuality] = useState<ExportQuality>("balanced");
+  const [includeSubtitles, setIncludeSubtitles] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [narrationName, setNarrationName] = useState("");
@@ -282,6 +283,7 @@ export function ExportAudioModal({
       setNarrationAdjustDb(0);
       setBackgroundAdjustDb(0);
       setError(null);
+      setIncludeSubtitles(false);
       return;
     }
     void loadNarration();
@@ -646,6 +648,21 @@ export function ExportAudioModal({
                     All presets use VBR with a hard bitrate ceiling (2500Kbps)
                   </p>
                 </div>
+
+                <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                  <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-white/85">
+                    <input
+                      type="checkbox"
+                      checked={includeSubtitles}
+                      onChange={(event) => setIncludeSubtitles(event.target.checked)}
+                      className="h-4 w-4 rounded border-white/20 bg-black/30"
+                    />
+                    Include subtitles (white text with black stroke)
+                  </label>
+                  <p className="mt-2 text-xs text-white/45">
+                    Subtitles are auto-generated from Whisper timing with sentence-level refinement.
+                  </p>
+                </div>
               </div>
               )}
 
@@ -674,6 +691,7 @@ export function ExportAudioModal({
                         mixAdjustments,
                         resolution,
                         quality,
+                        includeSubtitles,
                       });
                     }}
                     className="glow-btn-primary rounded-[10px] px-3 py-2 text-sm font-semibold"

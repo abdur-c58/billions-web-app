@@ -5,14 +5,12 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
 
+from openai_http import openai_json_message
 from youtube_chapters import build_youtube_chapters_block
 
-OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
 DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
@@ -66,10 +64,6 @@ def _openai_youtube_copy(
     narration: str,
     include_emojis: bool = True,
 ) -> tuple[str, list[str]]:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing")
-
     display_title = title or "Untitled video"
     emoji_rule = (
         "- Use a few relevant emojis (roughly 3–6 across the whole description)\n"
@@ -93,36 +87,13 @@ def _openai_youtube_copy(
         'Return JSON only: {"description": "...", "tags": ["tag1", "tag2"]}'
     )
 
-    body = json.dumps(
-        {
-            "model": DESCRIPTION_MODEL,
-            "temperature": 0.65,
-            "max_tokens": 900,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "user", "content": prompt}],
-        }
-    ).encode("utf-8")
-
-    request = urllib.request.Request(
-        OPENAI_CHAT_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "Billions-BrollViewer/1.0",
-        },
-        method="POST",
+    parsed = openai_json_message(
+        model=DESCRIPTION_MODEL,
+        prompt=prompt,
+        temperature=0.65,
+        max_tokens=900,
+        timeout=90,
     )
-
-    try:
-        with urllib.request.urlopen(request, timeout=90) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenAI API error {exc.code}: {raw}") from exc
-
-    message = payload["choices"][0]["message"]["content"]
-    parsed = json.loads(message)
     description = str(parsed.get("description") or "").strip()
     tags = [str(tag).strip() for tag in (parsed.get("tags") or []) if str(tag).strip()]
     if not description:

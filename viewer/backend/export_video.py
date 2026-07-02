@@ -633,6 +633,142 @@ def mux_audio(
     )
 
 
+def _format_srt_timestamp(total_seconds: float) -> str:
+    millis = max(0, int(round(total_seconds * 1000)))
+    hours, rem = divmod(millis, 3_600_000)
+    minutes, rem = divmod(rem, 60_000)
+    seconds, ms = divmod(rem, 1000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
+
+
+def _sentence_chunks(text: str) -> list[str]:
+    cleaned = " ".join(str(text or "").strip().split())
+    if not cleaned:
+        return []
+    chunks = [part.strip() for part in re.split(r"(?<=[.!?])\s+", cleaned) if part.strip()]
+    if not chunks:
+        return [cleaned]
+    split_chunks: list[str] = []
+    for chunk in chunks:
+        words = chunk.split()
+        if len(words) <= 12:
+            split_chunks.append(chunk)
+            continue
+        for index in range(0, len(words), 12):
+            split_chunks.append(" ".join(words[index : index + 12]))
+    return split_chunks
+
+
+def write_refined_subtitles_srt(timestamps_path: Path, output_path: Path) -> int:
+    timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
+    segments = timestamps.get("segments", [])
+    cues: list[tuple[float, float, str]] = []
+
+    for segment in segments:
+        timing = segment.get("timing") or {}
+        start = timing.get("start_seconds")
+        end = timing.get("end_seconds")
+        if start is None or end is None:
+            duration = timing.get("duration_seconds")
+            if start is not None and duration:
+                end = float(start) + float(duration)
+            else:
+                continue
+        start_f = float(start)
+        end_f = float(end)
+        if end_f <= start_f:
+            continue
+
+        text = str(segment.get("content") or "").strip()
+        chunks = _sentence_chunks(text)
+        if not chunks:
+            continue
+        total_words = max(1, sum(max(1, len(chunk.split())) for chunk in chunks))
+        seg_duration = end_f - start_f
+        cursor = start_f
+
+        for idx, chunk in enumerate(chunks):
+            words = max(1, len(chunk.split()))
+            if idx == len(chunks) - 1:
+                cue_end = end_f
+            else:
+                portion = seg_duration * (words / total_words)
+                cue_end = min(end_f, cursor + max(0.7, portion))
+            cues.append((cursor, cue_end, chunk))
+            cursor = cue_end
+
+    if not cues:
+        output_path.write_text("", encoding="utf-8")
+        return 0
+
+    normalized: list[tuple[float, float, str]] = []
+    last_end = 0.0
+    for start, end, text in cues:
+        start = max(last_end, start)
+        min_end = start + 0.6
+        end = max(min_end, end)
+        normalized.append((start, end, text))
+        last_end = end
+
+    lines: list[str] = []
+    for idx, (start, end, text) in enumerate(normalized, start=1):
+        lines.extend(
+            [
+                str(idx),
+                f"{_format_srt_timestamp(start)} --> {_format_srt_timestamp(end)}",
+                text,
+                "",
+            ]
+        )
+    output_path.write_text("\n".join(lines), encoding="utf-8")
+    return len(normalized)
+
+
+def _escape_subtitles_path(path: Path) -> str:
+    value = path.resolve().as_posix()
+    return value.replace("\\", "\\\\").replace(":", r"\:").replace("'", r"\'")
+
+
+def mux_audio_with_subtitles(
+    video_path: Path,
+    audio_path: Path,
+    subtitles_path: Path,
+    output_path: Path,
+    enc_args: list[str],
+    *,
+    should_cancel: CancelCheck | None = None,
+) -> None:
+    subtitle_filter = (
+        f"subtitles=filename='{_escape_subtitles_path(subtitles_path)}':"
+        "force_style='FontName=Arial,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
+        "BorderStyle=1,Outline=2,Shadow=0,MarginV=36'"
+    )
+    run_ffmpeg(
+        [
+            "-i",
+            str(video_path),
+            "-i",
+            str(audio_path),
+            "-vf",
+            subtitle_filter,
+            "-map",
+            "0:v:0",
+            "-map",
+            "1:a:0",
+            *enc_args,
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-shortest",
+            str(output_path),
+        ],
+        should_cancel=should_cancel,
+    )
+
+
 def add_faststart(input_path: Path, *, should_cancel: CancelCheck | None = None) -> None:
     """Move moov atom to file start for web playback (optional second pass)."""
     if not input_path.exists() or input_path.stat().st_size < 500 * 1024 * 1024:
@@ -879,6 +1015,7 @@ def export_video(
     background_adjust_db: float = 0.0,
     resolution: str = DEFAULT_RESOLUTION,
     quality: str = DEFAULT_QUALITY,
+    include_subtitles: bool = False,
 ) -> dict[str, Any]:
     def progress(stage: str, current: int, total: int, message: str) -> None:
         if on_progress:
@@ -1019,8 +1156,25 @@ def export_video(
             mux_audio_path = adjusted_narration_path
             progress("audio", 1, 1, "Narration normalized")
 
-    progress("encode", 0, 1, f"Muxing audio with {encoder_name}…")
-    mux_audio(video_only, mux_audio_path, output_path, enc_args, should_cancel=should_cancel)
+    subtitles_count = 0
+    subtitles_path = work_dir / "captions.srt"
+    if include_subtitles:
+        progress("encode", 0, 2, "Generating subtitles from Whisper timing…")
+        subtitles_count = write_refined_subtitles_srt(timestamps_path, subtitles_path)
+
+    if include_subtitles and subtitles_count > 0:
+        progress("encode", 1, 2, f"Burning {subtitles_count} subtitle cues…")
+        mux_audio_with_subtitles(
+            video_only,
+            mux_audio_path,
+            subtitles_path,
+            output_path,
+            enc_args,
+            should_cancel=should_cancel,
+        )
+    else:
+        progress("encode", 0, 1, f"Muxing audio with {encoder_name}…")
+        mux_audio(video_only, mux_audio_path, output_path, enc_args, should_cancel=should_cancel)
     if output_path.exists() and output_path.stat().st_size < 500 * 1024 * 1024:
         progress("encode", 1, 1, "Optimizing for download…")
         add_faststart(output_path, should_cancel=should_cancel)
@@ -1032,6 +1186,8 @@ def export_video(
         "missing_broll": missing,
         "background_audio": str(background_audio_path.resolve()) if background_audio_path else None,
         "audio_mix": mix_gains,
+        "subtitles_burned": bool(include_subtitles and subtitles_count > 0),
+        "subtitles_count": subtitles_count,
     }
 
 

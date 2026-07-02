@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import os
-import urllib.error
-import urllib.request
 from pathlib import Path
-from typing import Any
 
+from openai_http import openai_json_message
 from youtube_description import _script_context
 
-OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
 THUMBNAIL_MODEL = "gpt-4o-mini"
 
 # Proven formats from vidIQ's 2026 thumbnail guide:
@@ -46,62 +41,61 @@ Best practices:
 """.strip()
 
 
-def _openai_thumbnail_prompts(*, title: str, narration: str) -> list[dict[str, str]]:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing")
+def _ensure_youtube_thumbnail_prompt(text: str) -> str:
+    """Guarantee the paste-ready prompt names YouTube thumbnail specs."""
+    cleaned = text.strip()
+    if not cleaned:
+        return cleaned
+    lower = cleaned.lower()
+    has_youtube = "youtube" in lower
+    has_thumbnail = "thumbnail" in lower
+    has_ratio = "16:9" in lower or "16×9" in lower or "1280" in lower
+    if has_youtube and has_thumbnail and has_ratio:
+        return cleaned
+    prefix = (
+        "YouTube video thumbnail, 16:9 aspect ratio (1280×720), "
+        "click-optimized for the YouTube home/browse feed. "
+    )
+    return prefix + cleaned
 
+
+def _openai_thumbnail_prompts(*, title: str, narration: str) -> list[dict[str, str]]:
     display_title = title or "Untitled video"
+    context = narration or display_title
+    if len(context) > 8_000:
+        context = context[:8_000] + "…"
     prompt = (
         "You are a YouTube thumbnail strategist. Create TWO distinct A/B test thumbnail "
         "prompts for AI image generation (Midjourney, DALL·E, Ideogram, etc.).\n\n"
         f"Video title: {display_title}\n\n"
         "Script / narration (for context only):\n"
-        f"{narration or display_title}\n\n"
+        f"{context}\n\n"
         f"{THUMBNAIL_FORMATS}\n\n"
         "Task:\n"
         "- Choose TWO different formats/styles that fit THIS video best (do not pick the same format twice)\n"
-        "- Each prompt must be a complete, paste-ready image-generation prompt (English)\n"
-        "- Include: aspect ratio 16:9, composition, subject, lighting, color palette, "
-        "on-image text (≤3 words) if any, and what to avoid (bottom-right clutter, tiny text)\n"
+        "- Each `prompt` must be a complete, paste-ready AI image-generation prompt (English)\n"
+        "- EVERY `prompt` MUST explicitly state it is a **YouTube video thumbnail** (use those words near the start)\n"
+        "- EVERY `prompt` MUST include: 16:9 aspect ratio, 1280×720 resolution, optimized for the YouTube home/browse feed\n"
+        "- Also include: composition, subject, lighting, color palette, on-image text (≤3 words) if any, "
+        "and what to avoid (bottom-right clutter, tiny text, movie poster, generic wallpaper)\n"
+        "- Do NOT write a generic scene or movie still — this is specifically a click-optimized YouTube thumbnail\n"
         "- Prompts must be accurate to the video — no misleading clickbait\n"
         "- Variation A and B should feel meaningfully different for a real A/B test\n\n"
+        "Example prompt opening: "
+        "YouTube video thumbnail, 16:9 (1280x720), click-optimized for the YouTube feed, ...\n\n"
         "Return JSON only:\n"
         '{"prompts":[{"label":"A","style":"...","visual_approach":"...","rationale":"...",'
         '"prompt":"..."},{"label":"B","style":"...","visual_approach":"...","rationale":"...",'
         '"prompt":"..."}]}'
     )
 
-    body = json.dumps(
-        {
-            "model": THUMBNAIL_MODEL,
-            "temperature": 0.75,
-            "max_tokens": 1800,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "user", "content": prompt}],
-        }
-    ).encode("utf-8")
-
-    request = urllib.request.Request(
-        OPENAI_CHAT_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "Billions-BrollViewer/1.0",
-        },
-        method="POST",
+    parsed = openai_json_message(
+        model=THUMBNAIL_MODEL,
+        prompt=prompt,
+        temperature=0.75,
+        max_tokens=1800,
+        timeout=120,
     )
-
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenAI API error {exc.code}: {raw}") from exc
-
-    message = payload["choices"][0]["message"]["content"]
-    parsed = json.loads(message)
     raw_prompts = parsed.get("prompts") or []
     if not isinstance(raw_prompts, list) or len(raw_prompts) < 2:
         raise RuntimeError("OpenAI did not return two thumbnail prompts")
@@ -117,6 +111,7 @@ def _openai_thumbnail_prompts(*, title: str, narration: str) -> list[dict[str, s
         image_prompt = str(item.get("prompt") or "").strip()
         if not image_prompt:
             continue
+        image_prompt = _ensure_youtube_thumbnail_prompt(image_prompt)
         results.append(
             {
                 "label": label[:1] if label else ("A" if index == 0 else "B"),
