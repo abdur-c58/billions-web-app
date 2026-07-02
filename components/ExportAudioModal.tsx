@@ -656,7 +656,7 @@ export function ExportAudioModal({
                       checked={includeSubtitles}
                       onCheckedChange={(checked) => setIncludeSubtitles(checked === true)}
                     />
-                    Include subtitles
+                    Include subtitles 
                   </label>
                   <p className="mt-2 text-xs text-white/45">
                     Subtitles are auto-generated from Whisper timing with sentence-level refinement.
