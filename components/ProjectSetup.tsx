@@ -243,7 +243,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                           : setup.status?.timestamps_ready || timestampsDone
                             ? alignmentSummary
                               ? `${alignmentSummary.aligned_segments}/${alignmentSummary.total_segments} Whisper-aligned · ${alignmentSummary.timed_segments}/${alignmentSummary.total_segments} timestamps`
-                              : `${setup.status.aligned_segments}/${setup.status.segment_count} segments ready`
+                              : `${setup.status?.aligned_segments ?? 0}/${setup.status?.segment_count ?? 0} segments ready`
                             : "Generate timestamps with Whisper or import an existing JSON file."}
                     </p>
                   </div>

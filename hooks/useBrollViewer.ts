@@ -15,6 +15,7 @@ import type {
   JudgmentSummary,
   ScriptFormat,
   SegmentsPayload,
+  TimestampAlignment,
   ViewerSegment,
 } from "@/lib/types";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
