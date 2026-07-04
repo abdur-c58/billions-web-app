@@ -178,10 +178,21 @@ export type SegmentsPayload = {
   script?: string;
   script_format?: ScriptFormat;
   video_duration_s?: number | null;
+  timestamp_alignment?: TimestampAlignment | null;
   segments: ViewerSegment[];
   judgment_summary?: JudgmentSummary;
   ai_judge?: AiJudgeStatus;
   export_inputs_hash?: string;
+};
+
+export type TimestampAlignment = {
+  total_segments: number;
+  aligned_segments: number;
+  timed_segments: number;
+  interpolated_segments?: number;
+  estimated_segments?: number;
+  total_duration_seconds?: number;
+  total_duration_timecode?: string;
 };
 
 export type FetchPayload = {

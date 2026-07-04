@@ -47,6 +47,7 @@ export function useBrollViewer() {
   const [projectFolder, setProjectFolder] = useState("");
   const [scriptFormat, setScriptFormat] = useState<ScriptFormat>("legacy");
   const [videoDurationS, setVideoDurationS] = useState<number | null>(null);
+  const [timestampAlignment, setTimestampAlignment] = useState<TimestampAlignment | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [beatFilter, setBeatFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
@@ -196,6 +197,7 @@ export function useBrollViewer() {
     setVideoDurationS(
       typeof payload.video_duration_s === "number" ? payload.video_duration_s : null,
     );
+    setTimestampAlignment(payload.timestamp_alignment ?? null);
     if (payload.ai_judge) {
       setAiJudge(payload.ai_judge);
     }
@@ -1045,6 +1047,7 @@ export function useBrollViewer() {
     title,
     projectFolder,
     scriptFormat,
+    timestampAlignment,
     searchQuery,
     setSearchQuery,
     beatFilter,

@@ -807,6 +807,59 @@ def probe_duration(audio_path: Path) -> float:
     return float(result.stdout.strip())
 
 
+def probe_decoded_duration(audio_path: Path) -> float:
+    """How much audio ffmpeg can actually decode (handles lying MP3 headers)."""
+    result = subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-i",
+            str(audio_path),
+            "-map",
+            "0:a:0",
+            "-f",
+            "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    output = (result.stderr or "") + (result.stdout or "")
+    matches = re.findall(r"time=(\d+):(\d+):(\d+(?:\.\d+)?)", output)
+    if not matches:
+        raise RuntimeError(f"Could not decode audio duration for {audio_path.name}")
+    hours, minutes, seconds = matches[-1]
+    return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+
+
+def validate_narration_audio(
+    audio_path: Path,
+    *,
+    min_expected_seconds: float | None = None,
+) -> float:
+    """Ensure narration is fully decodable; raise if metadata oversells the file."""
+    tagged = probe_duration(audio_path)
+    decoded = probe_decoded_duration(audio_path)
+    if decoded < 5:
+        raise RuntimeError(
+            f"Narration audio {audio_path.name} has no usable audio. Re-upload the MP3."
+        )
+    if tagged - decoded > 30:
+        raise RuntimeError(
+            f"Narration audio {audio_path.name} looks incomplete: the file reports "
+            f"{tagged / 60:.1f} min but ffmpeg only decodes {decoded / 60:.1f} min. "
+            "Re-upload the full narration MP3, then re-run segment timestamps and export."
+        )
+    if min_expected_seconds is not None and decoded + 30 < min_expected_seconds:
+        raise RuntimeError(
+            f"Narration audio is only {decoded / 60:.1f} min long, but the timeline needs "
+            f"about {min_expected_seconds / 60:.1f} min. Re-upload the full MP3 and re-run "
+            "segment timestamps before exporting."
+        )
+    return decoded
+
+
 def probe_mean_volume(audio_path: Path, max_probe_seconds: float | None = 120.0) -> float:
     command = ["ffmpeg", "-hide_banner"]
     if max_probe_seconds:
@@ -883,7 +936,7 @@ def build_mixed_audio(
     if gains is None:
         gains = compute_mix_gains(narration_path, background_path)
 
-    duration = probe_duration(narration_path)
+    duration = validate_narration_audio(narration_path)
     if preview_seconds is not None:
         duration = min(duration, preview_seconds)
     duration_str = f"{duration:.3f}"
@@ -936,7 +989,7 @@ def render_narration_audio(
     preview_seconds: float | None = None,
     should_cancel: CancelCheck | None = None,
 ) -> None:
-    duration = probe_duration(narration_path)
+    duration = probe_decoded_duration(narration_path)
     if preview_seconds is not None:
         duration = min(duration, preview_seconds)
     duration_str = f"{duration:.3f}"
@@ -1033,6 +1086,12 @@ def export_video(
     segments = load_segments(timestamps_path, selections_path)
     if not segments:
         raise RuntimeError("No timed segments found in timestamps file")
+
+    timeline_seconds = sum(segment["duration"] for segment in segments)
+    validate_narration_audio(
+        audio_path,
+        min_expected_seconds=timeline_seconds,
+    )
 
     res_key = resolution.lower().replace(" ", "")
     out_width, out_height = RESOLUTION_MAP.get(res_key, RESOLUTION_MAP[DEFAULT_RESOLUTION])
@@ -1153,8 +1212,17 @@ def export_video(
                 mix_gains["narration_gain_db"],
                 should_cancel=should_cancel,
             )
-            mux_audio_path = adjusted_narration_path
-            progress("audio", 1, 1, "Narration normalized")
+        mux_audio_path = adjusted_narration_path
+        progress("audio", 1, 1, "Narration normalized")
+
+    video_duration = probe_duration(video_only)
+    audio_duration = probe_decoded_duration(mux_audio_path)
+    if audio_duration + 5 < video_duration:
+        raise RuntimeError(
+            f"Final audio is only {audio_duration / 60:.1f} min but rendered video is "
+            f"{video_duration / 60:.1f} min. The narration MP3 is likely incomplete — "
+            "re-upload the full file, re-run segment timestamps, and export again."
+        )
 
     subtitles_count = 0
     subtitles_path = work_dir / "captions.srt"

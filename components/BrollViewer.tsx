@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportAudioModal } from "@/components/ExportAudioModal";
 import { FlagClipModal } from "@/components/FlagClipModal";
+import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { StorageClipSelectModal } from "@/components/StorageClipSelectModal";
 import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
@@ -323,6 +324,11 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
             <p className="mt-0.5 text-xs text-[var(--muted)]">
               {viewer.projectFolder}
             </p>
+            {viewer.timestampAlignment ? (
+              <div className="mt-3 max-w-2xl">
+                <SegmentationAlignmentSummary alignment={viewer.timestampAlignment} />
+              </div>
+            ) : null}
             {!viewer.backendReady ? (
               <p className="mt-1 text-[0.82rem] text-[#ffc9c9]">
                 API offline — run <code className="text-[var(--foreground)]">npm run dev:all</code>{" "}

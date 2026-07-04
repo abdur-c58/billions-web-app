@@ -1,0 +1,1774 @@
+{
+  "words": [
+    {
+      "word": "Every",
+      "start": 0.0,
+      "end": 0.34
+    },
+    {
+      "word": "year,",
+      "start": 0.34,
+      "end": 0.76
+    },
+    {
+      "word": "thousands",
+      "start": 1.06,
+      "end": 1.5
+    },
+    {
+      "word": "of",
+      "start": 1.5,
+      "end": 1.74
+    },
+    {
+      "word": "people",
+      "start": 1.74,
+      "end": 2.0
+    },
+    {
+      "word": "are",
+      "start": 2.0,
+      "end": 2.2
+    },
+    {
+      "word": "killed",
+      "start": 2.2,
+      "end": 2.4
+    },
+    {
+      "word": "by",
+      "start": 2.4,
+      "end": 2.62
+    },
+    {
+      "word": "animals",
+      "start": 2.62,
+      "end": 2.98
+    },
+    {
+      "word": "they",
+      "start": 2.98,
+      "end": 3.24
+    },
+    {
+      "word": "didn't",
+      "start": 3.24,
+      "end": 3.5
+    },
+    {
+      "word": "recognize",
+      "start": 3.5,
+      "end": 4.0
+    },
+    {
+      "word": "as",
+      "start": 4.0,
+      "end": 4.26
+    },
+    {
+      "word": "dangerous.",
+      "start": 4.26,
+      "end": 4.7
+    },
+    {
+      "word": "Not",
+      "start": 5.34,
+      "end": 5.6
+    },
+    {
+      "word": "because",
+      "start": 5.6,
+      "end": 5.88
+    },
+    {
+      "word": "they",
+      "start": 5.88,
+      "end": 6.08
+    },
+    {
+      "word": "were",
+      "start": 6.08,
+      "end": 6.2
+    },
+    {
+      "word": "careless,",
+      "start": 6.2,
+      "end": 6.58
+    },
+    {
+      "word": "not",
+      "start": 7.22,
+      "end": 7.38
+    },
+    {
+      "word": "because",
+      "start": 7.38,
+      "end": 7.68
+    },
+    {
+      "word": "they",
+      "start": 7.68,
+      "end": 7.86
+    },
+    {
+      "word": "were",
+      "start": 7.86,
+      "end": 8.0
+    },
+    {
+      "word": "reckless.",
+      "start": 8.0,
+      "end": 8.36
+    },
+    {
+      "word": "Because",
+      "start": 8.88,
+      "end": 9.1
+    },
+    {
+      "word": "the",
+      "start": 9.1,
+      "end": 9.28
+    },
+    {
+      "word": "animal",
+      "start": 9.28,
+      "end": 9.56
+    },
+    {
+      "word": "in",
+      "start": 9.56,
+      "end": 9.72
+    },
+    {
+      "word": "question",
+      "start": 9.72,
+      "end": 10.1
+    },
+    {
+      "word": "looked",
+      "start": 10.1,
+      "end": 10.4
+    },
+    {
+      "word": "exactly",
+      "start": 10.4,
+      "end": 10.84
+    },
+    {
+      "word": "like",
+      "start": 10.84,
+      "end": 11.14
+    },
+    {
+      "word": "something",
+      "start": 11.14,
+      "end": 11.42
+    },
+    {
+      "word": "you'd",
+      "start": 11.42,
+      "end": 11.72
+    },
+    {
+      "word": "photograph.",
+      "start": 11.72,
+      "end": 12.22
+    },
+    {
+      "word": "Pick",
+      "start": 12.8,
+      "end": 13.04
+    },
+    {
+      "word": "up",
+      "start": 13.04,
+      "end": 13.2
+    },
+    {
+      "word": "off",
+      "start": 13.2,
+      "end": 13.36
+    },
+    {
+      "word": "a",
+      "start": 13.36,
+      "end": 13.48
+    },
+    {
+      "word": "beach,",
+      "start": 13.48,
+      "end": 13.7
+    },
+    {
+      "word": "keep",
+      "start": 14.22,
+      "end": 14.46
+    },
+    {
+      "word": "as",
+      "start": 14.46,
+      "end": 14.62
+    },
+    {
+      "word": "a",
+      "start": 14.62,
+      "end": 14.76
+    },
+    {
+      "word": "pet,",
+      "start": 14.76,
+      "end": 14.98
+    },
+    {
+      "word": "or",
+      "start": 15.58,
+      "end": 15.8
+    },
+    {
+      "word": "walk",
+      "start": 15.8,
+      "end": 16.02
+    },
+    {
+      "word": "past",
+      "start": 16.02,
+      "end": 16.42
+    },
+    {
+      "word": "without",
+      "start": 16.42,
+      "end": 16.68
+    },
+    {
+      "word": "a",
+      "start": 16.68,
+      "end": 16.88
+    },
+    {
+      "word": "second",
+      "start": 16.88,
+      "end": 17.14
+    },
+    {
+      "word": "thought,",
+      "start": 17.14,
+      "end": 17.54
+    },
+    {
+      "word": "and",
+      "start": 17.92,
+      "end": 18.08
+    },
+    {
+      "word": "then",
+      "start": 18.08,
+      "end": 18.2
+    },
+    {
+      "word": "it",
+      "start": 18.2,
+      "end": 18.32
+    },
+    {
+      "word": "killed",
+      "start": 18.32,
+      "end": 18.62
+    },
+    {
+      "word": "them",
+      "start": 18.62,
+      "end": 18.84
+    },
+    {
+      "word": "before",
+      "start": 18.84,
+      "end": 19.1
+    },
+    {
+      "word": "they",
+      "start": 19.1,
+      "end": 19.32
+    },
+    {
+      "word": "understood",
+      "start": 19.32,
+      "end": 19.66
+    },
+    {
+      "word": "what",
+      "start": 19.66,
+      "end": 19.94
+    },
+    {
+      "word": "was",
+      "start": 19.94,
+      "end": 20.16
+    },
+    {
+      "word": "happening.",
+      "start": 20.16,
+      "end": 20.48
+    },
+    {
+      "word": "The",
+      "start": 21.22,
+      "end": 21.46
+    },
+    {
+      "word": "animals",
+      "start": 21.46,
+      "end": 21.76
+    },
+    {
+      "word": "on",
+      "start": 21.76,
+      "end": 22.0
+    },
+    {
+      "word": "this",
+      "start": 22.0,
+      "end": 22.2
+    },
+    {
+      "word": "list",
+      "start": 22.2,
+      "end": 22.46
+    },
+    {
+      "word": "don't",
+      "start": 22.46,
+      "end": 22.8
+    },
+    {
+      "word": "look",
+      "start": 22.8,
+      "end": 22.98
+    },
+    {
+      "word": "like",
+      "start": 22.98,
+      "end": 23.2
+    },
+    {
+      "word": "predators.",
+      "start": 23.2,
+      "end": 23.64
+    },
+    {
+      "word": "They",
+      "start": 24.4,
+      "end": 24.58
+    },
+    {
+      "word": "don't",
+      "start": 24.58,
+      "end": 24.82
+    },
+    {
+      "word": "have",
+      "start": 24.82,
+      "end": 24.94
+    },
+    {
+      "word": "the",
+      "start": 24.94,
+      "end": 25.08
+    },
+    {
+      "word": "teeth,",
+      "start": 25.08,
+      "end": 25.4
+    },
+    {
+      "word": "the",
+      "start": 25.88,
+      "end": 25.98
+    },
+    {
+      "word": "size,",
+      "start": 25.98,
+      "end": 26.36
+    },
+    {
+      "word": "or",
+      "start": 26.36,
+      "end": 27.02
+    },
+    {
+      "word": "the",
+      "start": 27.02,
+      "end": 27.16
+    },
+    {
+      "word": "silhouette",
+      "start": 27.16,
+      "end": 27.52
+    },
+    {
+      "word": "that",
+      "start": 27.52,
+      "end": 27.82
+    },
+    {
+      "word": "triggers",
+      "start": 27.82,
+      "end": 28.08
+    },
+    {
+      "word": "a",
+      "start": 28.08,
+      "end": 28.3
+    },
+    {
+      "word": "fear",
+      "start": 28.3,
+      "end": 28.5
+    },
+    {
+      "word": "response",
+      "start": 28.5,
+      "end": 28.92
+    },
+    {
+      "word": "in",
+      "start": 28.92,
+      "end": 29.16
+    },
+    {
+      "word": "a",
+      "start": 29.16,
+      "end": 29.26
+    },
+    {
+      "word": "human",
+      "start": 29.26,
+      "end": 29.48
+    },
+    {
+      "word": "brain.",
+      "start": 29.48,
+      "end": 29.9
+    },
+    {
+      "word": "Several",
+      "start": 30.66,
+      "end": 31.04
+    },
+    {
+      "word": "of",
+      "start": 31.04,
+      "end": 31.2
+    },
+    {
+      "word": "them",
+      "start": 31.2,
+      "end": 31.36
+    },
+    {
+      "word": "are",
+      "start": 31.36,
+      "end": 31.48
+    },
+    {
+      "word": "actively",
+      "start": 31.48,
+      "end": 31.82
+    },
+    {
+      "word": "described",
+      "start": 31.82,
+      "end": 32.38
+    },
+    {
+      "word": "as",
+      "start": 32.38,
+      "end": 32.58
+    },
+    {
+      "word": "cute.",
+      "start": 32.58,
+      "end": 32.9
+    },
+    {
+      "word": "One",
+      "start": 33.6,
+      "end": 33.84
+    },
+    {
+      "word": "of",
+      "start": 33.84,
+      "end": 33.94
+    },
+    {
+      "word": "them",
+      "start": 33.94,
+      "end": 34.08
+    },
+    {
+      "word": "is",
+      "start": 34.08,
+      "end": 34.2
+    },
+    {
+      "word": "curled",
+      "start": 34.2,
+      "end": 34.58
+    },
+    {
+      "word": "up",
+      "start": 34.58,
+      "end": 34.7
+    },
+    {
+      "word": "in",
+      "start": 34.7,
+      "end": 34.84
+    },
+    {
+      "word": "the",
+      "start": 34.84,
+      "end": 34.94
+    },
+    {
+      "word": "homes",
+      "start": 34.94,
+      "end": 35.24
+    },
+    {
+      "word": "of",
+      "start": 35.24,
+      "end": 35.44
+    },
+    {
+      "word": "roughly",
+      "start": 35.44,
+      "end": 35.74
+    },
+    {
+      "word": "a",
+      "start": 35.74,
+      "end": 35.92
+    },
+    {
+      "word": "third",
+      "start": 35.92,
+      "end": 36.12
+    },
+    {
+      "word": "of",
+      "start": 36.12,
+      "end": 36.34
+    },
+    {
+      "word": "the",
+      "start": 36.34,
+      "end": 36.44
+    },
+    {
+      "word": "global",
+      "start": 36.44,
+      "end": 36.74
+    },
+    {
+      "word": "population",
+      "start": 36.74,
+      "end": 37.48
+    },
+    {
+      "word": "right",
+      "start": 37.48,
+      "end": 37.76
+    },
+    {
+      "word": "now,",
+      "start": 37.76,
+      "end": 38.16
+    },
+    {
+      "word": "carrying",
+      "start": 38.68,
+      "end": 39.08
+    },
+    {
+      "word": "a",
+      "start": 39.08,
+      "end": 39.26
+    },
+    {
+      "word": "parasite",
+      "start": 39.26,
+      "end": 39.72
+    },
+    {
+      "word": "that",
+      "start": 39.72,
+      "end": 40.16
+    },
+    {
+      "word": "has",
+      "start": 40.16,
+      "end": 40.3
+    },
+    {
+      "word": "infected",
+      "start": 40.3,
+      "end": 40.76
+    },
+    {
+      "word": "an",
+      "start": 40.76,
+      "end": 40.96
+    },
+    {
+      "word": "estimated",
+      "start": 40.96,
+      "end": 41.38
+    },
+    {
+      "word": "one",
+      "start": 41.38,
+      "end": 41.78
+    },
+    {
+      "word": "to",
+      "start": 41.78,
+      "end": 41.94
+    },
+    {
+      "word": "two",
+      "start": 41.94,
+      "end": 42.14
+    },
+    {
+      "word": "billion",
+      "start": 42.14,
+      "end": 42.48
+    },
+    {
+      "word": "people",
+      "start": 42.48,
+      "end": 42.96
+    },
+    {
+      "word": "worldwide",
+      "start": 42.96,
+      "end": 43.66
+    },
+    {
+      "word": "without",
+      "start": 43.66,
+      "end": 44.4
+    },
+    {
+      "word": "most",
+      "start": 44.4,
+      "end": 44.74
+    },
+    {
+      "word": "of",
+      "start": 44.74,
+      "end": 44.94
+    },
+    {
+      "word": "them",
+      "start": 44.94,
+      "end": 45.14
+    },
+    {
+      "word": "ever",
+      "start": 45.14,
+      "end": 45.42
+    },
+    {
+      "word": "knowing",
+      "start": 45.42,
+      "end": 45.74
+    },
+    {
+      "word": "it.",
+      "start": 45.74,
+      "end": 45.98
+    },
+    {
+      "word": "Today",
+      "start": 46.54,
+      "end": 46.86
+    },
+    {
+      "word": "we're",
+      "start": 46.86,
+      "end": 47.2
+    },
+    {
+      "word": "ranking",
+      "start": 47.2,
+      "end": 47.44
+    },
+    {
+      "word": "ten",
+      "start": 47.44,
+      "end": 47.74
+    },
+    {
+      "word": "animals",
+      "start": 47.74,
+      "end": 48.14
+    },
+    {
+      "word": "that",
+      "start": 48.14,
+      "end": 48.38
+    },
+    {
+      "word": "kill",
+      "start": 48.38,
+      "end": 48.64
+    },
+    {
+      "word": "people",
+      "start": 48.64,
+      "end": 48.98
+    },
+    {
+      "word": "who",
+      "start": 48.98,
+      "end": 49.18
+    },
+    {
+      "word": "had",
+      "start": 49.18,
+      "end": 49.34
+    },
+    {
+      "word": "no",
+      "start": 49.34,
+      "end": 49.54
+    },
+    {
+      "word": "idea",
+      "start": 49.54,
+      "end": 49.88
+    },
+    {
+      "word": "they",
+      "start": 49.88,
+      "end": 50.1
+    },
+    {
+      "word": "were",
+      "start": 50.1,
+      "end": 50.24
+    },
+    {
+      "word": "in",
+      "start": 50.24,
+      "end": 50.4
+    },
+    {
+      "word": "danger,",
+      "start": 50.4,
+      "end": 50.8
+    },
+    {
+      "word": "from",
+      "start": 51.08,
+      "end": 51.48
+    },
+    {
+      "word": "the",
+      "start": 51.48,
+      "end": 51.64
+    },
+    {
+      "word": "least",
+      "start": 51.64,
+      "end": 51.9
+    },
+    {
+      "word": "to",
+      "start": 51.9,
+      "end": 52.08
+    },
+    {
+      "word": "the",
+      "start": 52.08,
+      "end": 52.18
+    },
+    {
+      "word": "most",
+      "start": 52.18,
+      "end": 52.38
+    },
+    {
+      "word": "deaths",
+      "start": 52.38,
+      "end": 52.72
+    },
+    {
+      "word": "per",
+      "start": 52.72,
+      "end": 53.04
+    },
+    {
+      "word": "year.",
+      "start": 53.04,
+      "end": 53.36
+    },
+    {
+      "word": "The",
+      "start": 54.08,
+      "end": 54.22
+    },
+    {
+      "word": "ranking",
+      "start": 54.22,
+      "end": 54.5
+    },
+    {
+      "word": "is",
+      "start": 54.5,
+      "end": 54.74
+    },
+    {
+      "word": "going",
+      "start": 54.74,
+      "end": 54.92
+    },
+    {
+      "word": "to",
+      "start": 54.92,
+      "end": 55.08
+    },
+    {
+      "word": "invert",
+      "start": 55.08,
+      "end": 55.42
+    },
+    {
+      "word": "almost",
+      "start": 55.42,
+      "end": 55.72
+    },
+    {
+      "word": "everything",
+      "start": 55.72,
+      "end": 56.22
+    },
+    {
+      "word": "most",
+      "start": 56.22,
+      "end": 56.5
+    },
+    {
+      "word": "people",
+      "start": 56.5,
+      "end": 56.84
+    },
+    {
+      "word": "think",
+      "start": 56.84,
+      "end": 57.1
+    },
+    {
+      "word": "they",
+      "start": 57.1,
+      "end": 57.32
+    },
+    {
+      "word": "know",
+      "start": 57.32,
+      "end": 57.54
+    },
+    {
+      "word": "about",
+      "start": 57.54,
+      "end": 57.74
+    },
+    {
+      "word": "which",
+      "start": 57.74,
+      "end": 58.0
+    },
+    {
+      "word": "animals",
+      "start": 58.0,
+      "end": 58.38
+    },
+    {
+      "word": "are",
+      "start": 58.38,
+      "end": 58.62
+    },
+    {
+      "word": "worth",
+      "start": 58.62,
+      "end": 58.82
+    },
+    {
+      "word": "being",
+      "start": 58.82,
+      "end": 59.06
+    },
+    {
+      "word": "afraid",
+      "start": 59.06,
+      "end": 59.4
+    },
+    {
+      "word": "of.",
+      "start": 59.4,
+      "end": 59.74
+    },
+    {
+      "word": "Because",
+      "start": 60.2,
+      "end": 60.52
+    },
+    {
+      "word": "the",
+      "start": 60.52,
+      "end": 60.7
+    },
+    {
+      "word": "actual",
+      "start": 60.7,
+      "end": 61.12
+    },
+    {
+      "word": "killers",
+      "start": 61.12,
+      "end": 61.48
+    },
+    {
+      "word": "on",
+      "start": 61.48,
+      "end": 61.72
+    },
+    {
+      "word": "this",
+      "start": 61.72,
+      "end": 61.92
+    },
+    {
+      "word": "list",
+      "start": 61.92,
+      "end": 62.3
+    },
+    {
+      "word": "aren't",
+      "start": 62.3,
+      "end": 62.86
+    },
+    {
+      "word": "the",
+      "start": 62.86,
+      "end": 62.96
+    },
+    {
+      "word": "ones",
+      "start": 62.96,
+      "end": 63.2
+    },
+    {
+      "word": "with",
+      "start": 63.2,
+      "end": 63.4
+    },
+    {
+      "word": "any",
+      "start": 63.4,
+      "end": 63.58
+    },
+    {
+      "word": "kind",
+      "start": 63.58,
+      "end": 63.86
+    },
+    {
+      "word": "of",
+      "start": 63.86,
+      "end": 63.98
+    },
+    {
+      "word": "reputation",
+      "start": 63.98,
+      "end": 64.4
+    },
+    {
+      "word": "for",
+      "start": 64.4,
+      "end": 64.88
+    },
+    {
+      "word": "it",
+      "start": 64.88,
+      "end": 65.02
+    },
+    {
+      "word": "at",
+      "start": 65.02,
+      "end": 65.12
+    },
+    {
+      "word": "all.",
+      "start": 65.12,
+      "end": 65.4
+    },
+    {
+      "word": "Every",
+      "start": 66.04,
+      "end": 66.32
+    },
+    {
+      "word": "number",
+      "start": 66.32,
+      "end": 66.64
+    },
+    {
+      "word": "in",
+      "start": 66.64,
+      "end": 66.82
+    },
+    {
+      "word": "this",
+      "start": 66.82,
+      "end": 66.98
+    },
+    {
+      "word": "video",
+      "start": 66.98,
+      "end": 67.32
+    },
+    {
+      "word": "is",
+      "start": 67.32,
+      "end": 67.78
+    },
+    {
+      "word": "sourced",
+      "start": 67.78,
+      "end": 68.2
+    },
+    {
+      "word": "from",
+      "start": 68.2,
+      "end": 68.36
+    },
+    {
+      "word": "peer",
+      "start": 68.36,
+      "end": 68.66
+    },
+    {
+      "word": "-reviewed",
+      "start": 68.66,
+      "end": 69.1
+    },
+    {
+      "word": "research,",
+      "start": 69.1,
+      "end": 69.46
+    },
+    {
+      "word": "WHO",
+      "start": 70.2,
+      "end": 70.62
+    },
+    {
+      "word": "data,",
+      "start": 70.62,
+      "end": 71.12
+    },
+    {
+      "word": "and",
+      "start": 71.8,
+      "end": 71.94
+    },
+    {
+      "word": "published",
+      "start": 71.94,
+      "end": 72.28
+    },
+    {
+      "word": "epidemiological",
+      "start": 72.28,
+      "end": 73.22
+    },
+    {
+      "word": "studies.",
+      "start": 73.22,
+      "end": 73.7
+    },
+    {
+      "word": "Where",
+      "start": 74.16,
+      "end": 74.34
+    },
+    {
+      "word": "estimates",
+      "start": 74.34,
+      "end": 74.68
+    },
+    {
+      "word": "are",
+      "start": 74.68,
+      "end": 74.98
+    },
+    {
+      "word": "uncertain,",
+      "start": 74.98,
+      "end": 75.48
+    },
+    {
+      "word": "we'll",
+      "start": 75.78,
+      "end": 76.02
+    },
+    {
+      "word": "tell",
+      "start": 76.02,
+      "end": 76.22
+    },
+    {
+      "word": "you",
+      "start": 76.22,
+      "end": 76.36
+    },
+    {
+      "word": "that",
+      "start": 76.36,
+      "end": 76.54
+    },
+    {
+      "word": "explicitly,",
+      "start": 76.54,
+      "end": 77.14
+    },
+    {
+      "word": "rather",
+      "start": 77.6,
+      "end": 77.9
+    },
+    {
+      "word": "than",
+      "start": 77.9,
+      "end": 78.14
+    },
+    {
+      "word": "presenting",
+      "start": 78.14,
+      "end": 78.58
+    },
+    {
+      "word": "a",
+      "start": 78.58,
+      "end": 78.8
+    },
+    {
+      "word": "wide",
+      "start": 78.8,
+      "end": 79.08
+    },
+    {
+      "word": "-range",
+      "start": 79.08,
+      "end": 79.32
+    },
+    {
+      "word": "guess",
+      "start": 79.32,
+      "end": 79.72
+    },
+    {
+      "word": "as",
+      "start": 79.72,
+      "end": 80.14
+    },
+    {
+      "word": "a",
+      "start": 80.14,
+      "end": 80.24
+    },
+    {
+      "word": "confirmed",
+      "start": 80.24,
+      "end": 80.72
+    },
+    {
+      "word": "figure.",
+      "start": 80.72,
+      "end": 81.1
+    },
+    {
+      "word": "Hit",
+      "start": 81.62,
+      "end": 81.94
+    },
+    {
+      "word": "subscribe",
+      "start": 81.94,
+      "end": 82.28
+    },
+    {
+      "word": "now",
+      "start": 82.28,
+      "end": 82.74
+    },
+    {
+      "word": "if",
+      "start": 82.74,
+      "end": 83.04
+    },
+    {
+      "word": "you're",
+      "start": 83.04,
+      "end": 83.22
+    },
+    {
+      "word": "new",
+      "start": 83.22,
+      "end": 83.36
+    },
+    {
+      "word": "to",
+      "start": 83.36,
+      "end": 83.52
+    },
+    {
+      "word": "Apex",
+      "start": 83.52,
+      "end": 83.8
+    },
+    {
+      "word": "Archives.",
+      "start": 83.8,
+      "end": 84.36
+    },
+    {
+      "word": "This",
+      "start": 85.08,
+      "end": 85.34
+    },
+    {
+      "word": "is",
+      "start": 85.34,
+      "end": 85.46
+    },
+    {
+      "word": "exactly",
+      "start": 85.46,
+      "end": 85.9
+    },
+    {
+      "word": "the",
+      "start": 85.9,
+      "end": 86.1
+    },
+    {
+      "word": "kind",
+      "start": 86.1,
+      "end": 86.28
+    },
+    {
+      "word": "of",
+      "start": 86.28,
+      "end": 86.42
+    },
+    {
+      "word": "video",
+      "start": 86.42,
+      "end": 86.64
+    },
+    {
+      "word": "we",
+      "start": 86.64,
+      "end": 86.88
+    },
+    {
+      "word": "make",
+      "start": 86.88,
+      "end": 87.08
+    },
+    {
+      "word": "every",
+      "start": 87.08,
+      "end": 87.34
+    },
+    {
+      "word": "week.",
+      "start": 87.34,
+      "end": 87.62
+    },
+    {
+      "word": "And",
+      "start": 88.28,
+      "end": 88.52
+    },
+    {
+      "word": "the",
+      "start": 88.52,
+      "end": 88.62
+    },
+    {
+      "word": "next",
+      "start": 88.62,
+      "end": 88.82
+    },
+    {
+      "word": "one",
+      "start": 88.82,
+      "end": 89.04
+    },
+    {
+      "word": "is",
+      "start": 89.04,
+      "end": 89.18
+    },
+    {
+      "word": "going",
+      "start": 89.18,
+      "end": 89.34
+    },
+    {
+      "word": "to",
+      "start": 89.34,
+      "end": 89.48
+    },
+    {
+      "word": "cover",
+      "start": 89.48,
+      "end": 89.7
+    },
+    {
+      "word": "the",
+      "start": 89.7,
+      "end": 89.86
+    },
+    {
+      "word": "animals",
+      "start": 89.86,
+      "end": 90.2
+    },
+    {
+      "word": "whose",
+      "start": 90.2,
+      "end": 90.52
+    },
+    {
+      "word": "venom",
+      "start": 90.52,
+      "end": 90.86
+    },
+    {
+      "word": "is",
+      "start": 90.86,
+      "end": 91.06
+    },
+    {
+      "word": "actively",
+      "start": 91.06,
+      "end": 91.52
+    },
+    {
+      "word": "being",
+      "start": 91.52,
+      "end": 91.84
+    },
+    {
+      "word": "turned",
+      "start": 91.84,
+      "end": 92.14
+    },
+    {
+      "word": "into",
+      "start": 92.14,
+      "end": 92.42
+    },
+    {
+      "word": "human",
+      "start": 92.42,
+      "end": 92.74
+    },
+    {
+      "word": "medicine",
+      "start": 92.74,
+      "end": 93.18
+    },
+    {
+      "word": "right",
+      "start": 93.18,
+      "end": 93.46
+    },
+    {
+      "word": "now.",
+      "start": 93.46,
+      "end": 93.76
+    },
+    {
+      "word": "The",
+      "start": 94.32,
+      "end": 94.48
+    },
+    {
+      "word": "biology",
+      "start": 94.48,
+      "end": 94.9
+    },
+    {
+      "word": "in",
+      "start": 94.9,
+      "end": 95.16
+    },
+    {
+      "word": "that",
+      "start": 95.16,
+      "end": 95.34
+    },
+    {
+      "word": "one",
+      "start": 95.34,
+      "end": 95.48
+    },
+    {
+      "word": "is",
+      "start": 95.48,
+      "end": 95.64
+    },
+    {
+      "word": "even",
+      "start": 95.64,
+      "end": 95.86
+    },
+    {
+      "word": "stranger",
+      "start": 95.86,
+      "end": 96.28
+    },
+    {
+      "word": "than",
+      "start": 96.28,
+      "end": 96.48
+    },
+    {
+      "word": "what's",
+      "start": 96.48,
+      "end": 96.74
+    },
+    {
+      "word": "on",
+      "start": 96.74,
+      "end": 96.86
+    },
+    {
+      "word": "this",
+      "start": 96.86,
+      "end": 97.04
+    },
+    {
+      "word": "list.",
+      "start": 97.04,
+      "end": 97.4
+    },
+    {
+      "word": "Stay",
+      "start": 98.0,
+      "end": 98.3
+    },
+    {
+      "word": "through",
+      "start": 98.3,
+      "end": 98.54
+    },
+    {
+      "word": "to",
+      "start": 98.54,
+      "end": 98.66
+    },
+    {
+      "word": "the",
+      "start": 98.66,
+      "end": 98.8
+    },
+    {
+      "word": "end.",
+      "start": 98.8,
+      "end": 99.1
+    },
+    {
+      "word": "Because",
+      "start": 99.72,
+      "end": 100.06
+    },
+    {
+      "word": "the",
+      "start": 100.06,
+      "end": 100.26
+    },
+    {
+      "word": "number",
+      "start": 100.26,
+      "end": 100.48
+    },
+    {
+      "word": "one",
+      "start": 100.48,
+      "end": 100.7
+    },
+    {
+      "word": "entry",
+      "start": 100.7,
+      "end": 101.02
+    },
+    {
+      "word": "on",
+      "start": 101.02,
+      "end": 101.2
+    },
+    {
+      "word": "this",
+      "start": 101.2,
+      "end": 101.34
+    },
+    {
+      "word": "list",
+      "start": 101.34,
+      "end": 101.7
+    },
+    {
+      "word": "is",
+      "start": 101.7,
+      "end": 102.02
+    },
+    {
+      "word": "not",
+      "start": 102.02,
+      "end": 102.2
+    },
+    {
+      "word": "a",
+      "start": 102.2,
+      "end": 102.38
+    },
+    {
+      "word": "wild",
+      "start": 102.38,
+      "end": 102.66
+    },
+    {
+      "word": "animal.",
+      "start": 102.66,
+      "end": 103.0
+    },
+    {
+      "word": "It",
+      "start": 103.64,
+      "end": 103.86
+    },
+    {
+      "word": "is",
+      "start": 103.86,
+      "end": 103.98
+    },
+    {
+      "word": "not",
+      "start": 103.98,
+      "end": 104.12
+    },
+    {
+      "word": "rare,",
+      "start": 104.12,
+      "end": 104.46
+    },
+    {
+      "word": "exotic,",
+      "start": 104.82,
+      "end": 105.2
+    },
+    {
+      "word": "or",
+      "start": 105.78,
+      "end": 105.88
+    },
+    {
+      "word": "confined",
+      "start": 105.88,
+      "end": 106.32
+    },
+    {
+      "word": "to",
+      "start": 106.32,
+      "end": 106.52
+    },
+    {
+      "word": "another",
+      "start": 106.52,
+      "end": 106.76
+    },
+    {
+      "word": "continent.",
+      "start": 106.76,
+      "end": 107.22
+    },
+    {
+      "word": "It",
+      "start": 108.0,
+      "end": 108.1
+    },
+    {
+      "word": "is",
+      "start": 108.1,
+      "end": 108.2
+    },
+    {
+      "word": "domestic,",
+      "start": 108.2,
+      "end": 108.66
+    },
+    {
+      "word": "widely",
+      "start": 109.1,
+      "end": 109.34
+    },
+    {
+      "word": "kept,",
+      "start": 109.34,
+      "end": 109.74
+    },
+    {
+      "word": "and",
+      "start": 110.38,
+      "end": 110.48
+    },
+    {
+      "word": "sitting",
+      "start": 110.48,
+      "end": 110.7
+    },
+    {
+      "word": "on",
+      "start": 110.7,
+      "end": 110.92
+    },
+    {
+      "word": "an",
+      "start": 110.92,
+      "end": 111.02
+    },
+    {
+      "word": "estimated",
+      "start": 111.02,
+      "end": 111.44
+    },
+    {
+      "word": "100",
+      "start": 111.44,
+      "end": 112.06
+    },
+    {
+      "word": "million",
+      "start": 112.06,
+      "end": 112.44
+    },
+    {
+      "word": "sofas",
+      "start": 112.44,
+      "end": 113.08
+    },
+    {
+      "word": "across",
+      "start": 113.08,
+      "end": 113.28
+    },
+    {
+      "word": "the",
+      "start": 113.28,
+      "end": 113.54
+    },
+    {
+      "word": "world",
+      "start": 113.54,
+      "end": 113.96
+    },
+    {
+      "word": "as",
+      "start": 113.96,
+      "end": 114.5
+    },
+    {
+      "word": "you",
+      "start": 114.5,
+      "end": 114.62
+    },
+    {
+      "word": "watch",
+      "start": 114.62,
+      "end": 114.86
+    },
+    {
+      "word": "this.",
+      "start": 114.86,
+      "end": 115.1
+    },
+    {
+      "word": "And",
+      "start": 115.78,
+      "end": 115.94
+    },
+    {
+      "word": "the",
+      "start": 115.94,
+      "end": 116.04
+    },
+    {
+      "word": "way",
+      "start": 116.04,
+      "end": 116.22
+    },
+    {
+      "word": "it",
+      "start": 116.22,
+      "end": 116.32
+    },
+    {
+      "word": "kills",
+      "start": 116.32,
+      "end": 116.68
+    },
+    {
+      "word": "is",
+      "start": 116.68,
+      "end": 116.94
+    },
+    {
+      "word": "so",
+      "start": 116.94,
+      "end": 117.16
+    },
+    {
+      "word": "indirect,",
+      "start": 117.16,
+      "end": 117.58
+    },
+    {
+      "word": "so",
+      "start": 118.2,
+      "end": 118.34
+    },
+    {
+      "word": "slow,",
+      "start": 118.34,
+      "end": 118.78
+    },
+    {
+      "word": "and",
+      "start": 119.2,
+      "end": 119.3
+    },
+    {
+      "word": "so",
+      "start": 119.3,
+      "end": 119.3
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 "use client";
 
 import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
+import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
-import type { ProjectStatus } from "@/lib/project";
+import type { ProjectStatus, TimestampAlignment } from "@/lib/project";
 
 function formatLogTime(ts: number) {
   return new Date(ts * 1000).toLocaleTimeString(undefined, {
@@ -43,11 +44,26 @@ type ProjectSetupProps = {
   onBackToProjects?: () => void;
 };
 
+function resolveTimestampAlignment(status: ProjectStatus | null): TimestampAlignment | null {
+  if (!status) return null;
+  if (status.timestamp_alignment) return status.timestamp_alignment;
+  const fromJob = status.timestamps_job.alignment_summary;
+  if (fromJob) return fromJob;
+  if (!status.timestamps_ready || !status.segment_count) return null;
+  return {
+    total_segments: status.segment_count,
+    aligned_segments: status.aligned_segments,
+    timed_segments: status.timed_segments ?? status.aligned_segments,
+  };
+}
+
 export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
 
   const step = setup.status?.next_step ?? "import_script";
   const timestampsRunning = setup.status?.timestamps_job.status === "running";
+  const timestampsDone = setup.status?.timestamps_job.status === "done";
   const restartRequired = Boolean(setup.status?.timestamps_job.restart_required);
+  const alignmentSummary = resolveTimestampAlignment(setup.status);
   const segmentProgress = Math.min(
     100,
     Math.max(0, setup.status?.timestamps_job.progress_percent ?? 0),
@@ -224,8 +240,10 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                         ? setup.status?.timestamps_job.message || "Aligning segments with Whisper…"
                         : restartRequired
                           ? "Segmentation was interrupted — click Auto-segment to run it again."
-                          : setup.status?.timestamps_ready
-                            ? `${setup.status.aligned_segments}/${setup.status.segment_count} segments ready`
+                          : setup.status?.timestamps_ready || timestampsDone
+                            ? alignmentSummary
+                              ? `${alignmentSummary.aligned_segments}/${alignmentSummary.total_segments} Whisper-aligned · ${alignmentSummary.timed_segments}/${alignmentSummary.total_segments} timestamps`
+                              : `${setup.status.aligned_segments}/${setup.status.segment_count} segments ready`
                             : "Generate timestamps with Whisper or import an existing JSON file."}
                     </p>
                   </div>
@@ -298,6 +316,9 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                 </div>
               ) : timestampsRunning || (setup.status?.timestamps_job.logs?.length ?? 0) > 0 ? (
                 <div className="sm:pl-8">
+                  {!timestampsRunning && timestampsDone && alignmentSummary ? (
+                    <SegmentationAlignmentSummary alignment={alignmentSummary} className="mb-4" />
+                  ) : null}
                   <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
                     <span className="capitalize">
                       {setup.status?.timestamps_job.stage?.replace(/_/g, " ") || "Running"}
@@ -344,6 +365,10 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     idleProbe={false}
                   />
                   <TimestampJobLogs job={setup.status?.timestamps_job} />
+                </div>
+              ) : alignmentSummary && setup.status?.timestamps_ready ? (
+                <div className="sm:pl-8">
+                  <SegmentationAlignmentSummary alignment={alignmentSummary} />
                 </div>
               ) : step === "segment_timestamps" ? (
                 <div className="sm:pl-8">

@@ -431,23 +431,10 @@ def make_timing_block(start_seconds: float, end_seconds: float) -> dict[str, Any
 
 def get_audio_duration(audio_path: Path) -> float | None:
     try:
-        result = subprocess.run(
-            [
-                "ffprobe",
-                "-v",
-                "error",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "default=noprint_wrappers=1:nokey=1",
-                str(audio_path),
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return round(float(result.stdout.strip()), 3)
-    except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
+        from export_video import probe_decoded_duration
+
+        return round(probe_decoded_duration(audio_path), 3)
+    except (FileNotFoundError, subprocess.CalledProcessError, ValueError, RuntimeError):
         return None
 
 
@@ -1089,6 +1076,20 @@ def summarize_timeline(
     aligned_count = sum(
         1 for segment in timeline_segments if segment["alignment"]["status"] == "aligned"
     )
+    timed_count = sum(
+        1
+        for segment in timeline_segments
+        if segment.get("timing", {}).get("start_seconds") is not None
+        and segment.get("timing", {}).get("end_seconds") is not None
+    )
+    interpolated_count = sum(
+        1 for segment in timeline_segments if segment["alignment"]["status"] == "interpolated"
+    )
+    estimated_count = sum(
+        1
+        for segment in timeline_segments
+        if segment["alignment"]["status"] in ("estimated_fallback", "estimated")
+    )
 
     return {
         "title": script_data.get("title"),
@@ -1100,6 +1101,9 @@ def summarize_timeline(
         "summary": {
             "total_segments": len(timeline_segments),
             "aligned_segments": aligned_count,
+            "timed_segments": timed_count,
+            "interpolated_segments": interpolated_count,
+            "estimated_segments": estimated_count,
             "total_words": total_words,
             "total_duration_seconds": round(total_seconds, 3),
             "total_duration_timecode": format_timestamp(total_seconds),

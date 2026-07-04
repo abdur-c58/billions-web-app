@@ -36,7 +36,64 @@ _default_timestamps_state: dict[str, Any] = {
     "logs": [],
     "restart_required": False,
     "hardware": None,
+    "alignment_summary": None,
 }
+
+
+def _alignment_summary_from_timeline(timeline: dict[str, Any]) -> dict[str, Any]:
+    summary = timeline.get("summary") or {}
+    total = int(summary.get("total_segments") or 0)
+    aligned = int(summary.get("aligned_segments") or 0)
+    timed = int(summary.get("timed_segments") or 0)
+    return {
+        "total_segments": total,
+        "aligned_segments": aligned,
+        "timed_segments": timed,
+        "interpolated_segments": int(summary.get("interpolated_segments") or 0),
+        "estimated_segments": int(summary.get("estimated_segments") or 0),
+        "total_duration_seconds": float(summary.get("total_duration_seconds") or 0),
+        "total_duration_timecode": str(summary.get("total_duration_timecode") or ""),
+    }
+
+
+def _alignment_summary_from_timestamps_file(timestamps_data: dict[str, Any]) -> dict[str, Any] | None:
+    file_summary = timestamps_data.get("summary")
+    if not isinstance(file_summary, dict):
+        return None
+    timed_segments = file_summary.get("timed_segments")
+    if timed_segments is None:
+        segments = timestamps_data.get("segments") or []
+        timed_segments = sum(
+            1
+            for segment in segments
+            if segment.get("timing", {}).get("start_seconds") is not None
+            and segment.get("timing", {}).get("end_seconds") is not None
+        )
+    total_segments = int(file_summary.get("total_segments") or 0)
+    return {
+        "total_segments": total_segments,
+        "aligned_segments": int(file_summary.get("aligned_segments") or 0),
+        "timed_segments": int(timed_segments),
+        "interpolated_segments": int(file_summary.get("interpolated_segments") or 0),
+        "estimated_segments": int(file_summary.get("estimated_segments") or 0),
+        "total_duration_seconds": float(file_summary.get("total_duration_seconds") or 0),
+        "total_duration_timecode": str(file_summary.get("total_duration_timecode") or ""),
+    }
+
+
+def _format_alignment_message(summary: dict[str, Any]) -> str:
+    aligned = summary.get("aligned_segments", 0)
+    total = summary.get("total_segments", 0)
+    timed = summary.get("timed_segments", 0)
+    duration = summary.get("total_duration_timecode") or ""
+    parts = [f"Whisper aligned {aligned}/{total} segments"]
+    if timed != total:
+        parts.append(f"{timed}/{total} timestamps assigned")
+    else:
+        parts.append(f"{timed} timestamps assigned")
+    if duration:
+        parts.append(f"span {duration}")
+    return " · ".join(parts) + "."
 
 
 def _append_job_log(
@@ -282,12 +339,17 @@ def project_status(workspace: Path) -> dict[str, Any]:
             script_format = None
 
     aligned_segments = 0
+    timed_segments = 0
+    timestamp_alignment: dict[str, Any] | None = None
     if timestamps_exists:
         try:
             with paths["timestamps"].open("r", encoding="utf-8") as infile:
                 timestamps_data = json.load(infile)
-            aligned_segments = timestamps_data.get("summary", {}).get("aligned_segments", 0)
-            segment_count = timestamps_data.get("summary", {}).get("total_segments", segment_count)
+            timestamp_alignment = _alignment_summary_from_timestamps_file(timestamps_data)
+            if timestamp_alignment:
+                aligned_segments = timestamp_alignment["aligned_segments"]
+                timed_segments = timestamp_alignment["timed_segments"]
+                segment_count = timestamp_alignment["total_segments"] or segment_count
         except (json.JSONDecodeError, OSError):
             pass
 
@@ -310,6 +372,8 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "script_format": script_format,
         "segment_count": segment_count,
         "aligned_segments": aligned_segments,
+        "timed_segments": timed_segments,
+        "timestamp_alignment": timestamp_alignment,
         "timestamps_job": timestamps_job,
         "next_step": (
             "import_script"
@@ -399,6 +463,7 @@ def start_segment_timestamps(
         started_at=time.time(),
         progress_percent=0,
         stage="prepare",
+        alignment_summary=None,
     )
 
     def on_progress(percent: int, message: str, stage: str) -> None:
@@ -437,16 +502,16 @@ def start_segment_timestamps(
                 on_progress=on_progress,
                 on_hardware=on_hardware,
             )
-            aligned = timeline.get("summary", {}).get("aligned_segments", 0)
-            total = timeline.get("summary", {}).get("total_segments", 0)
+            alignment_summary = _alignment_summary_from_timeline(timeline)
             _set_timestamps_state(
                 workspace,
                 status="done",
-                message=f"Aligned {aligned}/{total} segments.",
+                message=_format_alignment_message(alignment_summary),
                 error=None,
                 progress_percent=100,
                 stage="done",
                 restart_required=False,
+                alignment_summary=alignment_summary,
             )
             try:
                 from project_r2 import sync_workspace_file

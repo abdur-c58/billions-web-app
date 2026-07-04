@@ -70,6 +70,7 @@ from broll_judge import (
 from youtube_description import build_youtube_description
 from youtube_thumbnail_prompts import build_thumbnail_prompts
 from project_manager import (
+    _alignment_summary_from_timestamps_file,
     load_all_timestamps_job_states,
     load_timestamps_job_state,
     parse_multipart_form,
@@ -1648,6 +1649,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             enrich_segments_folder_status(rows, script_format)
             timestamps_meta = read_json(self.timestamps_path, {})
             ai_snapshot = self.ai_budget.snapshot() if self.ai_budget else {}
+            timestamp_alignment = _alignment_summary_from_timestamps_file(timestamps_meta)
 
             self._send_json(
                 {
@@ -1656,6 +1658,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     "script": str(self.script_path),
                     "script_format": script_format,
                     "video_duration_s": timestamps_meta.get("video_duration_s"),
+                    "timestamp_alignment": timestamp_alignment,
                     "segments": rows,
                     "judgment_summary": summarize_judgments(rows),
                     "export_inputs_hash": compute_export_inputs_hash(
@@ -2364,10 +2367,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
                 preview_bytes = preview_path.read_bytes()
                 preview_b64 = base64.b64encode(preview_bytes).decode("ascii")
+                preview_url = f"/api/audio/preview-file?file={urllib.parse.quote(preview_name)}"
 
                 self._send_json(
                     {
-                        "preview_url": f"/api/audio/preview-file?file={urllib.parse.quote(preview_name)}",
+                        "preview_url": preview_url,
                         "preview_data_url": f"data:audio/mp4;base64,{preview_b64}",
                         "preview_seconds": preview_seconds,
                         "background_audio": background_name,

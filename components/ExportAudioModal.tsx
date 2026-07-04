@@ -120,7 +120,7 @@ export function ExportAudioModal({
       releasePreviewBlobUrl();
       const fetchUrl = await resolveBrollApiUrl(url);
       const response = await fetch(fetchUrl, { headers: getSessionHeaders() });
-      if (!response.ok) {
+  if (!response.ok) {
         let message = "Preview file unavailable";
         try {
           const payload = (await response.json()) as { error?: string };
@@ -352,7 +352,7 @@ export function ExportAudioModal({
         }),
       });
       setBalance(payload);
-      const playbackSource = payload.preview_data_url ?? payload.preview_url;
+      const playbackSource = await resolvePreviewPlaybackUrl(payload.preview_url);
       setPreviewUrl(playbackSource);
       setPreviewStale(false);
       await playAudio(playbackSource);
