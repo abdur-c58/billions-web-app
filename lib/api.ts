@@ -139,6 +139,16 @@ export function invalidateBackendUrlCache() {
   cachedBackendUrl = undefined;
 }
 
+/** Paths that must hit the Python backend directly (long-running or large payloads). */
+const ALWAYS_DIRECT_BACKEND_PATHS = ["/api/storage/youtube-audio"];
+
+function shouldResolveToDirectBackend(path: string, backendUrl: string): boolean {
+  if (ALWAYS_DIRECT_BACKEND_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}?`))) {
+    return true;
+  }
+  return shouldUseDirectBackend(backendUrl);
+}
+
 function shouldUseDirectBackend(backendUrl: string): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
@@ -164,7 +174,7 @@ export async function resolveBrollApiUrl(path: string): Promise<string> {
     }
   }
 
-  if (cachedBackendUrl && shouldUseDirectBackend(cachedBackendUrl)) {
+  if (cachedBackendUrl && shouldResolveToDirectBackend(normalized, cachedBackendUrl)) {
     return `${cachedBackendUrl}${normalized}`;
   }
   return normalized;

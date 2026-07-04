@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Folder, FolderPlus, Loader2, X } from "lucide-react";
 import type { StorageItem } from "@/lib/r2";
+import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type ListResponse = {
@@ -151,21 +152,14 @@ export function DownloadYtAudioModal({
     setDownloading(true);
     setError(null);
     try {
-      const response = await fetch("/api/storage/youtube-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), prefix }),
-      });
-      const payload = (await response.json()) as {
-        key?: string;
-        name?: string;
-        title?: string;
-        error?: string;
-      };
-      if (!response.ok) throw new Error(payload.error || "Download failed");
-      if (!payload.key || !payload.name) {
-        throw new Error("Download finished but storage response was incomplete.");
-      }
+      const payload = await apiFetch<{ key: string; name: string; title?: string }>(
+        "/api/storage/youtube-audio",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim(), prefix }),
+        },
+      );
       onComplete({
         key: payload.key,
         name: payload.name,
