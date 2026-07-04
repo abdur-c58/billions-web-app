@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AudioLines, Clapperboard, Cpu } from "lucide-react";
+import { AudioLines, Clapperboard, Cpu, Music2 } from "lucide-react";
 import { fetchActivity, type ActivityJob, type ActivitySnapshot } from "@/lib/activity";
 import { STATUS_POLL_MS } from "@/hooks/usePolling";
 
@@ -21,6 +21,11 @@ const JOB_STYLES: Record<
     icon: Clapperboard,
     fill: "rgba(232, 192, 106, 0.18)",
     accent: "#e8c06a",
+  },
+  youtube_audio: {
+    icon: Music2,
+    fill: "rgba(59, 130, 246, 0.18)",
+    accent: "#3b82f6",
   },
 };
 
@@ -143,7 +148,7 @@ export function GlobalActivityIndicator() {
   return (
     <div className="ml-auto flex items-center gap-2">
       {snapshot.jobs.map((job) => (
-        <JobPill key={`${job.type}-${job.project_id ?? "current"}`} job={job} />
+        <JobPill key={`${job.type}-${job.job_id ?? job.project_id ?? "current"}`} job={job} />
       ))}
       <GpuPill utilization={snapshot.gpu?.utilization_percent ?? null} />
     </div>

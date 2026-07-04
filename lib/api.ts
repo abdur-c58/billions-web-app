@@ -140,7 +140,7 @@ export function invalidateBackendUrlCache() {
 }
 
 /** Paths that must hit the Python backend directly (long-running or large payloads). */
-const ALWAYS_DIRECT_BACKEND_PATHS = ["/api/storage/youtube-audio"];
+const ALWAYS_DIRECT_BACKEND_PATHS: string[] = [];
 
 function shouldResolveToDirectBackend(path: string, backendUrl: string): boolean {
   if (ALWAYS_DIRECT_BACKEND_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}?`))) {

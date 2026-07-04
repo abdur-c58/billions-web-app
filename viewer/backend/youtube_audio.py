@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+
+ProgressCallback = Callable[[int, str, str], None]
 
 
 def extract_video_id(url_or_id: str) -> str:
@@ -32,12 +35,47 @@ def sanitize_audio_filename(title: str) -> str:
     return (safe[:120] or "youtube_audio").strip()
 
 
+def _build_progress_hooks(on_progress: ProgressCallback | None) -> tuple[list, list]:
+    if not on_progress:
+        return [], []
+
+    def progress_hook(data: dict) -> None:
+        status = data.get("status")
+        if status == "downloading":
+            total = data.get("total_bytes") or data.get("total_bytes_estimate") or 0
+            downloaded = data.get("downloaded_bytes") or 0
+            eta = str(data.get("_eta_str") or "").strip()
+            if total > 0:
+                ratio = downloaded / total
+                percent = int(min(80, max(5, ratio * 80)))
+                message = f"Downloading… {percent}%"
+                if eta:
+                    message = f"{message} · ETA {eta}"
+                on_progress(percent, message, "download")
+            else:
+                on_progress(10, "Downloading…", "download")
+        elif status == "finished":
+            on_progress(82, "Download complete, converting to MP3…", "convert")
+
+    def postprocessor_hook(data: dict) -> None:
+        status = data.get("status")
+        postprocessor = str(data.get("postprocessor") or "")
+        if status == "started":
+            on_progress(85, "Converting to MP3…", "convert")
+        elif status == "finished":
+            if "ExtractAudio" in postprocessor or "FFmpeg" in postprocessor:
+                on_progress(92, "Preparing upload…", "convert")
+
+    return [progress_hook], [postprocessor_hook]
+
+
 def download_mp3(
     url: str,
     output_dir: Path,
     *,
     bitrate: str = "192",
     cookies_browser: str | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> tuple[Path, str]:
     try:
         import yt_dlp
@@ -48,6 +86,7 @@ def download_mp3(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     outtmpl = str(output_dir / "%(title)s.%(ext)s")
+    progress_hooks, postprocessor_hooks = _build_progress_hooks(on_progress)
 
     options: dict = {
         "format": "bestaudio/best",
@@ -71,8 +110,16 @@ def download_mp3(
         ],
     }
 
+    if progress_hooks:
+        options["progress_hooks"] = progress_hooks
+    if postprocessor_hooks:
+        options["postprocessor_hooks"] = postprocessor_hooks
+
     if cookies_browser:
         options["cookiesfrombrowser"] = (cookies_browser,)
+
+    if on_progress:
+        on_progress(3, "Fetching video info…", "starting")
 
     try:
         with yt_dlp.YoutubeDL(options) as downloader:
@@ -104,6 +151,7 @@ def download_youtube_audio_to_temp(
     *,
     bitrate: str = "192",
     cookies_browser: str | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> tuple[Path, str]:
     video_id = extract_video_id(url)
     watch_url = f"https://www.youtube.com/watch?v={video_id}"
@@ -114,6 +162,7 @@ def download_youtube_audio_to_temp(
             temp_dir,
             bitrate=bitrate,
             cookies_browser=cookies_browser,
+            on_progress=on_progress,
         )
         return local_path, title
     except Exception:

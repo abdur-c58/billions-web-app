@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Folder, FolderPlus, Loader2, X } from "lucide-react";
+import { ExportStyleProgressBar } from "@/components/ExportStyleProgressBar";
 import type { StorageItem } from "@/lib/r2";
-import { apiFetch } from "@/lib/api";
+import { fetchYoutubeAudioJob, startYoutubeAudioDownload } from "@/lib/youtube-audio";
 import { cn } from "@/lib/utils";
+import { STATUS_POLL_MS } from "@/hooks/usePolling";
 
 type ListResponse = {
   prefix: string;
@@ -16,6 +18,7 @@ type DownloadYtAudioModalProps = {
   initialPrefix?: string;
   onClose: () => void;
   onComplete: (result: { key: string; name: string; title: string }) => void;
+  onJobStarted?: (jobId: string) => void;
 };
 
 const AUDIO_PREFIX = "Audio/";
@@ -32,6 +35,7 @@ export function DownloadYtAudioModal({
   initialPrefix = AUDIO_PREFIX,
   onClose,
   onComplete,
+  onJobStarted,
 }: DownloadYtAudioModalProps) {
   const [step, setStep] = useState<"url" | "folder">("url");
   const [url, setUrl] = useState("");
@@ -42,6 +46,9 @@ export function DownloadYtAudioModal({
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [jobProgress, setJobProgress] = useState(0);
+  const [jobMessage, setJobMessage] = useState("Starting download…");
 
   const breadcrumbs = useMemo(() => {
     if (!prefix) return [];
@@ -58,6 +65,9 @@ export function DownloadYtAudioModal({
     setCreatingFolder(false);
     setFolderName("");
     setError(null);
+    setActiveJobId(null);
+    setJobProgress(0);
+    setJobMessage("Starting download…");
   }, []);
 
   const loadPrefix = useCallback(async (nextPrefix: string) => {
@@ -100,6 +110,56 @@ export function DownloadYtAudioModal({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, downloading, onClose]);
+
+  useEffect(() => {
+    if (!activeJobId || !downloading) return;
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const job = await fetchYoutubeAudioJob(activeJobId);
+        if (cancelled) return;
+
+        setJobProgress(job.progress_percent ?? 0);
+        setJobMessage(job.message || "Downloading…");
+
+        if (job.status === "done" && job.key && job.name) {
+          onComplete({
+            key: job.key,
+            name: job.name,
+            title: job.title || job.name,
+          });
+          setDownloading(false);
+          setActiveJobId(null);
+          onClose();
+          return;
+        }
+
+        if (job.status === "error") {
+          setError(job.error || job.message || "Download failed");
+          setDownloading(false);
+          setActiveJobId(null);
+          return;
+        }
+
+        timer = window.setTimeout(poll, STATUS_POLL_MS);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Failed to read download progress");
+        setDownloading(false);
+        setActiveJobId(null);
+      }
+    };
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [activeJobId, downloading, onClose, onComplete]);
 
   if (!open) return null;
 
@@ -151,24 +211,23 @@ export function DownloadYtAudioModal({
     if (!canDownload) return;
     setDownloading(true);
     setError(null);
+    setJobProgress(0);
+    setJobMessage("Starting download…");
     try {
-      const payload = await apiFetch<{ key: string; name: string; title?: string }>(
-        "/api/storage/youtube-audio",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: url.trim(), prefix }),
-        },
-      );
-      onComplete({
-        key: payload.key,
-        name: payload.name,
-        title: payload.title || payload.name,
-      });
-      onClose();
+      const payload = await startYoutubeAudioDownload(url.trim(), prefix);
+      setActiveJobId(payload.job_id);
+      onJobStarted?.(payload.job_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Download failed");
-    } finally {
+      const message = err instanceof Error ? err.message : "Download failed";
+      if (/not available on the running backend|npm run dev:api|ytserver/i.test(message)) {
+        setError(message);
+      } else if (/not found/i.test(message)) {
+        setError(
+          "YouTube audio download is not available on the running backend. Restart it: npm run dev:api (or ytserver).",
+        );
+      } else {
+        setError(message);
+      }
       setDownloading(false);
     }
   };
@@ -177,7 +236,7 @@ export function DownloadYtAudioModal({
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4"
       onClick={() => {
-        if (!downloading) onClose();
+        onClose();
       }}
     >
       <div
@@ -201,8 +260,7 @@ export function DownloadYtAudioModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={downloading}
-            className="glow-btn-secondary rounded-[var(--radius-sm)] p-2 disabled:opacity-55"
+            className="glow-btn-secondary rounded-[var(--radius-sm)] p-2"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -308,6 +366,17 @@ export function DownloadYtAudioModal({
         )}
 
         {error ? <p className="mb-3 text-sm text-red-300">{error}</p> : null}
+
+        {downloading ? (
+          <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-raised)] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium">Downloading YouTube audio</span>
+              <span className="tabular-nums text-[var(--muted)]">{jobProgress}%</span>
+            </div>
+            <ExportStyleProgressBar percent={jobProgress} />
+            <p className="mt-3 text-xs text-[var(--muted)]">{jobMessage}</p>
+          </div>
+        ) : null}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {step === "folder" ? (

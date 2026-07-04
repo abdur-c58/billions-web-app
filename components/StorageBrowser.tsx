@@ -21,9 +21,13 @@ import { EXPORTED_VIDEOS_FOLDER, isMediaItemType, ROOT_STORAGE_FOLDERS, ALL_ROOT
 import { StorageDeleteModal } from "@/components/StorageDeleteModal";
 import { StorageMoveModal } from "@/components/StorageMoveModal";
 import { DownloadYtAudioModal } from "@/components/DownloadYtAudioModal";
+import { ExportStyleProgressBar } from "@/components/ExportStyleProgressBar";
 import { StoragePreviewModal } from "@/components/StoragePreviewModal";
 import { StorageProjectFiles } from "@/components/StorageProjectFiles";
+import { fetchActivity, type ActivityJob } from "@/lib/activity";
+import { useYoutubeAudioJobPoll } from "@/hooks/useYoutubeAudioJobPoll";
 import { storageMediaUrl } from "@/lib/storage-media";
+import { STATUS_POLL_MS } from "@/hooks/usePolling";
 import { cn } from "@/lib/utils";
 
 type ListResponse = {
@@ -430,8 +434,11 @@ export function StorageBrowser() {
   const [moveTarget, setMoveTarget] = useState<StorageItem | null>(null);
   const [previewTarget, setPreviewTarget] = useState<StorageItem | null>(null);
   const [ytAudioModalOpen, setYtAudioModalOpen] = useState(false);
+  const [trackedYtJobId, setTrackedYtJobId] = useState<string | null>(null);
+  const [ytActivityJob, setYtActivityJob] = useState<ActivityJob | null>(null);
   const [storageView, setStorageView] = useState<"library" | "project">("library");
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const polledYtJob = useYoutubeAudioJobPoll(trackedYtJobId, storageView === "library");
 
   const breadcrumbs = useMemo(() => {
     if (!prefix) return [];
@@ -467,6 +474,73 @@ export function StorageBrowser() {
     setStorageView(readViewFromUrl());
     void refresh(readPathFromUrl());
   }, [refresh]);
+
+  useEffect(() => {
+    if (storageView !== "library") {
+      setYtActivityJob(null);
+      return;
+    }
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const snapshot = await fetchActivity();
+        if (cancelled) return;
+        const ytJob = snapshot.jobs.find((job) => job.type === "youtube_audio") ?? null;
+        setYtActivityJob(ytJob);
+        if (ytJob?.job_id) {
+          setTrackedYtJobId((current) => current ?? ytJob.job_id ?? null);
+        }
+      } catch {
+        if (!cancelled) setYtActivityJob(null);
+      } finally {
+        if (!cancelled) {
+          timer = window.setTimeout(poll, STATUS_POLL_MS);
+        }
+      }
+    };
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [storageView]);
+
+  useEffect(() => {
+    if (!polledYtJob || ytAudioModalOpen) return;
+    if (polledYtJob.status === "done" && polledYtJob.key) {
+      setStatus(`Saved "${polledYtJob.title || polledYtJob.name}" as ${polledYtJob.name}`);
+      const slash = polledYtJob.key.lastIndexOf("/");
+      const destPrefix = slash >= 0 ? polledYtJob.key.slice(0, slash + 1) : prefix;
+      void refresh(destPrefix);
+      setTrackedYtJobId(null);
+    } else if (polledYtJob.status === "error") {
+      setError(polledYtJob.error || polledYtJob.message || "YouTube download failed");
+      setTrackedYtJobId(null);
+    }
+  }, [polledYtJob, ytAudioModalOpen, prefix, refresh]);
+
+  const activeYtDownload = useMemo(() => {
+    if (polledYtJob?.status === "running") {
+      return {
+        percent: polledYtJob.progress_percent ?? 0,
+        message: polledYtJob.message || "Downloading…",
+        title: polledYtJob.title || "YouTube audio",
+      };
+    }
+    if (ytActivityJob?.type === "youtube_audio") {
+      return {
+        percent: ytActivityJob.progress_percent ?? 0,
+        message: ytActivityJob.message || "Downloading…",
+        title: ytActivityJob.project_name || "YouTube audio",
+      };
+    }
+    return null;
+  }, [polledYtJob, ytActivityJob]);
 
   const openProjectFiles = () => {
     setStorageView("project");
@@ -739,6 +813,22 @@ export function StorageBrowser() {
         </div>
       ) : null}
 
+      {activeYtDownload ? (
+        <div className="glow-card mb-4 rounded-[var(--radius-lg)] p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm">
+            <Music2 className="h-4 w-4 shrink-0 text-[#3b82f6]" />
+            <span>
+              Downloading <span className="font-medium">{activeYtDownload.title}</span>
+            </span>
+            <span className="ml-auto tabular-nums text-[var(--muted)]">
+              {activeYtDownload.percent}%
+            </span>
+          </div>
+          <ExportStyleProgressBar percent={activeYtDownload.percent} />
+          <p className="mt-3 text-xs text-[var(--muted)]">{activeYtDownload.message}</p>
+        </div>
+      ) : null}
+
       {error ? (
         <p className="mb-4 rounded-[var(--radius)] border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
@@ -863,11 +953,13 @@ export function StorageBrowser() {
         open={ytAudioModalOpen}
         initialPrefix={prefix}
         onClose={() => setYtAudioModalOpen(false)}
+        onJobStarted={(jobId) => setTrackedYtJobId(jobId)}
         onComplete={(result) => {
           setStatus(`Saved "${result.title}" as ${result.name}`);
           const slash = result.key.lastIndexOf("/");
           const destPrefix = slash >= 0 ? result.key.slice(0, slash + 1) : prefix;
           void refresh(destPrefix);
+          setTrackedYtJobId(null);
         }}
       />
     </main>

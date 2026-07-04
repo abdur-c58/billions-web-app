@@ -101,6 +101,11 @@ from user_sessions import (
     prune_stale_projects,
     read_manifest,
 )
+from youtube_audio_job import (
+    get_youtube_audio_job,
+    list_running_youtube_audio_jobs,
+    start_youtube_audio_job,
+)
 
 ROOT = Path(__file__).resolve().parent
 WORKSPACE_DIR = ROOT / "workspace"
@@ -1190,27 +1195,27 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         return self._export_snapshot_for(project_id)
 
     def _download_youtube_audio(self) -> None:
-        import shutil
-
-        from youtube_audio import download_youtube_audio_to_temp, sanitize_audio_filename
-
         body = self._read_json_body()
         url = str(body.get("url") or "").strip()
         prefix = str(body.get("prefix") or "").strip()
         if not url:
             raise ValueError("YouTube URL is required.")
 
-        validate_audio_storage_prefix(prefix)
-        temp_root: Path | None = None
-        try:
-            local_path, title = download_youtube_audio_to_temp(url)
-            temp_root = local_path.parent
-            filename = f"{sanitize_audio_filename(title)}.mp3"
-            result = upload_storage_audio(prefix, local_path, filename=filename)
-            self._send_json({**result, "title": title})
-        finally:
-            if temp_root and temp_root.exists():
-                shutil.rmtree(temp_root, ignore_errors=True)
+        job_id = start_youtube_audio_job(url, prefix)
+        self._send_json({"job_id": job_id, "status": "running"})
+
+    def _youtube_audio_job_snapshot(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        job_id = str((params.get("job_id") or [""])[0]).strip()
+        if not job_id:
+            self._send_json({"error": "job_id is required"}, HTTPStatus.BAD_REQUEST)
+            return
+        job = get_youtube_audio_job(job_id)
+        if not job:
+            self._send_json({"error": "Download job not found"}, HTTPStatus.NOT_FOUND)
+            return
+        self._send_json(job)
 
     def _activity_snapshot(self) -> dict[str, Any]:
         """Global view of all running jobs across projects (navbar indicator)."""
@@ -1245,6 +1250,20 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     "message": export.get("message") or "Exporting video…",
                     "stage": export.get("stage"),
                     "eta_seconds": export.get("eta_seconds"),
+                }
+            )
+
+        for yt_job in list_running_youtube_audio_jobs():
+            jobs.append(
+                {
+                    "type": "youtube_audio",
+                    "label": "YT audio",
+                    "job_id": yt_job.get("job_id"),
+                    "project_id": None,
+                    "project_name": yt_job.get("title") or "YouTube",
+                    "progress_percent": int(yt_job.get("progress_percent") or 0),
+                    "message": yt_job.get("message") or "Downloading audio…",
+                    "stage": yt_job.get("stage"),
                 }
             )
 
@@ -1796,6 +1815,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 self._send_json(self._export_snapshot_for())
             except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/storage/youtube-audio/status":
+            try:
+                self._youtube_audio_job_snapshot()
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 

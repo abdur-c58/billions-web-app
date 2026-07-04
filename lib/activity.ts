@@ -1,10 +1,11 @@
 import { apiFetch } from "@/lib/api";
 
-export type ActivityJobType = "whisper" | "export";
+export type ActivityJobType = "whisper" | "export" | "youtube_audio";
 
 export interface ActivityJob {
   type: ActivityJobType;
   label: string;
+  job_id?: string | null;
   project_id: string | null;
   project_name: string | null;
   progress_percent: number;
