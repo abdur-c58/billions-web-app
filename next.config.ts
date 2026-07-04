@@ -76,6 +76,10 @@ const nextConfig: NextConfig = {
         source: "/api/folder-fetch/:path*",
         destination: `${backendBase}/api/folder-fetch/:path*`,
       },
+      {
+        source: "/api/storage/youtube-audio",
+        destination: `${backendBase}/api/storage/youtube-audio`,
+      },
     ];
   },
 };

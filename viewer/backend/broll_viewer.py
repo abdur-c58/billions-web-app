@@ -87,7 +87,9 @@ from storage_r2 import (
     resolve_r2_background_audio,
     touch_exported_video_access,
     upload_exported_video,
+    upload_storage_audio,
     validate_audio_storage_key,
+    validate_audio_storage_prefix,
 )
 from user_sessions import (
     create_project,
@@ -1186,6 +1188,29 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         status_file = workspace_paths(workspace)["export_status"]
         update_export_state(project_id, status_file, thumbnail_prompts=thumbnail_prompts)
         return self._export_snapshot_for(project_id)
+
+    def _download_youtube_audio(self) -> None:
+        import shutil
+
+        from youtube_audio import download_youtube_audio_to_temp, sanitize_audio_filename
+
+        body = self._read_json_body()
+        url = str(body.get("url") or "").strip()
+        prefix = str(body.get("prefix") or "").strip()
+        if not url:
+            raise ValueError("YouTube URL is required.")
+
+        validate_audio_storage_prefix(prefix)
+        temp_root: Path | None = None
+        try:
+            local_path, title = download_youtube_audio_to_temp(url)
+            temp_root = local_path.parent
+            filename = f"{sanitize_audio_filename(title)}.mp3"
+            result = upload_storage_audio(prefix, local_path, filename=filename)
+            self._send_json({**result, "title": title})
+        finally:
+            if temp_root and temp_root.exists():
+                shutil.rmtree(temp_root, ignore_errors=True)
 
     def _activity_snapshot(self) -> dict[str, Any]:
         """Global view of all running jobs across projects (navbar indicator)."""
@@ -2365,6 +2390,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 snapshot = self._regenerate_thumbnail_prompts()
                 self._send_json(snapshot)
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/storage/youtube-audio":
+            try:
+                self._download_youtube_audio()
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:

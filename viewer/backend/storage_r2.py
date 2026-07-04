@@ -205,6 +205,44 @@ def purge_stale_exported_videos() -> list[str]:
     return deleted
 
 
+def validate_audio_storage_prefix(prefix: str) -> str:
+    normalized = prefix.strip().replace("\\", "/").lstrip("/")
+    if not normalized:
+        raise ValueError("Choose a folder inside Audio.")
+    if not normalized.endswith("/"):
+        normalized = f"{normalized}/"
+    if not normalized.startswith(STORAGE_AUDIO_PREFIX):
+        raise ValueError("Destination must be inside the Audio folder.")
+    return normalized
+
+
+def upload_storage_audio(prefix: str, local_path: Path, *, filename: str) -> dict[str, str]:
+    if not _r2_configured():
+        raise RuntimeError("R2 is not configured.")
+    if not local_path.exists() or local_path.stat().st_size == 0:
+        raise FileNotFoundError(f"Audio file not found: {local_path}")
+
+    dest_prefix = validate_audio_storage_prefix(prefix)
+    name = Path(filename).name.strip()
+    if not name.lower().endswith(".mp3"):
+        name = f"{name}.mp3" if name else "youtube_audio.mp3"
+    ext = Path(name).suffix.lower()
+    if ext not in AUDIO_EXTENSIONS:
+        raise ValueError(f"Unsupported audio type: {ext}")
+
+    key = f"{dest_prefix}{name}"
+    client = _r2_client()
+    bucket = os.environ["R2_BUCKET_NAME"]
+    client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=local_path.read_bytes(),
+        ContentType="audio/mpeg",
+    )
+    print(f"[storage-r2] Uploaded audio to R2: {key}")
+    return {"key": key, "name": name}
+
+
 def resolve_r2_background_audio(key: str, cache_dir: Path) -> Path:
     """Download an R2 Audio/ object to a local cache path for ffmpeg."""
     if not _r2_configured():

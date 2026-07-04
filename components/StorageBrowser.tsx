@@ -15,10 +15,12 @@ import {
   FolderInput,
   Download,
   FolderKanban,
+  Youtube,
 } from "lucide-react";
 import { EXPORTED_VIDEOS_FOLDER, isMediaItemType, ROOT_STORAGE_FOLDERS, ALL_ROOT_FOLDERS, type StorageItem } from "@/lib/r2";
 import { StorageDeleteModal } from "@/components/StorageDeleteModal";
 import { StorageMoveModal } from "@/components/StorageMoveModal";
+import { DownloadYtAudioModal } from "@/components/DownloadYtAudioModal";
 import { StoragePreviewModal } from "@/components/StoragePreviewModal";
 import { StorageProjectFiles } from "@/components/StorageProjectFiles";
 import { storageMediaUrl } from "@/lib/storage-media";
@@ -427,6 +429,7 @@ export function StorageBrowser() {
   const [deleteTarget, setDeleteTarget] = useState<StorageItem | null>(null);
   const [moveTarget, setMoveTarget] = useState<StorageItem | null>(null);
   const [previewTarget, setPreviewTarget] = useState<StorageItem | null>(null);
+  const [ytAudioModalOpen, setYtAudioModalOpen] = useState(false);
   const [storageView, setStorageView] = useState<"library" | "project">("library");
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -436,6 +439,7 @@ export function StorageBrowser() {
   }, [prefix]);
 
   const isAtRoot = prefix === "";
+  const isInAudioFolder = prefix.startsWith("Audio/");
   const folders = items.filter((item) => item.type === "folder");
   const files = items.filter((item) => item.type !== "folder");
 
@@ -702,6 +706,17 @@ export function StorageBrowser() {
               onChange={(event) => void uploadFiles(event.target.files)}
             />
           </label>
+          {isInAudioFolder ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setYtAudioModalOpen(true)}
+              className="glow-btn-secondary inline-flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold disabled:opacity-55"
+            >
+              <Youtube className="h-4 w-4" />
+              Download YT audio
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -843,6 +858,17 @@ export function StorageBrowser() {
         busy={busy}
         onClose={() => setMoveTarget(null)}
         onConfirm={(item, destinationPrefix) => void confirmMove(item, destinationPrefix)}
+      />
+      <DownloadYtAudioModal
+        open={ytAudioModalOpen}
+        initialPrefix={prefix}
+        onClose={() => setYtAudioModalOpen(false)}
+        onComplete={(result) => {
+          setStatus(`Saved "${result.title}" as ${result.name}`);
+          const slash = result.key.lastIndexOf("/");
+          const destPrefix = slash >= 0 ? result.key.slice(0, slash + 1) : prefix;
+          void refresh(destPrefix);
+        }}
       />
     </main>
   );
