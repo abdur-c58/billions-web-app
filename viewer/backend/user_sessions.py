@@ -21,8 +21,7 @@ STALE_JOB_SECONDS = 15 * 60
 PROJECT_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
 
 # Projects are auto-pruned after a week of inactivity to save local disk.
-# Only the local project workspace (incl. its downloaded clip cache) is
-# removed — nothing in R2 storage is ever touched.
+# Local and R2 backups are kept in sync — deleting a local folder removes R2 too.
 PROJECT_TTL_SECONDS = 7 * 24 * 60 * 60
 
 # Files whose mtime reflects real activity on a project (uploads, b-roll
@@ -60,6 +59,18 @@ def projects_root(workspace_root: Path) -> Path:
     root = workspace_root / "projects"
     root.mkdir(parents=True, exist_ok=True)
     return root
+
+
+def list_local_project_ids(workspace_root: Path) -> set[str]:
+    """Project folder names currently on local disk."""
+    root = projects_root(workspace_root)
+    if not root.exists():
+        return set()
+    ids: set[str] = set()
+    for child in root.iterdir():
+        if child.is_dir() and PROJECT_ID_RE.match(child.name):
+            ids.add(child.name)
+    return ids
 
 
 def project_workspace(workspace_root: Path, project_id: str) -> Path:
@@ -209,10 +220,7 @@ def create_project(
 
 
 def delete_project(workspace_root: Path, project_id: str) -> None:
-    """Remove a project's local workspace (incl. its downloaded clip cache).
-
-    R2 storage is never touched — only the local project folder is deleted.
-    """
+    """Remove a project's local workspace and its R2 backup."""
     workspace = project_workspace(workspace_root, project_id)
     resolved = workspace.resolve()
     root = projects_root(workspace_root).resolve()
@@ -228,6 +236,12 @@ def delete_project(workspace_root: Path, project_id: str) -> None:
         forget_timestamps_state(workspace)
     except Exception:
         pass
+    try:
+        from project_r2 import delete_project_from_r2
+
+        delete_project_from_r2(project_id)
+    except Exception as exc:
+        print(f"[project-r2] Failed to delete R2 backup for {project_id}: {exc}")
 
 
 def prune_stale_projects(

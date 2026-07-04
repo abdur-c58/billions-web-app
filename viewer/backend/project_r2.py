@@ -9,6 +9,7 @@ import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from project_manager import (
     AUDIO_NAME,
@@ -17,7 +18,7 @@ from project_manager import (
     TIMESTAMPS_NAME,
     workspace_paths,
 )
-from user_sessions import parse_workspace_scope
+from user_sessions import PROJECT_ID_RE, parse_workspace_scope
 
 PROJECT_STORAGE_PREFIX = ".project/"
 PROJECT_TTL_SECONDS = 7 * 24 * 60 * 60
@@ -35,6 +36,8 @@ PATH_KEYS = {
     TIMESTAMPS_NAME: "timestamps",
     SELECTIONS_NAME: "selections",
 }
+
+_LEGACY_WORKSPACE_PREFIX = f"{PROJECT_STORAGE_PREFIX}workspace/"
 
 
 def _web_base() -> str:
@@ -71,6 +74,133 @@ def _project_key(workspace: Path, name: str) -> str | None:
     if not project_id:
         return None
     return f"{PROJECT_STORAGE_PREFIX}projects/{project_id}/{safe}"
+
+
+def _parse_r2_project_id(key: str) -> str | None:
+    if not key.startswith(PROJECT_STORAGE_PREFIX):
+        return None
+    remainder = key[len(PROJECT_STORAGE_PREFIX) :]
+    if remainder.startswith("projects/"):
+        parts = remainder.split("/")
+        if len(parts) >= 3 and PROJECT_ID_RE.match(parts[1]):
+            return parts[1]
+        return None
+    if remainder.startswith("users/"):
+        parts = remainder.split("/")
+        try:
+            projects_idx = parts.index("projects")
+            project_id = parts[projects_idx + 1]
+            if PROJECT_ID_RE.match(project_id):
+                return project_id
+        except (ValueError, IndexError):
+            return None
+        return None
+    if remainder.startswith("workspace/"):
+        return "legacy"
+    return None
+
+
+def _iter_r2_object_keys(prefix: str = PROJECT_STORAGE_PREFIX) -> list[str]:
+    if not _r2_configured():
+        return []
+    client = _r2_client()
+    bucket = os.environ["R2_BUCKET_NAME"]
+    keys: list[str] = []
+    continuation: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+        if continuation:
+            kwargs["ContinuationToken"] = continuation
+        response = client.list_objects_v2(**kwargs)
+        for entry in response.get("Contents") or []:
+            key = entry.get("Key")
+            if key and not key.endswith("/"):
+                keys.append(str(key))
+        if not response.get("IsTruncated"):
+            break
+        continuation = response.get("NextContinuationToken")
+    return keys
+
+
+def _delete_r2_keys(keys: list[str]) -> list[str]:
+    if not keys or not _r2_configured():
+        return []
+    client = _r2_client()
+    bucket = os.environ["R2_BUCKET_NAME"]
+    deleted: list[str] = []
+    for key in keys:
+        try:
+            client.delete_object(Bucket=bucket, Key=key)
+            deleted.append(key)
+        except Exception as exc:
+            print(f"[project-r2] Failed to delete {key}: {exc}")
+    return deleted
+
+
+def delete_project_from_r2(project_id: str) -> list[str]:
+    """Remove all R2 backups for a project id."""
+    if not _r2_configured():
+        return []
+    if not PROJECT_ID_RE.match(project_id):
+        raise ValueError("Invalid project id.")
+
+    prefixes = [f"{PROJECT_STORAGE_PREFIX}projects/{project_id}/"]
+    if project_id == "legacy":
+        prefixes.append(_LEGACY_WORKSPACE_PREFIX)
+
+    keys: list[str] = []
+    for prefix in prefixes:
+        keys.extend(_iter_r2_object_keys(prefix))
+
+    # User-scoped layout: .project/users/<user>/projects/<id>/...
+    for key in _iter_r2_object_keys(f"{PROJECT_STORAGE_PREFIX}users/"):
+        parsed = _parse_r2_project_id(key)
+        if parsed == project_id:
+            keys.append(key)
+
+    unique_keys = sorted(set(keys))
+    deleted = _delete_r2_keys(unique_keys)
+    if deleted:
+        print(f"[project-r2] Deleted {len(deleted)} R2 object(s) for project {project_id}")
+    return deleted
+
+
+def purge_r2_orphan_projects(workspace_root: Path) -> list[str]:
+    """Delete R2 project backups that have no matching local workspace folder."""
+    from user_sessions import list_local_project_ids
+
+    if not _r2_configured():
+        return []
+
+    local_ids = list_local_project_ids(workspace_root)
+    orphan_keys: list[str] = []
+    orphan_projects: set[str] = set()
+
+    for key in _iter_r2_object_keys():
+        project_id = _parse_r2_project_id(key)
+        if not project_id or project_id in local_ids:
+            continue
+        orphan_keys.append(key)
+        orphan_projects.add(project_id)
+
+    if orphan_keys:
+        _delete_r2_keys(orphan_keys)
+        print(
+            "[project-r2] Purged R2 backup(s) for removed local project(s): "
+            + ", ".join(sorted(orphan_projects))
+        )
+    return sorted(orphan_projects)
+
+
+def sync_local_projects_with_r2(workspace_root: Path) -> dict[str, Any]:
+    """Align R2 project backups with folders on local disk (disk is source of truth)."""
+    purged = purge_r2_orphan_projects(workspace_root)
+    from user_sessions import list_local_project_ids
+
+    return {
+        "purged_project_ids": purged,
+        "local_project_count": len(list_local_project_ids(workspace_root)),
+    }
 
 
 def sync_project_path(path: Path, workspace: Path, name: str) -> None:

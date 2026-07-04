@@ -1501,6 +1501,9 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/project/list":
             try:
+                from project_r2 import sync_local_projects_with_r2
+
+                sync_local_projects_with_r2(WORKSPACE_DIR)
                 prune_inactive_projects()
                 projects = list_projects(WORKSPACE_DIR)
                 running = next(
@@ -2654,10 +2657,11 @@ def main() -> None:
     BrollViewerHandler.workspace_mode = workspace_mode
 
     if workspace_mode:
-        from project_r2 import restore_workspace_from_r2
+        from project_r2 import restore_workspace_from_r2, sync_local_projects_with_r2
 
         migrate_legacy_workspace(WORKSPACE_DIR)
         migrate_user_scoped_projects(WORKSPACE_DIR)
+        sync_local_projects_with_r2(WORKSPACE_DIR)
         load_all_timestamps_job_states(WORKSPACE_DIR)
         prune_inactive_projects()
         for project in list_projects(WORKSPACE_DIR):
