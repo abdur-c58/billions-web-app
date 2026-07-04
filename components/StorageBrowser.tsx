@@ -15,7 +15,7 @@ import {
   FolderInput,
   Download,
   FolderKanban,
-  Youtube,
+  Music2,
 } from "lucide-react";
 import { EXPORTED_VIDEOS_FOLDER, isMediaItemType, ROOT_STORAGE_FOLDERS, ALL_ROOT_FOLDERS, type StorageItem } from "@/lib/r2";
 import { StorageDeleteModal } from "@/components/StorageDeleteModal";
@@ -713,7 +713,7 @@ export function StorageBrowser() {
               onClick={() => setYtAudioModalOpen(true)}
               className="glow-btn-secondary inline-flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold disabled:opacity-55"
             >
-              <Youtube className="h-4 w-4" />
+              <Music2 className="h-4 w-4" />
               Download YT audio
             </button>
           ) : null}
