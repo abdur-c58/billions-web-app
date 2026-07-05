@@ -784,7 +784,8 @@ def extend_match(
     start_idx: int,
     whisper_idx: int,
     lookahead: int,
-) -> list[int]:
+) -> tuple[list[int], int]:
+    """Return whisper indices used and how many script tokens were consumed."""
     matched_indices: list[int] = []
     script_idx = 0
     cursor = start_idx
@@ -814,7 +815,7 @@ def extend_match(
         cursor = found_at + whisper_advance
         script_idx += script_advance
 
-    return matched_indices
+    return matched_indices, script_idx
 
 
 def fact_number_token_length(script_tokens: list[str]) -> int:
@@ -828,30 +829,115 @@ def fact_number_token_length(script_tokens: list[str]) -> int:
 
 def alignment_ratio_threshold(script_word_count: int) -> float:
     if script_word_count <= 20:
-        return 0.45
+        return 0.42
     if script_word_count <= 50:
-        return 0.58
+        return 0.55
     if script_word_count <= 90:
-        return 0.65
-    return 0.72
+        return 0.62
+    return 0.68
 
 
-def is_strong_alignment(script_word_count: int, matched_word_count: int) -> bool:
-    if matched_word_count <= 0:
+def is_strong_alignment(script_word_count: int, matched_script_tokens: int) -> bool:
+    if matched_script_tokens <= 0:
         return False
-    return matched_word_count / script_word_count >= alignment_ratio_threshold(script_word_count)
+    return matched_script_tokens / script_word_count >= alignment_ratio_threshold(script_word_count)
 
 
-def segments_needing_realign(timeline_segments: list[dict[str, Any]]) -> set[int]:
-    needs = failed_segment_ids(timeline_segments)
-    for entry in timeline_segments:
-        if entry["alignment"]["status"] != "aligned":
+def estimate_whisper_search_window(
+    segment_index: int,
+    segment_list: list[dict[str, Any]],
+    whisper_words: list[dict[str, Any]],
+    cursor_hint: int,
+    *,
+    fuzzy: bool = False,
+) -> tuple[int, int]:
+    """Estimate where in the whisper word list this segment should appear."""
+    total_script_words = sum(int(segment["word_count"]) for segment in segment_list)
+    words_before = sum(
+        int(segment_list[i]["word_count"]) for i in range(segment_index)
+    )
+    segment_words = int(segment_list[segment_index]["word_count"])
+    total_whisper = len(whisper_words)
+
+    if total_script_words > 0 and total_whisper > 0:
+        center = int((words_before / total_script_words) * total_whisper)
+    else:
+        center = cursor_hint
+
+    margin = max(90, min(600, int(segment_words * 3) + 60))
+    if fuzzy:
+        margin = min(total_whisper, margin * 2)
+
+    search_start = max(0, min(cursor_hint, center) - margin)
+    search_end = min(
+        total_whisper,
+        max(cursor_hint, center) + margin + max(segment_words * 2, 40),
+    )
+    return search_start, search_end
+
+
+def _try_anchor_match(
+    script_tokens: list[str],
+    whisper_words: list[dict[str, Any]],
+    whisper_start: int,
+    lookahead: int,
+    max_skip: int,
+) -> tuple[list[int], int] | None:
+    token_variants: list[list[str]] = [script_tokens]
+    skip = fact_number_token_length(script_tokens)
+    if skip > 1:
+        token_variants.append(script_tokens[skip:])
+
+    best_indices: list[int] = []
+    best_script_matched = 0
+
+    for tokens in token_variants:
+        if len(tokens) < 2:
             continue
-        script_words = int(entry["alignment"].get("script_words") or 0)
-        matched_words = int(entry["alignment"].get("matched_words") or 0)
-        if script_words and not is_strong_alignment(script_words, matched_words):
-            needs.add(entry["segment_id"])
-    return needs
+        for skip_tokens in range(0, max_skip + 1):
+            if skip_tokens >= len(tokens):
+                continue
+            body = tokens[skip_tokens:]
+            if len(body) < 2:
+                continue
+
+            window = body[: min(DEFAULT_MATCH_WINDOW, len(body))]
+            min_matches = min_window_matches(len(window))
+            whisper_idx = whisper_start
+            script_idx = 0
+            matched = 0
+
+            while script_idx < len(window) and whisper_idx < len(whisper_words):
+                consumed = consume_token_match(
+                    window, script_idx, whisper_words, whisper_idx
+                )
+                if consumed is None:
+                    break
+                script_consumed, whisper_consumed = consumed
+                matched += 1
+                script_idx += script_consumed
+                whisper_idx += whisper_consumed
+
+            if matched < min_matches:
+                continue
+
+            indices, script_matched = extend_match(
+                body,
+                whisper_words,
+                whisper_start,
+                whisper_start,
+                lookahead,
+            )
+            if not indices:
+                continue
+            total_matched = skip_tokens + script_matched
+            if total_matched > best_script_matched:
+                best_script_matched = total_matched
+                best_indices = indices
+
+    if not best_indices:
+        return None
+    return best_indices, best_script_matched
 
 
 def align_segment(
@@ -860,68 +946,95 @@ def align_segment(
     cursor: int,
     fuzzy: bool = False,
     lookahead: int = DEFAULT_LOOKAHEAD,
-) -> tuple[list[int], int]:
+    *,
+    search_start: int | None = None,
+    search_end: int | None = None,
+) -> tuple[list[int], int, int]:
+    """Find the best script→whisper match within a search window.
+
+    Returns (matched_whisper_indices, next_cursor, matched_script_tokens).
+    """
     if not script_tokens:
-        return [], cursor
+        return [], cursor, 0
 
-    body_tokens = script_tokens
-    skip = 0
-    max_skip = DEFAULT_LOOKAHEAD if fuzzy else 0
-    max_jump = max(DEFAULT_MAX_CURSOR_JUMP, len(script_tokens) * 2)
+    if search_start is None:
+        search_start = max(0, cursor - 30)
+    if search_end is None:
+        search_end = min(
+            len(whisper_words),
+            cursor + max(DEFAULT_MAX_CURSOR_JUMP, len(script_tokens) * 3),
+        )
 
-    window_hit = find_window_start(
-        script_tokens,
-        whisper_words,
-        cursor,
-        max_skip=max_skip,
-        max_cursor_jump=max_jump,
-    )
-    if window_hit is None:
-        skip = fact_number_token_length(script_tokens)
-        if skip > 1:
-            body_tokens = script_tokens[skip:]
-            window_hit = find_window_start(
-                body_tokens,
-                whisper_words,
-                cursor,
-                max_skip=max_skip,
-                max_cursor_jump=max_jump,
-            )
-    if window_hit is None and not fuzzy:
-        expanded_window = min(12, len(script_tokens))
-        window_hit = find_window_start(
+    search_start = max(0, min(search_start, len(whisper_words)))
+    search_end = max(search_start + 1, min(search_end, len(whisper_words)))
+
+    lookahead_use = lookahead if fuzzy else DEFAULT_LOOKAHEAD
+    if fuzzy:
+        max_skip = min(DEFAULT_LOOKAHEAD, max(0, len(script_tokens) // 8))
+    else:
+        max_skip = min(2, fact_number_token_length(script_tokens))
+    span = search_end - search_start
+    step = 1 if fuzzy or span <= 400 else 2
+
+    best_indices: list[int] = []
+    best_next = cursor
+    best_script_matched = 0
+    best_distance = float("inf")
+
+    for whisper_start in range(search_start, search_end, step):
+        hit = _try_anchor_match(
             script_tokens,
             whisper_words,
-            cursor,
-            window_size=expanded_window,
-            max_skip=min(4, max(0, len(script_tokens) // 10)),
-            max_cursor_jump=min(len(whisper_words) - cursor, len(script_tokens) * 4),
+            whisper_start,
+            lookahead_use,
+            max_skip,
         )
-        if window_hit is None and skip > 1:
-            window_hit = find_window_start(
-                body_tokens,
+        if hit is None:
+            continue
+        indices, script_matched = hit
+        distance = abs(whisper_start - cursor)
+        if script_matched > best_script_matched or (
+            script_matched == best_script_matched and distance < best_distance
+        ):
+            best_script_matched = script_matched
+            best_indices = indices
+            best_next = indices[-1] + 1
+            best_distance = distance
+
+    if not best_indices and fuzzy:
+        total = len(whisper_words)
+        if search_start is not None and search_end is not None:
+            center = (search_start + search_end) // 2
+        else:
+            center = cursor
+        wide_margin = min(total, max(400, len(script_tokens) * 8))
+        wide_start = max(0, center - wide_margin)
+        wide_end = min(total, center + wide_margin)
+        wide_step = 1 if wide_end - wide_start <= 500 else 3
+        for whisper_start in range(wide_start, wide_end, wide_step):
+            hit = _try_anchor_match(
+                script_tokens,
                 whisper_words,
-                cursor,
-                window_size=min(12, len(body_tokens)),
-                max_skip=min(4, max(0, len(body_tokens) // 10)),
-                max_cursor_jump=min(len(whisper_words) - cursor, len(script_tokens) * 4),
+                whisper_start,
+                lookahead_use,
+                min(DEFAULT_LOOKAHEAD, max(2, len(script_tokens) // 6)),
             )
-    if window_hit is None:
-        return [], cursor
+            if hit is None:
+                continue
+            indices, script_matched = hit
+            distance = abs(whisper_start - center)
+            if script_matched > best_script_matched or (
+                script_matched == best_script_matched and distance < best_distance
+            ):
+                best_script_matched = script_matched
+                best_indices = indices
+                best_next = indices[-1] + 1
+                best_distance = distance
 
-    start_idx, whisper_idx = window_hit
-    matched_indices = extend_match(
-        body_tokens,
-        whisper_words,
-        start_idx,
-        whisper_idx,
-        lookahead=lookahead if fuzzy else DEFAULT_LOOKAHEAD,
-    )
+    if not best_indices:
+        return [], cursor, 0
 
-    if not matched_indices:
-        matched_indices = [start_idx]
-
-    return matched_indices, matched_indices[-1] + 1
+    return best_indices, best_next, best_script_matched
 
 
 def interpolate_failed_segments(timeline_segments: list[dict[str, Any]]) -> list[str]:
@@ -1012,6 +1125,18 @@ def apply_aligned_spans(
         entry["timing"] = make_timing_block(start_seconds, end_seconds)
 
 
+def segments_needing_realign(timeline_segments: list[dict[str, Any]]) -> set[int]:
+    needs = failed_segment_ids(timeline_segments)
+    for entry in timeline_segments:
+        if entry["alignment"]["status"] != "aligned":
+            continue
+        script_words = int(entry["alignment"].get("script_words") or 0)
+        matched_words = int(entry["alignment"].get("matched_words") or 0)
+        if script_words and not is_strong_alignment(script_words, matched_words):
+            needs.add(entry["segment_id"])
+    return needs
+
+
 def build_whisper_timeline(
     script_data: dict[str, Any],
     whisper_words: list[dict[str, Any]],
@@ -1044,41 +1169,42 @@ def build_whisper_timeline(
             continue
 
         if retry_only and segment_id in existing_by_id:
-            prior = existing_by_id[segment_id]
             for earlier in timeline_segments:
                 if earlier["segment_id"] == segment_id:
                     break
-                if earlier["timing"]["start_seconds"] is not None:
-                    whisper_cursor = max(
-                        whisper_cursor,
-                        earlier["alignment"].get("whisper_word_indices", [-1])[-1] + 1
-                        if earlier["alignment"].get("whisper_word_indices")
-                        else 0,
-                    )
+                indices = earlier["alignment"].get("whisper_word_indices") or []
+                if indices:
+                    whisper_cursor = max(whisper_cursor, indices[-1] + 1)
 
         script_tokens = segment["script_tokens"]
-        matched_indices, next_cursor = align_segment(
+        search_start, search_end = estimate_whisper_search_window(
+            index,
+            segment_list,
+            whisper_words,
+            whisper_cursor,
+            fuzzy=fuzzy,
+        )
+        matched_indices, next_cursor, matched_script_tokens = align_segment(
             script_tokens,
             whisper_words,
             whisper_cursor,
             fuzzy=fuzzy,
             lookahead=lookahead,
+            search_start=search_start,
+            search_end=search_end,
         )
 
-        alignment_ratio = (
-            len(matched_indices) / len(script_tokens) if script_tokens else 1.0
-        )
-        aligned = is_strong_alignment(len(script_tokens), len(matched_indices))
+        aligned = is_strong_alignment(len(script_tokens), matched_script_tokens)
 
         if aligned:
             whisper_cursor = next_cursor
             raw_starts[segment_id] = float(whisper_words[matched_indices[0]]["start"])
             raw_ends[segment_id] = float(whisper_words[matched_indices[-1]]["end"])
             alignment_status = "aligned"
-            if alignment_ratio < 1.0:
+            if matched_script_tokens < len(script_tokens):
                 warnings.append(
                     f"Segment {segment_id}: partial match "
-                    f"({len(matched_indices)}/{len(script_tokens)} words)."
+                    f"({matched_script_tokens}/{len(script_tokens)} words)."
                 )
         else:
             alignment_status = "unmatched"
@@ -1096,7 +1222,7 @@ def build_whisper_timeline(
             "broll": segment["broll"],
             "alignment": {
                 "status": alignment_status,
-                "matched_words": len(matched_indices),
+                "matched_words": matched_script_tokens,
                 "script_words": len(script_tokens),
                 "whisper_word_indices": matched_indices,
             },
