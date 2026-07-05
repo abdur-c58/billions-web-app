@@ -120,7 +120,7 @@ export async function uploadTimestampsFile(file: File) {
   });
 }
 
-export async function startSegmentTimestamps(model = "small") {
+export async function startSegmentTimestamps(model = "medium") {
   return apiFetch<ProjectStatus["timestamps_job"]>("/api/project/segment-timestamps", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

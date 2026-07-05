@@ -26,7 +26,18 @@ HardwareCallback = Callable[[dict[str, Any]], None] | None
 DEFAULT_WPM = 145.0
 DEFAULT_MIN_DURATION = 2.0
 DEFAULT_GAP = 0.0
-DEFAULT_WHISPER_MODEL = "small"
+DEFAULT_WHISPER_MODEL = "medium"
+WHISPER_MODELS = frozenset(
+    {"tiny", "base", "small", "medium", "large", "large-v2", "large-v3", "turbo"}
+)
+
+
+def normalize_whisper_model(model: str | None) -> str:
+    name = str(model or DEFAULT_WHISPER_MODEL).strip().lower()
+    if name not in WHISPER_MODELS:
+        allowed = ", ".join(sorted(WHISPER_MODELS))
+        raise ValueError(f"Unsupported Whisper model '{model}'. Choose from: {allowed}.")
+    return name
 DEFAULT_LOOKAHEAD = 8
 DEFAULT_MATCH_WINDOW = 5
 DEFAULT_MIN_WINDOW_MATCH_RATIO = 0.6

@@ -2108,7 +2108,9 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 workspace = self._require_workspace() if self.workspace_mode else self.project_dir
                 body = self._read_json_body() if self.headers.get("Content-Length") else {}
-                model = str(body.get("model", "small"))
+                from segment_timestamps import normalize_whisper_model
+
+                model = normalize_whisper_model(str(body.get("model", "medium")))
 
                 def on_complete() -> None:
                     configure_handler_paths(

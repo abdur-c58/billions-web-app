@@ -3,8 +3,16 @@
 import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
 import type { ProjectStatus, TimestampAlignment } from "@/lib/project";
+import { WHISPER_MODEL_OPTIONS, type WhisperModel } from "@/lib/whisper";
 
 function formatLogTime(ts: number) {
   return new Date(ts * 1000).toLocaleTimeString(undefined, {
@@ -70,6 +78,11 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
   );
   const isWhisperStage =
     timestampsRunning && setup.status?.timestamps_job.stage === "whisper";
+  const segmentControlsDisabled =
+    !setup.status?.script_uploaded ||
+    !setup.status?.audio_uploaded ||
+    setup.busy ||
+    timestampsRunning;
 
   return (
     <section className="page-container flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10">
@@ -249,11 +262,36 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                <Select<WhisperModel>
+                  value={setup.whisperModel}
+                  onValueChange={(value) => {
+                    if (value) setup.setWhisperModel(value);
+                  }}
+                  items={WHISPER_MODEL_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                  disabled={segmentControlsDisabled}
+                >
+                  <SelectTrigger
+                    className="w-[148px]"
+                    aria-label="Whisper model"
+                    disabled={segmentControlsDisabled}
+                  >
+                    <SelectValue placeholder="Model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WHISPER_MODEL_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="font-medium">{option.label}</span>
+                        <span className="ml-1.5 text-[var(--muted)]">· {option.description}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <label
                   className={`glow-btn-secondary inline-flex cursor-pointer items-center gap-2 px-3.5 py-2.5 text-sm font-semibold ${
-                    !setup.status?.script_uploaded || !setup.status?.audio_uploaded || setup.busy || timestampsRunning
-                      ? "cursor-not-allowed opacity-50"
-                      : ""
+                    segmentControlsDisabled ? "cursor-not-allowed opacity-50" : ""
                   }`}
                 >
                   <FileStack className="h-4 w-4" />
@@ -263,10 +301,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     accept=".json,application/json"
                     className="hidden"
                     disabled={
-                      !setup.status?.script_uploaded ||
-                      !setup.status?.audio_uploaded ||
-                      setup.busy ||
-                      timestampsRunning
+                      segmentControlsDisabled
                     }
                     onChange={(event) => {
                       const file = event.target.files?.[0];
@@ -277,12 +312,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                 <button
                   type="button"
                   className="glow-btn-primary inline-flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
-                  disabled={
-                    !setup.status?.script_uploaded ||
-                    !setup.status?.audio_uploaded ||
-                    setup.busy ||
-                    timestampsRunning
-                  }
+                  disabled={segmentControlsDisabled}
                   onClick={() => void setup.segmentTimestamps()}
                 >
                   {timestampsRunning ? (

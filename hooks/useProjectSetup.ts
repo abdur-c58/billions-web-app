@@ -12,12 +12,19 @@ import {
 } from "@/lib/project";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 import { fetchScriptTranscript } from "@/lib/script";
+import {
+  DEFAULT_WHISPER_MODEL,
+  readStoredWhisperModel,
+  storeWhisperModel,
+  type WhisperModel,
+} from "@/lib/whisper";
 
 export function useProjectSetup(projectId: string | null) {
   const [status, setStatus] = useState<ProjectStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [whisperModel, setWhisperModelState] = useState<WhisperModel>(DEFAULT_WHISPER_MODEL);
   const [audioUploadProgress, setAudioUploadProgress] = useState<number | null>(null);
   const [copyingTranscript, setCopyingTranscript] = useState(false);
   const [transcriptNotice, setTranscriptNotice] = useState<string | null>(null);
@@ -68,6 +75,15 @@ export function useProjectSetup(projectId: string | null) {
       setError(err instanceof Error ? err.message : "Failed to poll timestamp job");
     }
   }, [refresh]);
+
+  useEffect(() => {
+    setWhisperModelState(readStoredWhisperModel());
+  }, []);
+
+  const setWhisperModel = useCallback((model: WhisperModel) => {
+    setWhisperModelState(model);
+    storeWhisperModel(model);
+  }, []);
 
   useEffect(() => {
     if (!sessionReady) {
@@ -121,14 +137,14 @@ export function useProjectSetup(projectId: string | null) {
     setBusy(true);
     setError(null);
     try {
-      await startSegmentTimestamps();
+      await startSegmentTimestamps(whisperModel);
       await pollTimestamps();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start timestamp segmentation");
     } finally {
       setBusy(false);
     }
-  }, [pollTimestamps]);
+  }, [pollTimestamps, whisperModel]);
 
   const importTimestamps = useCallback(async (file: File) => {
     setBusy(true);
@@ -177,5 +193,7 @@ export function useProjectSetup(projectId: string | null) {
     transcriptNotice,
     viewerReady: Boolean(status?.viewer_ready),
     audioUploadProgress,
+    whisperModel,
+    setWhisperModel,
   };
 }

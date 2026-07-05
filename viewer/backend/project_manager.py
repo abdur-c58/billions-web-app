@@ -436,9 +436,12 @@ def timestamps_job_snapshot(workspace: Path) -> dict[str, Any]:
 def start_segment_timestamps(
     workspace: Path,
     *,
-    model: str = "small",
+    model: str = "medium",
     on_complete: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
+    from segment_timestamps import normalize_whisper_model
+
+    model = normalize_whisper_model(model)
     global _timestamps_workspace
     paths = workspace_paths(workspace)
     if not paths["script"].exists():
