@@ -12,6 +12,7 @@ from typing import Any, Callable
 
 from segment_timestamps import (
     cache_path_for_audio,
+    clear_resegment_artifacts,
     generate_segment_timestamps,
     iter_script_segments,
 )
@@ -459,6 +460,23 @@ def start_segment_timestamps(
         state = _get_timestamps_state_unlocked(workspace)
         state["logs"] = []
         state["restart_required"] = False
+
+    if retranscribe:
+        cleared = clear_resegment_artifacts(
+            paths["workspace"],
+            audio_path=paths["audio"],
+            output_path=paths["timestamps"],
+        )
+        if cleared:
+            message = f"Cleared {', '.join(cleared[:3])}"
+            if len(cleared) > 3:
+                message += f" (+{len(cleared) - 3} more)"
+            _set_timestamps_state(
+                workspace,
+                message=message,
+                stage="prepare",
+                progress_percent=1,
+            )
 
     _set_timestamps_state(
         workspace,

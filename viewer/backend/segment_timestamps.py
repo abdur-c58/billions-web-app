@@ -39,9 +39,9 @@ def normalize_whisper_model(model: str | None) -> str:
         raise ValueError(f"Unsupported Whisper model '{model}'. Choose from: {allowed}.")
     return name
 DEFAULT_LOOKAHEAD = 12
-DEFAULT_MATCH_WINDOW = 5
+DEFAULT_MATCH_WINDOW = 8
 DEFAULT_MIN_WINDOW_MATCH_RATIO = 0.6
-DEFAULT_MAX_CURSOR_JUMP = 80
+DEFAULT_MAX_CURSOR_JUMP = 120
 CACHE_DIR = Path(".whisper_cache")
 IGNORED_SUBDIRS = {".broll_cache", ".whisper_cache"}
 ALLOWED_EXTRA_FILES = {
@@ -488,6 +488,41 @@ def cache_path_for_audio(audio_path: Path, model_name: str | None = None) -> Pat
     return CACHE_DIR / f"{project}_{audio_path.stem}{model_suffix}.json"
 
 
+def clear_resegment_artifacts(
+    folder: Path,
+    *,
+    audio_path: Path | None = None,
+    output_path: Path | None = None,
+) -> list[str]:
+    """Remove prior segment timestamps and Whisper caches before a fresh transcribe."""
+    removed: list[str] = []
+    timestamps = output_path or folder / "segment_timestamps.json"
+    if timestamps.exists():
+        timestamps.unlink()
+        removed.append(timestamps.name)
+
+    audio = audio_path or folder / "script.mp3"
+    project = audio.parent.name or folder.name
+    cache_pattern = f"{project}_{audio.stem}*.json"
+
+    cache_dirs: list[Path] = []
+    for candidate in (folder / CACHE_DIR, folder / ".whisper_cache", CACHE_DIR):
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if resolved not in {path.resolve() for path in cache_dirs} and resolved.exists():
+            cache_dirs.append(resolved)
+
+    for cache_dir in cache_dirs:
+        for cache_file in cache_dir.glob(cache_pattern):
+            if cache_file.is_file():
+                cache_file.unlink()
+                removed.append(cache_file.name)
+
+    return removed
+
+
 def load_whisper_words(cache_file: Path, *, model_name: str | None = None) -> list[dict[str, Any]] | None:
     if not cache_file.exists():
         return None
@@ -791,6 +826,34 @@ def fact_number_token_length(script_tokens: list[str]) -> int:
     return 1 + parsed[1]
 
 
+def alignment_ratio_threshold(script_word_count: int) -> float:
+    if script_word_count <= 20:
+        return 0.45
+    if script_word_count <= 50:
+        return 0.58
+    if script_word_count <= 90:
+        return 0.65
+    return 0.72
+
+
+def is_strong_alignment(script_word_count: int, matched_word_count: int) -> bool:
+    if matched_word_count <= 0:
+        return False
+    return matched_word_count / script_word_count >= alignment_ratio_threshold(script_word_count)
+
+
+def segments_needing_realign(timeline_segments: list[dict[str, Any]]) -> set[int]:
+    needs = failed_segment_ids(timeline_segments)
+    for entry in timeline_segments:
+        if entry["alignment"]["status"] != "aligned":
+            continue
+        script_words = int(entry["alignment"].get("script_words") or 0)
+        matched_words = int(entry["alignment"].get("matched_words") or 0)
+        if script_words and not is_strong_alignment(script_words, matched_words):
+            needs.add(entry["segment_id"])
+    return needs
+
+
 def align_segment(
     script_tokens: list[str],
     whisper_words: list[dict[str, Any]],
@@ -802,11 +865,16 @@ def align_segment(
         return [], cursor
 
     body_tokens = script_tokens
+    skip = 0
+    max_skip = DEFAULT_LOOKAHEAD if fuzzy else 0
+    max_jump = max(DEFAULT_MAX_CURSOR_JUMP, len(script_tokens) * 2)
+
     window_hit = find_window_start(
         script_tokens,
         whisper_words,
         cursor,
-        max_skip=DEFAULT_LOOKAHEAD if fuzzy else 0,
+        max_skip=max_skip,
+        max_cursor_jump=max_jump,
     )
     if window_hit is None:
         skip = fact_number_token_length(script_tokens)
@@ -816,7 +884,27 @@ def align_segment(
                 body_tokens,
                 whisper_words,
                 cursor,
-                max_skip=DEFAULT_LOOKAHEAD if fuzzy else 0,
+                max_skip=max_skip,
+                max_cursor_jump=max_jump,
+            )
+    if window_hit is None and not fuzzy:
+        expanded_window = min(12, len(script_tokens))
+        window_hit = find_window_start(
+            script_tokens,
+            whisper_words,
+            cursor,
+            window_size=expanded_window,
+            max_skip=min(4, max(0, len(script_tokens) // 10)),
+            max_cursor_jump=min(len(whisper_words) - cursor, len(script_tokens) * 4),
+        )
+        if window_hit is None and skip > 1:
+            window_hit = find_window_start(
+                body_tokens,
+                whisper_words,
+                cursor,
+                window_size=min(12, len(body_tokens)),
+                max_skip=min(4, max(0, len(body_tokens) // 10)),
+                max_cursor_jump=min(len(whisper_words) - cursor, len(script_tokens) * 4),
             )
     if window_hit is None:
         return [], cursor
@@ -980,10 +1068,7 @@ def build_whisper_timeline(
         alignment_ratio = (
             len(matched_indices) / len(script_tokens) if script_tokens else 1.0
         )
-        aligned = bool(matched_indices) and (
-            alignment_ratio >= 0.5
-            or (len(matched_indices) >= 3 and alignment_ratio >= 0.4)
-        )
+        aligned = is_strong_alignment(len(script_tokens), len(matched_indices))
 
         if aligned:
             whisper_cursor = next_cursor
@@ -1198,6 +1283,18 @@ def generate_segment_timestamps(
         input_path, audio_path = resolve_video_folder(folder)
     output_path = output or folder / "segment_timestamps.json"
 
+    if retranscribe:
+        cleared = clear_resegment_artifacts(
+            folder,
+            audio_path=audio_path,
+            output_path=output_path,
+        )
+        if cleared:
+            names = ", ".join(cleared[:4])
+            if len(cleared) > 4:
+                names += f", +{len(cleared) - 4} more"
+            report(4, f"Cleared prior segmentation files ({names})", "prepare")
+
     with input_path.open("r", encoding="utf-8") as infile:
         script_data = json.load(infile)
 
@@ -1260,6 +1357,43 @@ def generate_segment_timestamps(
     )
 
     if not retry_failed:
+        realign_ids = segments_needing_realign(timeline_segments)
+        if realign_ids:
+            report(88, f"Re-aligning {len(realign_ids)} weak segment(s)…", "retry")
+            for entry in timeline_segments:
+                if entry["segment_id"] in realign_ids:
+                    entry["timing"] = {
+                        "start_seconds": None,
+                        "end_seconds": None,
+                        "duration_seconds": None,
+                        "start_timecode": None,
+                        "end_timecode": None,
+                    }
+                    entry["alignment"]["status"] = "unmatched"
+                    entry["alignment"]["matched_words"] = 0
+                    entry["alignment"]["whisper_word_indices"] = []
+
+            def on_realign_progress(done: int, total: int, segment_id: int) -> None:
+                span = 10
+                base = 88
+                percent = base + int(span * done / max(1, total))
+                report_throttled(
+                    percent,
+                    f"Re-aligning segment {segment_id} ({done}/{total})…",
+                    "retry",
+                )
+
+            timeline_segments, realign_warnings = build_whisper_timeline(
+                script_data=script_data,
+                whisper_words=whisper_words,
+                fuzzy=True,
+                lookahead=lookahead,
+                only_segment_ids=realign_ids,
+                existing_timeline=timeline_segments,
+                on_segment_progress=on_realign_progress,
+            )
+            warnings.extend(realign_warnings)
+
         failed_ids = failed_segment_ids(timeline_segments)
         if failed_ids:
             report(90, f"Retrying {len(failed_ids)} failed segment(s)…", "retry")

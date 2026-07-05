@@ -137,12 +137,16 @@ export function SegmentationAlignmentSummary({
           {weak ? (
             <div className="mt-3 space-y-2 text-xs leading-5 text-[var(--muted)]">
               <p>
-                {filledWithoutMatch} segments were timed without a direct Whisper word match. B-roll
-                still works, but cuts may be less precise on those lines.
+                {filledWithoutMatch > 0
+                  ? `${filledWithoutMatch} segments were timed without a direct Whisper word match. `
+                  : ""}
+                Weak matches often mean the aligner lost sync with the narration — usually from a
+                long segment that only partially matched, not from the Whisper model size.
               </p>
               <p>
-                Try a larger model below (e.g. <strong className="text-[var(--foreground)]">large-v3</strong>
-                ) and re-run. Each model keeps its own transcript cache on your GPU.
+                Pick a model below and click <strong className="text-[var(--foreground)]">Re-run Auto-segment</strong>.
+                Use <strong className="text-[var(--foreground)]">large-v3</strong> if you have not already.
+                Each model keeps its own transcript cache.
               </p>
             </div>
           ) : null}
