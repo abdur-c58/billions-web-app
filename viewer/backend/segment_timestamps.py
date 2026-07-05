@@ -1108,21 +1108,83 @@ def apply_aligned_spans(
     raw_starts: dict[int, float],
     raw_ends: dict[int, float],
 ) -> None:
+    prev_end = 0.0
     for index, entry in enumerate(timeline_segments):
         segment_id = entry["segment_id"]
         if segment_id not in raw_starts:
             continue
 
-        start_seconds = raw_starts[segment_id]
-        end_seconds = raw_ends[segment_id]
+        start_seconds = max(float(raw_starts[segment_id]), prev_end)
+        end_seconds = float(raw_ends[segment_id])
 
         for future in timeline_segments[index + 1 :]:
             future_id = future["segment_id"]
             if future_id in raw_starts:
-                end_seconds = raw_starts[future_id]
+                end_seconds = max(float(raw_starts[future_id]), start_seconds + 0.05)
                 break
+        else:
+            end_seconds = max(end_seconds, start_seconds + 0.05)
 
         entry["timing"] = make_timing_block(start_seconds, end_seconds)
+        prev_end = float(entry["timing"]["end_seconds"])
+
+
+def pack_timeline_spans(
+    timeline_segments: list[dict[str, Any]],
+    audio_duration: float | None = None,
+) -> list[str]:
+    """Ensure segment spans are sequential so export duration matches narration length."""
+    warnings: list[str] = []
+    prev_end = 0.0
+
+    for index, entry in enumerate(timeline_segments):
+        timing = entry.get("timing") or {}
+        start = timing.get("start_seconds")
+        if start is None:
+            continue
+
+        start_seconds = float(start)
+        if start_seconds < prev_end - 0.01:
+            warnings.append(
+                f"Segment {entry['segment_id']}: packed forward to remove overlap."
+            )
+            start_seconds = prev_end
+
+        next_start: float | None = None
+        for future in timeline_segments[index + 1 :]:
+            future_start = future.get("timing", {}).get("start_seconds")
+            if future_start is not None:
+                next_start = float(future_start)
+                break
+
+        if next_start is not None and next_start > start_seconds:
+            end_seconds = next_start
+        else:
+            end_seconds = timing.get("end_seconds")
+            if end_seconds is None or float(end_seconds) <= start_seconds:
+                end_seconds = start_seconds + max(
+                    DEFAULT_MIN_DURATION, entry["word_count"] / DEFAULT_WPM * 60.0
+                )
+            else:
+                end_seconds = float(end_seconds)
+
+        if next_start is not None and next_start < end_seconds:
+            end_seconds = max(start_seconds + 0.05, next_start)
+
+        entry["timing"] = make_timing_block(start_seconds, end_seconds)
+        prev_end = float(entry["timing"]["end_seconds"])
+
+    if audio_duration is not None and timeline_segments:
+        last = timeline_segments[-1]
+        last_timing = last.get("timing") or {}
+        last_start = last_timing.get("start_seconds")
+        if last_start is not None:
+            last_start_f = float(last_start)
+            if audio_duration > last_start_f + 0.05:
+                last["timing"] = make_timing_block(last_start_f, audio_duration)
+                prev_end = audio_duration
+
+    return warnings
 
 
 def segments_needing_realign(timeline_segments: list[dict[str, Any]]) -> set[int]:
@@ -1544,6 +1606,8 @@ def generate_segment_timestamps(
                 on_segment_progress=on_retry_progress,
             )
             warnings.extend(retry_warnings)
+
+    warnings.extend(pack_timeline_spans(timeline_segments, video_duration_s))
 
     report(98, "Writing segment_timestamps.json…", "finalize")
     timeline = summarize_timeline(

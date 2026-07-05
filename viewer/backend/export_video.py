@@ -260,16 +260,83 @@ def gpu_scale_available(encoder_name: str) -> bool:
     return _gpu_scale_support
 
 
+def narration_timeline_seconds(timestamps_path: Path) -> float:
+    """How long the narration timeline spans (not the sum of per-segment clip lengths)."""
+    timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
+    video_duration = timestamps.get("video_duration_s")
+    if video_duration is not None and float(video_duration) > 0:
+        return float(video_duration)
+
+    summary = timestamps.get("summary") or {}
+    summary_duration = summary.get("total_duration_seconds")
+    if summary_duration is not None and float(summary_duration) > 0:
+        return float(summary_duration)
+
+    end_times: list[float] = []
+    for entry in timestamps.get("segments", []):
+        timing = entry.get("timing") or {}
+        end = timing.get("end_seconds")
+        if end is not None:
+            end_times.append(float(end))
+    if end_times:
+        return max(end_times)
+
+    start_times: list[float] = []
+    for entry in timestamps.get("segments", []):
+        timing = entry.get("timing") or {}
+        start = timing.get("start_seconds")
+        if start is not None:
+            start_times.append(float(start))
+    if start_times:
+        return max(start_times)
+
+    return 0.0
+
+
 def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str, Any]]:
     timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
     selections = json.loads(selections_path.read_text(encoding="utf-8")).get("segments", {})
 
+    entries = sorted(
+        timestamps.get("segments", []),
+        key=lambda item: item.get("segment_id") or 0,
+    )
+    audio_duration = timestamps.get("video_duration_s")
+    if audio_duration is not None:
+        audio_duration = float(audio_duration)
+    elif timestamps.get("summary", {}).get("total_duration_seconds"):
+        audio_duration = float(timestamps["summary"]["total_duration_seconds"])
+
+    prev_end = 0.0
     rows: list[dict[str, Any]] = []
-    for entry in timestamps.get("segments", []):
+    for index, entry in enumerate(entries):
         segment_id = entry.get("segment_id")
         timing = entry.get("timing", {})
-        duration = timing.get("duration_seconds")
-        if segment_id is None or duration is None or duration <= 0:
+        start = timing.get("start_seconds")
+        if segment_id is None or start is None:
+            continue
+
+        start_seconds = max(float(start), prev_end)
+        next_start: float | None = None
+        for future in entries[index + 1 :]:
+            future_start = future.get("timing", {}).get("start_seconds")
+            if future_start is not None:
+                next_start = float(future_start)
+                break
+
+        end = timing.get("end_seconds")
+        if next_start is not None and next_start > start_seconds:
+            end_seconds = next_start
+        elif end is not None and float(end) > start_seconds:
+            end_seconds = float(end)
+        else:
+            continue
+
+        if next_start is not None and next_start < end_seconds:
+            end_seconds = max(start_seconds + 0.05, next_start)
+
+        duration = end_seconds - start_seconds
+        if duration <= 0:
             continue
 
         selection = selections.get(str(segment_id))
@@ -280,8 +347,15 @@ def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str
                 "selection": selection,
             }
         )
+        prev_end = end_seconds
 
-    rows.sort(key=lambda item: item["segment_id"])
+    if audio_duration and rows:
+        last = rows[-1]
+        last_duration = audio_duration - (prev_end - last["duration"])
+        if last_duration > 0.05:
+            last["duration"] = float(last_duration)
+            prev_end = audio_duration
+
     return rows
 
 
@@ -1087,7 +1161,7 @@ def export_video(
     if not segments:
         raise RuntimeError("No timed segments found in timestamps file")
 
-    timeline_seconds = sum(segment["duration"] for segment in segments)
+    timeline_seconds = narration_timeline_seconds(timestamps_path)
     validate_narration_audio(
         audio_path,
         min_expected_seconds=timeline_seconds,
