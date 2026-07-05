@@ -78,6 +78,7 @@ def _alignment_summary_from_timestamps_file(timestamps_data: dict[str, Any]) -> 
         "estimated_segments": int(file_summary.get("estimated_segments") or 0),
         "total_duration_seconds": float(file_summary.get("total_duration_seconds") or 0),
         "total_duration_timecode": str(file_summary.get("total_duration_timecode") or ""),
+        "whisper_model": str((timestamps_data.get("timing_method") or {}).get("whisper_model") or ""),
     }
 
 
@@ -437,6 +438,7 @@ def start_segment_timestamps(
     workspace: Path,
     *,
     model: str = "medium",
+    retranscribe: bool = False,
     on_complete: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     from segment_timestamps import normalize_whisper_model
@@ -502,6 +504,7 @@ def start_segment_timestamps(
                 script_path=paths["script"],
                 audio_path=paths["audio"],
                 model=model,
+                retranscribe=retranscribe,
                 on_progress=on_progress,
                 on_hardware=on_hardware,
             )

@@ -9,6 +9,7 @@ export type TimestampAlignment = {
   estimated_segments?: number;
   total_duration_seconds?: number;
   total_duration_timecode?: string;
+  whisper_model?: string;
 };
 
 export type ProjectStatus = {
@@ -120,11 +121,14 @@ export async function uploadTimestampsFile(file: File) {
   });
 }
 
-export async function startSegmentTimestamps(model = "medium") {
+export async function startSegmentTimestamps(
+  model = "medium",
+  options?: { retranscribe?: boolean },
+) {
   return apiFetch<ProjectStatus["timestamps_job"]>("/api/project/segment-timestamps", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model }),
+    body: JSON.stringify({ model, retranscribe: options?.retranscribe ?? false }),
   });
 }
 

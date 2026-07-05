@@ -38,7 +38,7 @@ def normalize_whisper_model(model: str | None) -> str:
         allowed = ", ".join(sorted(WHISPER_MODELS))
         raise ValueError(f"Unsupported Whisper model '{model}'. Choose from: {allowed}.")
     return name
-DEFAULT_LOOKAHEAD = 8
+DEFAULT_LOOKAHEAD = 12
 DEFAULT_MATCH_WINDOW = 5
 DEFAULT_MIN_WINDOW_MATCH_RATIO = 0.6
 DEFAULT_MAX_CURSOR_JUMP = 80
@@ -479,23 +479,30 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
     return segments
 
 
-def cache_path_for_audio(audio_path: Path) -> Path:
+def cache_path_for_audio(audio_path: Path, model_name: str | None = None) -> Path:
     project = audio_path.parent.name or "project"
-    return CACHE_DIR / f"{project}_{audio_path.stem}.json"
+    model_suffix = ""
+    if model_name:
+        safe_model = re.sub(r"[^a-zA-Z0-9_-]+", "_", model_name.strip().lower())
+        model_suffix = f"_{safe_model}"
+    return CACHE_DIR / f"{project}_{audio_path.stem}{model_suffix}.json"
 
 
-def load_whisper_words(cache_file: Path) -> list[dict[str, Any]] | None:
+def load_whisper_words(cache_file: Path, *, model_name: str | None = None) -> list[dict[str, Any]] | None:
     if not cache_file.exists():
         return None
     with cache_file.open("r", encoding="utf-8") as infile:
         payload = json.load(infile)
+    cached_model = str(payload.get("model") or "").strip().lower()
+    if model_name and cached_model and cached_model != model_name.strip().lower():
+        return None
     return payload.get("words")
 
 
-def save_whisper_cache(cache_file: Path, words: list[dict[str, Any]]) -> None:
+def save_whisper_cache(cache_file: Path, words: list[dict[str, Any]], *, model_name: str) -> None:
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_text(
-        json.dumps({"words": words}, indent=2, ensure_ascii=False) + "\n",
+        json.dumps({"model": model_name, "words": words}, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
@@ -602,15 +609,15 @@ def get_whisper_words(
     model_name: str,
     retranscribe: bool,
 ) -> list[dict[str, Any]]:
-    cache_file = cache_path_for_audio(audio_path)
+    cache_file = cache_path_for_audio(audio_path, model_name)
     if not retranscribe:
-        cached = load_whisper_words(cache_file)
+        cached = load_whisper_words(cache_file, model_name=model_name)
         if cached:
             print(f"Using cached Whisper words from {cache_file}")
             return cached
 
     words = transcribe_audio(audio_path, model_name)
-    save_whisper_cache(cache_file, words)
+    save_whisper_cache(cache_file, words, model_name=model_name)
     print(f"Saved Whisper cache to {cache_file}")
     return words
 
@@ -973,7 +980,10 @@ def build_whisper_timeline(
         alignment_ratio = (
             len(matched_indices) / len(script_tokens) if script_tokens else 1.0
         )
-        aligned = bool(matched_indices) and alignment_ratio >= 0.5
+        aligned = bool(matched_indices) and (
+            alignment_ratio >= 0.5
+            or (len(matched_indices) >= 3 and alignment_ratio >= 0.4)
+        )
 
         if aligned:
             whisper_cursor = next_cursor
@@ -1177,6 +1187,7 @@ def generate_segment_timestamps(
         report(percent, message, stage)
 
     report(2, "Preparing alignment…", "prepare")
+    model = normalize_whisper_model(model)
     if script_path is not None and audio_path is not None:
         input_path = script_path
         if not input_path.exists():
@@ -1190,8 +1201,9 @@ def generate_segment_timestamps(
     with input_path.open("r", encoding="utf-8") as infile:
         script_data = json.load(infile)
 
-    cache_file = cache_path_for_audio(audio_path)
-    cached_words = None if retranscribe else load_whisper_words(cache_file)
+    model = normalize_whisper_model(model)
+    cache_file = cache_path_for_audio(audio_path, model)
+    cached_words = None if retranscribe else load_whisper_words(cache_file, model_name=model)
     if cached_words:
         report(38, "Using cached Whisper transcription", "whisper")
         whisper_words = cached_words
@@ -1207,7 +1219,7 @@ def generate_segment_timestamps(
             on_progress=whisper_progress,
             on_hardware=on_hardware,
         )
-        save_whisper_cache(cache_file, whisper_words)
+        save_whisper_cache(cache_file, whisper_words, model_name=model)
         report(38, "Transcription complete", "whisper")
 
     video_duration_s = get_audio_duration(audio_path)

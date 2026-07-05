@@ -3,16 +3,9 @@
 import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WhisperModelSelect } from "@/components/WhisperModelSelect";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
 import type { ProjectStatus, TimestampAlignment } from "@/lib/project";
-import { WHISPER_MODEL_OPTIONS, type WhisperModel } from "@/lib/whisper";
 
 function formatLogTime(ts: number) {
   return new Date(ts * 1000).toLocaleTimeString(undefined, {
@@ -261,34 +254,12 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                <Select<WhisperModel>
+                <div className="flex flex-wrap items-end gap-2 sm:shrink-0">
+                <WhisperModelSelect
                   value={setup.whisperModel}
-                  onValueChange={(value) => {
-                    if (value) setup.setWhisperModel(value);
-                  }}
-                  items={WHISPER_MODEL_OPTIONS.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                  }))}
+                  onValueChange={setup.setWhisperModel}
                   disabled={segmentControlsDisabled}
-                >
-                  <SelectTrigger
-                    className="w-[148px]"
-                    aria-label="Whisper model"
-                    disabled={segmentControlsDisabled}
-                  >
-                    <SelectValue placeholder="Model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WHISPER_MODEL_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className="font-medium">{option.label}</span>
-                        <span className="ml-1.5 text-[var(--muted)]">· {option.description}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 <label
                   className={`glow-btn-secondary inline-flex cursor-pointer items-center gap-2 px-3.5 py-2.5 text-sm font-semibold ${
                     segmentControlsDisabled ? "cursor-not-allowed opacity-50" : ""

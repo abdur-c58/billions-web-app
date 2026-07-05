@@ -13,6 +13,7 @@ import { FolderFetchModal } from "@/components/FolderFetchModal";
 import { SegmentVirtualGrid } from "@/components/SegmentVirtualGrid";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
+import { useWhisperResegment } from "@/hooks/useWhisperResegment";
 import { resolveBrollApiUrl } from "@/lib/api";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
@@ -23,6 +24,7 @@ const DESCRIPTION_CHAPTERS_KEY = "broll-description-chapters";
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
   const viewer = useBrollViewer();
+  const resegment = useWhisperResegment(() => viewer.loadSegments());
   const router = useRouter();
   const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
   const [storagePickerSegmentId, setStoragePickerSegmentId] = useState<number | null>(null);
@@ -326,7 +328,19 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
             </p>
             {viewer.timestampAlignment ? (
               <div className="mt-3 max-w-2xl">
-                <SegmentationAlignmentSummary alignment={viewer.timestampAlignment} />
+                <SegmentationAlignmentSummary
+                  alignment={viewer.timestampAlignment}
+                  whisperModel={resegment.whisperModel}
+                  onWhisperModelChange={resegment.setWhisperModel}
+                  onResegment={() => void resegment.resegment({ retranscribe: true })}
+                  resegmenting={resegment.running}
+                  resegmentDisabled={!viewer.backendReady}
+                  jobMessage={resegment.job?.message}
+                  jobProgress={resegment.job?.progress_percent ?? null}
+                />
+                {resegment.error ? (
+                  <p className="mt-2 text-xs text-[#ffc9c9]">{resegment.error}</p>
+                ) : null}
               </div>
             ) : null}
             {!viewer.backendReady ? (

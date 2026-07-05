@@ -1099,5 +1099,6 @@ export function useBrollViewer() {
     timestampSeekInput,
     setTimestampSeekInput,
     seekToTimestamp,
+    loadSegments,
   };
 }

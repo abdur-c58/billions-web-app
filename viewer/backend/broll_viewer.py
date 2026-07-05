@@ -2111,6 +2111,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 from segment_timestamps import normalize_whisper_model
 
                 model = normalize_whisper_model(str(body.get("model", "medium")))
+                retranscribe = bool(body.get("retranscribe", False))
 
                 def on_complete() -> None:
                     configure_handler_paths(
@@ -2126,6 +2127,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 snapshot = start_segment_timestamps(
                     workspace,
                     model=model,
+                    retranscribe=retranscribe,
                     on_complete=on_complete if self.workspace_mode else None,
                 )
                 self._send_json(snapshot)

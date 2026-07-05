@@ -48,7 +48,7 @@ function SelectContent({
       <SelectPrimitive.Positioner sideOffset={8} alignItemWithTrigger={false}>
         <SelectPrimitive.Popup
           className={cn(
-            "z-50 max-h-72 min-w-[var(--anchor-width)] overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] p-1 text-[var(--foreground)] shadow-lg",
+            "z-[200] max-h-72 min-w-[var(--anchor-width)] overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] p-1 text-[var(--foreground)] shadow-lg",
             className,
           )}
           {...props}

@@ -12,19 +12,14 @@ import {
 } from "@/lib/project";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 import { fetchScriptTranscript } from "@/lib/script";
-import {
-  DEFAULT_WHISPER_MODEL,
-  readStoredWhisperModel,
-  storeWhisperModel,
-  type WhisperModel,
-} from "@/lib/whisper";
+import { useWhisperModel } from "@/hooks/useWhisperResegment";
 
 export function useProjectSetup(projectId: string | null) {
   const [status, setStatus] = useState<ProjectStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [whisperModel, setWhisperModelState] = useState<WhisperModel>(DEFAULT_WHISPER_MODEL);
+  const { whisperModel, setWhisperModel } = useWhisperModel();
   const [audioUploadProgress, setAudioUploadProgress] = useState<number | null>(null);
   const [copyingTranscript, setCopyingTranscript] = useState(false);
   const [transcriptNotice, setTranscriptNotice] = useState<string | null>(null);
@@ -75,15 +70,6 @@ export function useProjectSetup(projectId: string | null) {
       setError(err instanceof Error ? err.message : "Failed to poll timestamp job");
     }
   }, [refresh]);
-
-  useEffect(() => {
-    setWhisperModelState(readStoredWhisperModel());
-  }, []);
-
-  const setWhisperModel = useCallback((model: WhisperModel) => {
-    setWhisperModelState(model);
-    storeWhisperModel(model);
-  }, []);
 
   useEffect(() => {
     if (!sessionReady) {
@@ -137,7 +123,7 @@ export function useProjectSetup(projectId: string | null) {
     setBusy(true);
     setError(null);
     try {
-      await startSegmentTimestamps(whisperModel);
+      await startSegmentTimestamps(whisperModel, { retranscribe: false });
       await pollTimestamps();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start timestamp segmentation");

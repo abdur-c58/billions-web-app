@@ -193,6 +193,7 @@ export type TimestampAlignment = {
   estimated_segments?: number;
   total_duration_seconds?: number;
   total_duration_timecode?: string;
+  whisper_model?: string;
 };
 
 export type FetchPayload = {
