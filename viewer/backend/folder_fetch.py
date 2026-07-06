@@ -34,10 +34,19 @@ def enrich_segments_folder_status(
     category_counts: dict[str, int] = {}
 
     for segment in segments:
+        if segment.get("render_mode") == "remotion":
+            continue
         category = str(segment.get("category") or "").strip()
         category_counts[category] = category_counts.get(category, 0) + 1
 
     for segment in segments:
+        if segment.get("render_mode") == "remotion":
+            segment["folder_status"] = {
+                "expects_folder": False,
+                "has_folder": False,
+                "clip_count": 0,
+            }
+            continue
         category = str(segment.get("category") or "").strip()
         if category == "stock":
             segment["folder_status"] = {
@@ -217,6 +226,8 @@ def build_folder_fetch_plan(
     shortages: list[dict[str, Any]] = []
 
     for segment in segments:
+        if segment.get("render_mode") == "remotion":
+            continue
         category = str(segment.get("category") or "").strip()
         if category == "stock":
             assignments.append(

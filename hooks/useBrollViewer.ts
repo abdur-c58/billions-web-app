@@ -19,6 +19,11 @@ import type {
   ViewerSegment,
 } from "@/lib/types";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
+import {
+  isRemotionSegment,
+  segmentCountsAsReady,
+  segmentNeedsBrollFetch,
+} from "@/lib/remotion";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 
 const EXPORT_POLL_MS = 2000;
@@ -116,8 +121,8 @@ export function useBrollViewer() {
     const query = searchQuery.trim().toLowerCase();
     return segments.filter((segment) => {
       if (beatFilter && String(segment.beat) !== beatFilter) return false;
-      if (statusFilter === "missing" && segment.selection) return false;
-      if (statusFilter === "selected" && !segment.selection) return false;
+      if (statusFilter === "missing" && segmentCountsAsReady(segment)) return false;
+      if (statusFilter === "selected" && !segmentCountsAsReady(segment)) return false;
       if (qualityFilter) {
         const tier =
           segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
@@ -146,7 +151,7 @@ export function useBrollViewer() {
     [segments],
   );
 
-  const selectedCount = segments.filter((segment) => segment.selection).length;
+  const selectedCount = segments.filter((segment) => segmentCountsAsReady(segment)).length;
 
   const updateExportUi = useCallback((snapshot: ExportSnapshot) => {
     setExportSnapshot(snapshot);
@@ -292,6 +297,12 @@ export function useBrollViewer() {
       provider: FetchProvider = "mix",
     ) => {
       const segment = segmentsRef.current.find((item) => item.segment_id === segmentId);
+      if (segment && isRemotionSegment(segment)) {
+        if (!quiet) {
+          showStatus(`Segment ${segmentId} uses Remotion — no b-roll fetch needed.`);
+        }
+        return true;
+      }
       if (segment && scriptFormatRef.current === "folder") {
         const category = segment.category.trim().toLowerCase();
         if (category !== "stock") {
@@ -646,7 +657,8 @@ export function useBrollViewer() {
       "Fetching missing",
       () =>
         segmentsRef.current.filter(
-          (segment) => !segment.selection && shouldApiFetchSegment(segment),
+          (segment) =>
+            segmentNeedsBrollFetch(segment) && shouldApiFetchSegment(segment),
         ),
       false,
       "mix",
@@ -716,19 +728,25 @@ export function useBrollViewer() {
   );
 
   const refetchAll = useCallback(async (provider: FetchProvider = "mix") => {
-    if (!segmentsRef.current.length) return;
+    const targets = segmentsRef.current.filter((segment) => !isRemotionSegment(segment));
+    if (!targets.length) return;
+    const skipped = segmentsRef.current.length - targets.length;
     const confirmed = window.confirm(
-      `Refetch all ${segmentsRef.current.length} segments using ${provider}?`,
+      `Refetch all ${targets.length} b-roll segment${targets.length === 1 ? "" : "s"} using ${provider}?` +
+        (skipped > 0
+          ? ` (${skipped} Remotion segment${skipped === 1 ? "" : "s"} skipped)`
+          : ""),
     );
     if (!confirmed) return;
 
-    const snapshot = [...segmentsRef.current];
+    const snapshot = [...targets];
     await runBatch("Refetching", () => snapshot, true, provider);
   }, [runBatch]);
 
   const refetchReview = useCallback(
     async (provider: FetchProvider = "mix") => {
       const reviewTargets = segmentsRef.current.filter((segment) => {
+        if (isRemotionSegment(segment)) return false;
         const tier = segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
         return tier === "review";
       });
@@ -740,6 +758,7 @@ export function useBrollViewer() {
   const refetchUnscored = useCallback(
     async () => {
       const unscoredCount = segmentsRef.current.filter((segment) => {
+        if (isRemotionSegment(segment)) return false;
         const selection = segment.selection;
         return Boolean(selection?.url) && !selection?.confidence_source;
       }).length;
@@ -870,7 +889,10 @@ export function useBrollViewer() {
       await runBatch(
         label,
         () =>
-          segmentsRef.current.filter((segment) => snapshot.includes(segment.segment_id)),
+          segmentsRef.current.filter(
+            (segment) =>
+              snapshot.includes(segment.segment_id) && !isRemotionSegment(segment),
+          ),
         true,
         provider,
       );

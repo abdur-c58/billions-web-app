@@ -1749,6 +1749,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 if segment is None:
                     self._send_json({"error": "Segment not found"}, HTTPStatus.NOT_FOUND)
                     return
+                if segment.get("render_mode") == "remotion":
+                    self._send_json(
+                        {"error": "Remotion segments are rendered automatically and do not use b-roll fetch."},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
 
                 query_override = params.get("query", [""])[0].strip() or None
                 provider = params.get("provider", ["mix"])[0].strip().lower()

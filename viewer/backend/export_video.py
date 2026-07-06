@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent
-EXPORT_API_VERSION = 7  # bump when export pipeline changes (7 = Remotion segment renders)
+EXPORT_API_VERSION = 8  # bump when export pipeline changes (8 = concat timebase fix + narration-master trim)
 DEFAULT_OUTPUT = ROOT / "final_video.mp4"
 CLIP_CACHE_DIR = ROOT / ".broll_cache"
 SEGMENT_CACHE_DIR = ROOT / ".export_cache" / "segments"
@@ -531,12 +531,44 @@ def clear_export_work_cache(cache_dir: Path, output_path: Path | None = None) ->
     segments_dir = cache_dir / "segments"
     if segments_dir.exists():
         shutil.rmtree(segments_dir)
-    for name in ("video_only.mp4", "concat_list.txt"):
+    for name in ("video_only.mp4", "video_only_trimmed.mp4", "concat_list.txt", "narration_adjusted.m4a"):
         path = cache_dir / name
         if path.exists():
             path.unlink()
     if output_path and output_path.exists():
         output_path.unlink()
+
+
+def segment_cache_duration_ok(path: Path, expected_duration: float, *, tolerance: float = 0.75) -> bool:
+    """True when a cached segment clip matches the requested duration."""
+    if not path.exists() or path.stat().st_size == 0:
+        return False
+    try:
+        actual = probe_duration(path)
+    except (RuntimeError, ValueError, subprocess.CalledProcessError):
+        return False
+    return abs(actual - expected_duration) <= tolerance
+
+
+def trim_video_to_duration(
+    input_path: Path,
+    output_path: Path,
+    duration_seconds: float,
+    *,
+    should_cancel: CancelCheck | None = None,
+) -> None:
+    run_ffmpeg(
+        [
+            "-i",
+            str(input_path),
+            "-t",
+            f"{duration_seconds:.3f}",
+            "-c",
+            "copy",
+            str(output_path),
+        ],
+        should_cancel=should_cancel,
+    )
 
 
 def render_segment_clip(
@@ -578,10 +610,11 @@ def render_segment_clip(
             ).encode("utf-8")
         ).hexdigest()[:12]
         out_path = segment_cache_dir / f"segment_{segment_id:03d}_remotion_{cache_id}_{res_tag}.mp4"
-        if not force and out_path.exists() and out_path.stat().st_size > 0:
+        if not force and segment_cache_duration_ok(out_path, duration):
+            normalize_segment_timestamps(out_path, should_cancel=should_cancel)
             return out_path
         remotion_cache = (cache_dir / "remotion") if cache_dir else (ROOT / ".export_cache" / "remotion")
-        return render_remotion_clip(
+        rendered = render_remotion_clip(
             composition=composition,
             props=props,
             duration_seconds=duration,
@@ -591,10 +624,14 @@ def render_segment_clip(
             cache_dir=remotion_cache,
             force=force,
         )
+        normalize_segment_timestamps(rendered, should_cancel=should_cancel)
+        return rendered
 
     cache_id = selection_cache_id(selection)
-    out_path = segment_cache_dir / f"segment_{segment_id:03d}_{cache_id}_{res_tag}.mp4"
-    if not force and out_path.exists() and out_path.stat().st_size > 0:
+    duration_ms = int(round(duration * 1000))
+    out_path = segment_cache_dir / f"segment_{segment_id:03d}_{cache_id}_{duration_ms}ms_{res_tag}.mp4"
+    if not force and segment_cache_duration_ok(out_path, duration):
+        normalize_segment_timestamps(out_path, should_cancel=should_cancel)
         return out_path
 
     if selection and selection.get("url"):
@@ -666,6 +703,7 @@ def render_segment_clip(
                 ],
                 should_cancel=should_cancel,
             )
+        normalize_segment_timestamps(out_path, should_cancel=should_cancel)
         return out_path
 
     run_ffmpeg(
@@ -683,7 +721,32 @@ def render_segment_clip(
         ],
         should_cancel=should_cancel,
     )
+    normalize_segment_timestamps(out_path, should_cancel=should_cancel)
     return out_path
+
+
+def normalize_segment_timestamps(
+    path: Path,
+    *,
+    should_cancel: CancelCheck | None = None,
+) -> None:
+    """Remux a segment so concat demuxer gets a consistent timebase (Remotion vs NVENC)."""
+    temp = path.with_suffix(".norm.mp4")
+    run_ffmpeg(
+        [
+            "-i",
+            str(path),
+            "-c",
+            "copy",
+            "-reset_timestamps",
+            "1",
+            "-video_track_timescale",
+            str(FPS * 512),
+            str(temp),
+        ],
+        should_cancel=should_cancel,
+    )
+    temp.replace(path)
 
 
 def concat_segments(
@@ -1327,17 +1390,33 @@ def export_video(
                 mix_gains["narration_gain_db"],
                 should_cancel=should_cancel,
             )
-        mux_audio_path = adjusted_narration_path
-        progress("audio", 1, 1, "Narration normalized")
+            mux_audio_path = adjusted_narration_path
+            progress("audio", 1, 1, "Narration normalized")
 
     video_duration = probe_duration(video_only)
     audio_duration = probe_decoded_duration(mux_audio_path)
     if audio_duration + 5 < video_duration:
-        raise RuntimeError(
-            f"Final audio is only {audio_duration / 60:.1f} min but rendered video is "
-            f"{video_duration / 60:.1f} min. The narration MP3 is likely incomplete — "
-            "re-upload the full file, re-run segment timestamps, and export again."
+        if audio_duration + 15 < timeline_seconds:
+            raise RuntimeError(
+                f"Narration audio is only {audio_duration / 60:.1f} min but the timeline needs "
+                f"about {timeline_seconds / 60:.1f} min. Re-upload the full MP3, re-run segment "
+                "timestamps, and export again."
+            )
+        progress(
+            "concat",
+            0,
+            1,
+            f"Trimming video to narration ({video_duration:.0f}s -> {audio_duration:.0f}s)...",
         )
+        trimmed_video = work_dir / "video_only_trimmed.mp4"
+        trim_video_to_duration(
+            video_only,
+            trimmed_video,
+            audio_duration,
+            should_cancel=should_cancel,
+        )
+        video_only = trimmed_video
+        video_duration = audio_duration
 
     subtitles_count = 0
     subtitles_path = work_dir / "captions.srt"
