@@ -4,12 +4,11 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
+from remotion_schemas import sanitize_remotion_props
 from script_format import (
-    KNOWN_REMOTION_COMPOSITIONS,
     is_remotion_segment,
     parse_remotion_fields,
     parse_segment_render,
@@ -20,37 +19,6 @@ PREVIEW_HEIGHT = 720
 PREVIEW_MAX_SECONDS = 12.0
 PREVIEW_MIN_SECONDS = 2.0
 
-TEXT_ALIGNS = frozenset({"left", "center", "right"})
-VERTICAL_ALIGNS = frozenset({"top", "center", "bottom"})
-
-COMPOSITION_PROP_KEYS: dict[str, frozenset[str]] = {
-    "FactCard": frozenset(
-        {
-            "factNumber",
-            "title",
-            "body",
-            "accentColor",
-            "textAlign",
-            "verticalAlign",
-            "padding",
-            "titleSize",
-            "bodySize",
-        }
-    ),
-    "TitleCard": frozenset(
-        {
-            "title",
-            "subtitle",
-            "accentColor",
-            "textAlign",
-            "verticalAlign",
-            "padding",
-            "titleSize",
-            "subtitleSize",
-        }
-    ),
-}
-
 
 def find_script_segment(script_data: dict[str, Any], segment_id: int) -> dict[str, Any] | None:
     for beat_block in script_data.get("script", []):
@@ -58,58 +26,6 @@ def find_script_segment(script_data: dict[str, Any], segment_id: int) -> dict[st
             if int(segment.get("segment_id", -1)) == segment_id:
                 return segment
     return None
-
-
-def sanitize_remotion_props(composition: str, props: dict[str, Any]) -> dict[str, Any]:
-    if composition not in KNOWN_REMOTION_COMPOSITIONS:
-        raise ValueError(f"Unknown Remotion composition: {composition}")
-
-    allowed = COMPOSITION_PROP_KEYS[composition]
-    cleaned: dict[str, Any] = {}
-    for key, value in props.items():
-        if key not in allowed:
-            continue
-        if value is None:
-            continue
-        if isinstance(value, str) and not value.strip():
-            continue
-        cleaned[key] = value
-
-    if "factNumber" in cleaned:
-        try:
-            cleaned["factNumber"] = int(cleaned["factNumber"])
-        except (TypeError, ValueError):
-            cleaned.pop("factNumber", None)
-
-    for size_key in ("titleSize", "bodySize", "subtitleSize", "padding"):
-        if size_key in cleaned:
-            try:
-                number = float(cleaned[size_key])
-            except (TypeError, ValueError):
-                cleaned.pop(size_key, None)
-                continue
-            if size_key == "padding":
-                cleaned[size_key] = int(max(24, min(240, round(number))))
-            else:
-                cleaned[size_key] = int(max(24, min(120, round(number))))
-
-    if cleaned.get("textAlign") not in TEXT_ALIGNS:
-        cleaned.pop("textAlign", None)
-    if cleaned.get("verticalAlign") not in VERTICAL_ALIGNS:
-        cleaned.pop("verticalAlign", None)
-
-    if "accentColor" in cleaned:
-        color = str(cleaned["accentColor"]).strip()
-        if re.fullmatch(r"#[0-9a-fA-F]{3,8}", color):
-            cleaned["accentColor"] = color
-        else:
-            cleaned.pop("accentColor", None)
-
-    for text_key in ("title", "body", "subtitle"):
-        if text_key in cleaned:
-            cleaned[text_key] = str(cleaned[text_key]).strip()[:500]
-
-    return cleaned
 
 
 def merge_remotion_props(segment: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:

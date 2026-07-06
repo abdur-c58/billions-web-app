@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Play, RotateCcw, Save, Sparkles } from "lucide-react";
 import type { ViewerSegment } from "@/lib/types";
 import {
+  applyExtraPropsJson,
   buildRemotionPropsPayload,
+  extraPropsJson,
   mergePropsIntoFormValues,
   propsFromRemotion,
   remotionFieldsFor,
   remotionPropsDirty,
+  remotionSchemaAllowsExtra,
 } from "@/lib/remotionEditor";
 
 type RemotionSegmentEditorProps = {
@@ -39,27 +42,49 @@ export function RemotionSegmentEditor({
   );
 
   const [values, setValues] = useState<Record<string, string>>(savedValues);
+  const [extraJson, setExtraJson] = useState("{}");
+  const [extraJsonError, setExtraJsonError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [promptBusy, setPromptBusy] = useState(false);
   const [promptSummary, setPromptSummary] = useState<string | null>(null);
 
   useEffect(() => {
     setValues(savedValues);
+    setExtraJson(extraPropsJson(composition, savedValues));
+    setExtraJsonError(null);
     setPromptSummary(null);
-  }, [segment.segment_id, savedValues]);
+  }, [composition, segment.segment_id, savedValues]);
 
   const dirty = remotionPropsDirty(composition, values, savedValues);
   const payload = buildRemotionPropsPayload(composition, values);
   const controlsBusy = isBusy || promptBusy;
+  const allowExtra = remotionSchemaAllowsExtra(composition);
+
+  const syncValues = (next: Record<string, string>) => {
+    setValues(next);
+    setExtraJson(extraPropsJson(composition, next));
+  };
 
   const updateField = (key: string, value: string) => {
-    setValues((current) => ({ ...current, [key]: value }));
+    syncValues({ ...values, [key]: value });
     setPromptSummary(null);
   };
 
   const resetFields = () => {
-    setValues(savedValues);
+    syncValues(savedValues);
+    setExtraJsonError(null);
     setPromptSummary(null);
+  };
+
+  const updateExtraJson = (text: string) => {
+    setExtraJson(text);
+    try {
+      syncValues(applyExtraPropsJson(composition, values, text));
+      setExtraJsonError(null);
+      setPromptSummary(null);
+    } catch {
+      setExtraJsonError("Invalid JSON");
+    }
   };
 
   const applyPrompt = async () => {
@@ -69,10 +94,13 @@ export function RemotionSegmentEditor({
     setPromptSummary(null);
     try {
       const result = await onSuggestPrompt(trimmed, payload);
-      setValues((current) =>
-        mergePropsIntoFormValues(composition, current, result.props),
+      const nextValues = mergePropsIntoFormValues(composition, values, result.props);
+      syncValues(nextValues);
+      const nextPayload = buildRemotionPropsPayload(composition, nextValues);
+      await onSave(nextPayload);
+      setPromptSummary(
+        (result.summary || "Prompt applied.") + " Changes saved — click Preview to check.",
       );
-      setPromptSummary(result.summary || "Prompt applied — preview to check, then save.");
     } finally {
       setPromptBusy(false);
     }
@@ -111,7 +139,7 @@ export function RemotionSegmentEditor({
             ) : (
               <Sparkles className="h-3.5 w-3.5" />
             )}
-            Apply prompt
+            Apply & save
           </button>
           <span className="text-[0.65rem] text-[var(--muted)]">Ctrl+Enter</span>
         </div>
@@ -126,18 +154,38 @@ export function RemotionSegmentEditor({
           const controlClass =
             "glow-control w-full rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)]";
 
-          if (field.type === "textarea") {
+          if (field.type === "textarea" || field.type === "css") {
             return (
               <label key={field.key} className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
                   {field.label}
                 </span>
                 <textarea
-                  rows={3}
+                  rows={field.type === "css" ? 2 : 3}
                   value={value}
+                  placeholder={field.placeholder}
                   onChange={(event) => updateField(field.key, event.target.value)}
                   className={`${controlClass} min-h-[4.5rem] resize-y`}
                 />
+              </label>
+            );
+          }
+
+          if (field.type === "boolean") {
+            return (
+              <label
+                key={field.key}
+                className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2.5 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={value === "true"}
+                  onChange={(event) =>
+                    updateField(field.key, event.target.checked ? "true" : "false")
+                  }
+                  className="h-4 w-4 accent-violet-400"
+                />
+                <span className="text-[0.78rem] text-[var(--foreground)]">{field.label}</span>
               </label>
             );
           }
@@ -209,6 +257,28 @@ export function RemotionSegmentEditor({
         })}
       </div>
 
+      {allowExtra ? (
+        <label className="flex flex-col gap-1">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+            Additional props (JSON)
+          </span>
+          <textarea
+            rows={4}
+            value={extraJson}
+            onChange={(event) => updateExtraJson(event.target.value)}
+            placeholder='{"customFlag": true, "glowStrength": 0.8}'
+            className="glow-control min-h-[5rem] w-full resize-y rounded-lg px-2.5 py-1.5 font-mono text-[0.72rem] text-[var(--foreground)]"
+          />
+          {extraJsonError ? (
+            <span className="text-[0.68rem] text-red-300">{extraJsonError}</span>
+          ) : (
+            <span className="text-[0.65rem] text-[var(--muted)]">
+              Extra camelCase props pass through to Remotion for custom compositions.
+            </span>
+          )}
+        </label>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
@@ -238,7 +308,9 @@ export function RemotionSegmentEditor({
           Reset
         </button>
         {dirty ? (
-          <span className="text-[0.68rem] text-amber-200/85">Unsaved changes</span>
+          <span className="text-[0.68rem] text-amber-200/85">
+            Unsaved edits — click Save before export
+          </span>
         ) : previewUrl ? (
           <span className="text-[0.68rem] text-violet-200/75">Preview uses current form values</span>
         ) : null}

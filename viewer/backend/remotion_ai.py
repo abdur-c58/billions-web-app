@@ -9,33 +9,9 @@ import re
 from typing import Any
 
 from openai_http import openai_json_message
-from remotion_editor import sanitize_remotion_props
+from remotion_schemas import prop_docs_for_composition, sanitize_remotion_props
 
 REMOTION_AI_MODEL = "gpt-4o-mini"
-
-_PROP_DOCS: dict[str, dict[str, str]] = {
-    "FactCard": {
-        "factNumber": "integer 1-99",
-        "title": "short headline string",
-        "body": "supporting copy string",
-        "accentColor": "hex color like #5ecf8a",
-        "textAlign": "left | center | right",
-        "verticalAlign": "top | center | bottom",
-        "padding": "integer 24-240 (pixels)",
-        "titleSize": "integer 24-120 (pixels)",
-        "bodySize": "integer 24-120 (pixels)",
-    },
-    "TitleCard": {
-        "title": "main title string",
-        "subtitle": "subtitle string",
-        "accentColor": "hex color like #7db7ff",
-        "textAlign": "left | center | right",
-        "verticalAlign": "top | center | bottom",
-        "padding": "integer 24-240 (pixels)",
-        "titleSize": "integer 24-120 (pixels)",
-        "subtitleSize": "integer 24-120 (pixels)",
-    },
-}
 
 
 def _heuristic_props(composition: str, prompt: str) -> dict[str, Any]:
@@ -43,9 +19,11 @@ def _heuristic_props(composition: str, prompt: str) -> dict[str, Any]:
     text = prompt.lower()
     props: dict[str, Any] = {}
 
-    if re.search(r"\b(center|centred|middle)\b", text):
+    if re.search(r"\b(centered?|centred|middle)\b", text):
         props["textAlign"] = "center"
-        if re.search(r"\b(vertical|vertically|middle)\b", text):
+        if re.search(r"\b(vertical|vertically)\b", text) or re.search(
+            r"\bcenter(ed)?\s+(everything|all|text)\b", text
+        ):
             props["verticalAlign"] = "center"
     if re.search(r"\b(left aligned|align left|left side)\b", text):
         props["textAlign"] = "left"
@@ -63,7 +41,7 @@ def _heuristic_props(composition: str, prompt: str) -> dict[str, Any]:
         else:
             props["titleSize"] = 68
             props["subtitleSize"] = 30
-    if re.search(r"\b(larger|bigger|hero)\b", text):
+    if re.search(r"\b(larger|bigger|hero|large text)\b", text):
         if composition == "FactCard":
             props["titleSize"] = 80
             props["bodySize"] = 38
@@ -76,15 +54,29 @@ def _heuristic_props(composition: str, prompt: str) -> dict[str, Any]:
     if re.search(r"\b(less padding|tight|compact layout)\b", text):
         props["padding"] = 64
 
+    if re.search(r"\b(brown|tan|sepia)\b", text) and re.search(r"\bgradient|background\b", text):
+        props["backgroundGradient"] = (
+            "linear-gradient(145deg, #2a1810 0%, #4a2c1a 55%, #3d2318 100%)"
+        )
+    elif re.search(r"\b(blue|navy)\b", text) and re.search(r"\bgradient|background\b", text):
+        props["backgroundGradient"] = (
+            "linear-gradient(160deg, #05070d 0%, #10182a 55%, #1a2744 100%)"
+        )
+    elif re.search(r"\b(black|dark)\b", text) and re.search(r"\bgradient|background\b", text):
+        props["backgroundGradient"] = (
+            "linear-gradient(145deg, #050505 0%, #121212 55%, #1a1a1a 100%)"
+        )
+
     for color_name, hex_value in (
         ("green", "#5ecf8a"),
         ("blue", "#7db7ff"),
         ("purple", "#a78bfa"),
+        ("brown", "#a66b3f"),
         ("red", "#f87171"),
         ("gold", "#fbbf24"),
         ("white", "#f4f7fb"),
     ):
-        if color_name in text:
+        if re.search(rf"\b{re.escape(color_name)}\b", text):
             props["accentColor"] = hex_value
             break
 
@@ -99,7 +91,7 @@ def _build_prompt(
     current_props: dict[str, Any],
     user_prompt: str,
 ) -> str:
-    allowed = _PROP_DOCS.get(composition, _PROP_DOCS["FactCard"])
+    allowed = prop_docs_for_composition(composition)
     schema_lines = "\n".join(f'- "{key}": {desc}' for key, desc in allowed.items())
     current_json = json.dumps(current_props, ensure_ascii=False, indent=2)
 
@@ -128,6 +120,7 @@ Rules:
 - Only use these prop keys for {composition}:
 {schema_lines}
 - Include ONLY keys you are changing; omit unchanged keys.
+- You may set any documented prop key, plus other safe camelCase keys supported by the composition.
 - Do not invent new keys.
 - Keep copy edits concise and readable on screen.
 - Prefer layout changes (align, padding, sizes, accentColor) unless the user explicitly asks to rewrite text.

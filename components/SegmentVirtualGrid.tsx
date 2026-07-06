@@ -8,7 +8,7 @@ import { SegmentCard } from "@/components/SegmentCard";
 
 const CARD_MIN_WIDTH = 300;
 const GRID_GAP_PX = 14;
-const ROW_HEIGHT_ESTIMATE = 820;
+const ROW_HEIGHT_ESTIMATE = 920;
 
 function columnCountForWidth(width: number): number {
   return Math.max(1, Math.floor((width + GRID_GAP_PX) / (CARD_MIN_WIDTH + GRID_GAP_PX)));

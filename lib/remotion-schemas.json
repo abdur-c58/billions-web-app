@@ -1,0 +1,94 @@
+{
+  "compositions": {
+    "FactCard": {
+      "allowExtra": true,
+      "props": {
+        "title": { "type": "string", "label": "Title", "maxLength": 200 },
+        "body": { "type": "textarea", "label": "Body", "maxLength": 500 },
+        "factNumber": { "type": "number", "label": "Fact #", "min": 1, "max": 99, "integer": true },
+        "showFactBadge": { "type": "boolean", "label": "Show fact badge", "default": true },
+        "accentColor": { "type": "color", "label": "Accent" },
+        "textColor": { "type": "color", "label": "Text color" },
+        "bodyColor": { "type": "color", "label": "Body color" },
+        "backgroundGradient": {
+          "type": "css",
+          "label": "Background",
+          "placeholder": "linear-gradient(145deg, #2a1810, #4a2c1a)"
+        },
+        "fontFamily": {
+          "type": "string",
+          "label": "Font family",
+          "placeholder": "Segoe UI, system-ui, sans-serif"
+        },
+        "textAlign": {
+          "type": "select",
+          "label": "Text align",
+          "options": ["left", "center", "right"]
+        },
+        "verticalAlign": {
+          "type": "select",
+          "label": "Vertical",
+          "options": ["top", "center", "bottom"]
+        },
+        "padding": { "type": "number", "label": "Padding", "min": 24, "max": 240, "integer": true },
+        "contentMaxWidth": {
+          "type": "number",
+          "label": "Content max width",
+          "min": 400,
+          "max": 1800,
+          "integer": true
+        },
+        "titleSize": { "type": "number", "label": "Title size", "min": 24, "max": 120, "integer": true },
+        "bodySize": { "type": "number", "label": "Body size", "min": 24, "max": 120, "integer": true },
+        "labelSize": { "type": "number", "label": "Badge size", "min": 16, "max": 48, "integer": true },
+        "titleWeight": { "type": "number", "label": "Title weight", "min": 400, "max": 900, "integer": true },
+        "lineHeight": { "type": "number", "label": "Line height", "min": 1, "max": 2.5, "step": 0.05 },
+        "durationInFrames": { "type": "number", "hidden": true, "min": 30, "max": 36000, "integer": true }
+      }
+    },
+    "TitleCard": {
+      "allowExtra": true,
+      "props": {
+        "title": { "type": "string", "label": "Title", "maxLength": 200 },
+        "subtitle": { "type": "textarea", "label": "Subtitle", "maxLength": 500 },
+        "showAccentBar": { "type": "boolean", "label": "Show accent bar", "default": true },
+        "accentColor": { "type": "color", "label": "Accent" },
+        "textColor": { "type": "color", "label": "Text color" },
+        "subtitleColor": { "type": "color", "label": "Subtitle color" },
+        "backgroundGradient": {
+          "type": "css",
+          "label": "Background",
+          "placeholder": "linear-gradient(160deg, #05070d, #10182a)"
+        },
+        "fontFamily": {
+          "type": "string",
+          "label": "Font family",
+          "placeholder": "Segoe UI, system-ui, sans-serif"
+        },
+        "textAlign": {
+          "type": "select",
+          "label": "Text align",
+          "options": ["left", "center", "right"]
+        },
+        "verticalAlign": {
+          "type": "select",
+          "label": "Vertical",
+          "options": ["top", "center", "bottom"]
+        },
+        "padding": { "type": "number", "label": "Padding", "min": 24, "max": 240, "integer": true },
+        "contentMaxWidth": {
+          "type": "number",
+          "label": "Content max width",
+          "min": 400,
+          "max": 1800,
+          "integer": true
+        },
+        "titleSize": { "type": "number", "label": "Title size", "min": 24, "max": 120, "integer": true },
+        "subtitleSize": { "type": "number", "label": "Subtitle size", "min": 24, "max": 120, "integer": true },
+        "titleWeight": { "type": "number", "label": "Title weight", "min": 400, "max": 900, "integer": true },
+        "lineHeight": { "type": "number", "label": "Line height", "min": 1, "max": 2.5, "step": 0.05 },
+        "durationInFrames": { "type": "number", "hidden": true, "min": 30, "max": 36000, "integer": true }
+      }
+    }
+  }
+}
