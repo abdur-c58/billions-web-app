@@ -60,6 +60,12 @@ from flagged_clips import (
     list_flagged_clips,
     unflag_clip,
 )
+from broll_clip_filters import (
+    filter_videos_for_segment,
+    min_required_clip_duration,
+    pexels_min_duration_param,
+    segment_duration_seconds,
+)
 from broll_judge import (
     AiBudget,
     JudgmentCache,
@@ -156,7 +162,14 @@ class PexelsKeyPool:
             self._round_robin += 1
             return slot
 
-    def search(self, query: str, page: int = 1, per_page: int = 15) -> dict[str, Any]:
+    def search(
+        self,
+        query: str,
+        page: int = 1,
+        per_page: int = 15,
+        *,
+        min_duration: int | None = None,
+    ) -> dict[str, Any]:
         last_error: Exception | None = None
         max_attempts = len(self._keys) * PEXELS_MAX_RETRIES
 
@@ -168,7 +181,13 @@ class PexelsKeyPool:
                     wait = self._min_interval - (time.time() - self._last_call[slot])
                     if wait > 0:
                         time.sleep(wait)
-                    result = _pexels_search_once(query, page, per_page, api_key)
+                    result = _pexels_search_once(
+                        query,
+                        page,
+                        per_page,
+                        api_key,
+                        min_duration=min_duration,
+                    )
                     self._last_call[slot] = time.time()
                     return result
             except urllib.error.HTTPError as exc:
@@ -448,17 +467,19 @@ def _pexels_search_once(
     page: int,
     per_page: int,
     api_key: str,
+    *,
+    min_duration: int | None = None,
 ) -> dict[str, Any]:
-    params = urllib.parse.urlencode(
-        {
-            "query": query,
-            "page": page,
-            "per_page": per_page,
-            "orientation": "landscape",
-        }
-    )
+    params: dict[str, Any] = {
+        "query": query,
+        "page": page,
+        "per_page": per_page,
+        "orientation": "landscape",
+    }
+    if min_duration is not None and min_duration >= 1:
+        params["min_duration"] = int(min_duration)
     request = urllib.request.Request(
-        f"{PEXELS_SEARCH_URL}?{params}",
+        f"{PEXELS_SEARCH_URL}?{urllib.parse.urlencode(params)}",
         headers={
             "Authorization": api_key,
             "User-Agent": "Billions-BrollViewer/1.0",
@@ -484,8 +505,19 @@ def _pexels_search_once(
     }
 
 
-def pexels_search(query: str, page: int = 1, per_page: int = 15) -> dict[str, Any]:
-    return get_pexels_pool().search(query, page, per_page)
+def pexels_search(
+    query: str,
+    page: int = 1,
+    per_page: int = 15,
+    *,
+    min_duration: int | None = None,
+) -> dict[str, Any]:
+    return get_pexels_pool().search(
+        query,
+        page,
+        per_page,
+        min_duration=min_duration,
+    )
 
 
 def pixabay_search(query: str, page: int = 1, per_page: int = 15) -> dict[str, Any]:
@@ -529,8 +561,14 @@ def pixabay_search(query: str, page: int = 1, per_page: int = 15) -> dict[str, A
     }
 
 
-def mixed_search(query: str, page: int = 1, per_page: int = 15) -> dict[str, Any]:
-    pexels_result = pexels_search(query, page=page, per_page=per_page)
+def mixed_search(
+    query: str,
+    page: int = 1,
+    per_page: int = 15,
+    *,
+    min_duration: int | None = None,
+) -> dict[str, Any]:
+    pexels_result = pexels_search(query, page=page, per_page=per_page, min_duration=min_duration)
     pixabay_result: dict[str, Any] = {"videos": []}
     try:
         pixabay_result = pixabay_search(query, page=page, per_page=per_page)
@@ -686,6 +724,54 @@ def save_segment_selection(
     return data["segments"][key]
 
 
+def _search_provider_videos(
+    query: str,
+    page: int,
+    provider_mode: str,
+    *,
+    min_duration: int | None,
+) -> dict[str, Any]:
+    if provider_mode == "pexels":
+        return pexels_search(query, page=page, per_page=15, min_duration=min_duration)
+    if provider_mode == "pixabay":
+        return pixabay_search(query, page=page, per_page=15)
+    return mixed_search(query, page=page, per_page=15, min_duration=min_duration)
+
+
+def _filter_fetch_candidates(
+    raw_videos: list[dict[str, Any]],
+    *,
+    segment: dict[str, Any] | None,
+    flagged_path: Path | None,
+    used_clip_keys_elsewhere: set[str],
+    refetch: bool,
+) -> list[dict[str, Any]]:
+    videos = filter_flagged_videos(raw_videos, flagged_path) if flagged_path else list(raw_videos)
+    if refetch and used_clip_keys_elsewhere:
+        videos = [
+            video for video in videos if clip_key(video) not in used_clip_keys_elsewhere
+        ]
+    return filter_videos_for_segment(videos, segment)
+
+
+def _fetch_no_videos_error(
+    active_query: str,
+    fetch_provider_mode: str,
+    segment: dict[str, Any] | None,
+) -> str:
+    segment_duration = segment_duration_seconds(segment)
+    minimum = min_required_clip_duration(segment_duration)
+    if segment_duration and minimum:
+        return (
+            f"No videos found for '{active_query}' with provider {fetch_provider_mode} "
+            f"that are at least {minimum:.1f}s long (segment is {segment_duration:.1f}s)."
+        )
+    return (
+        f"No unflagged non-duplicate videos found for '{active_query}' "
+        f"with provider {fetch_provider_mode}"
+    )
+
+
 def fetch_segment_video(
     selections_path: Path,
     script_path: Path,
@@ -716,6 +802,7 @@ def fetch_segment_video(
         fetch_provider_mode = "mix"
 
     search_provider_mode = fetch_provider_mode
+    pexels_min_duration = pexels_min_duration_param(segment_duration_seconds(segment))
 
     data = get_selection_state(selections_path)
     key = str(segment_id)
@@ -788,24 +875,19 @@ def fetch_segment_video(
         videos = []
         pages_checked = 0
         while pages_checked < 10:
-            if search_provider_mode == "pexels":
-                search = pexels_search(candidate_query, page=page_for_query, per_page=15)
-            elif search_provider_mode == "pixabay":
-                search = pixabay_search(candidate_query, page=page_for_query, per_page=15)
-            else:
-                search = mixed_search(candidate_query, page=page_for_query, per_page=15)
-            raw_videos = search.get("videos", [])
-            videos = (
-                filter_flagged_videos(raw_videos, flagged_path)
-                if flagged_path
-                else raw_videos
+            search = _search_provider_videos(
+                candidate_query,
+                page_for_query,
+                search_provider_mode,
+                min_duration=pexels_min_duration,
             )
-            if refetch and used_clip_keys_elsewhere:
-                videos = [
-                    video
-                    for video in videos
-                    if clip_key(video) not in used_clip_keys_elsewhere
-                ]
+            videos = _filter_fetch_candidates(
+                search.get("videos", []),
+                segment=segment,
+                flagged_path=flagged_path,
+                used_clip_keys_elsewhere=used_clip_keys_elsewhere,
+                refetch=refetch,
+            )
             query_used = candidate_query
             pages_checked += 1
             if videos:
@@ -821,57 +903,49 @@ def fetch_segment_video(
 
     if not videos:
         raise RuntimeError(
-            f"No unflagged non-duplicate videos found for '{active_query}' with provider {fetch_provider_mode}"
+            _fetch_no_videos_error(active_query, fetch_provider_mode, segment)
         )
 
     while result_index >= len(videos):
         if not search or not search.get("next_page"):
             result_index = 0
             page = 1
-            if search_provider_mode == "pexels":
-                search = pexels_search(query_used, page=page, per_page=15)
-            elif search_provider_mode == "pixabay":
-                search = pixabay_search(query_used, page=page, per_page=15)
-            else:
-                search = mixed_search(query_used, page=page, per_page=15)
-            raw_videos = search.get("videos", [])
-            videos = (
-                filter_flagged_videos(raw_videos, flagged_path)
-                if flagged_path
-                else raw_videos
+            search = _search_provider_videos(
+                query_used,
+                page,
+                search_provider_mode,
+                min_duration=pexels_min_duration,
             )
-            if refetch and used_clip_keys_elsewhere:
-                videos = [
-                    video
-                    for video in videos
-                    if clip_key(video) not in used_clip_keys_elsewhere
-                ]
+            videos = _filter_fetch_candidates(
+                search.get("videos", []),
+                segment=segment,
+                flagged_path=flagged_path,
+                used_clip_keys_elsewhere=used_clip_keys_elsewhere,
+                refetch=refetch,
+            )
             if not videos:
                 raise RuntimeError(
-                    f"No unflagged non-duplicate videos found for '{active_query}' with provider {fetch_provider_mode}"
+                    _fetch_no_videos_error(active_query, fetch_provider_mode, segment)
                 )
             break
         page += 1
         result_index = 0
-        if search_provider_mode == "pexels":
-            search = pexels_search(query_used, page=page, per_page=15)
-        elif search_provider_mode == "pixabay":
-            search = pixabay_search(query_used, page=page, per_page=15)
-        else:
-            search = mixed_search(query_used, page=page, per_page=15)
-        raw_videos = search.get("videos", [])
-        videos = (
-            filter_flagged_videos(raw_videos, flagged_path)
-            if flagged_path
-            else raw_videos
+        search = _search_provider_videos(
+            query_used,
+            page,
+            search_provider_mode,
+            min_duration=pexels_min_duration,
         )
-        if refetch and used_clip_keys_elsewhere:
-            videos = [
-                video for video in videos if clip_key(video) not in used_clip_keys_elsewhere
-            ]
+        videos = _filter_fetch_candidates(
+            search.get("videos", []),
+            segment=segment,
+            flagged_path=flagged_path,
+            used_clip_keys_elsewhere=used_clip_keys_elsewhere,
+            refetch=refetch,
+        )
         if not videos and not search.get("next_page"):
             raise RuntimeError(
-                f"No unflagged non-duplicate videos found for '{active_query}' with provider {fetch_provider_mode}"
+                _fetch_no_videos_error(active_query, fetch_provider_mode, segment)
             )
 
     if result_index >= len(videos):

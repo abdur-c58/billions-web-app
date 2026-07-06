@@ -11,6 +11,13 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from broll_clip_filters import (
+    clip_meets_duration_requirement,
+    min_required_clip_duration,
+    segment_duration_seconds,
+    video_duration_seconds,
+)
+
 OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
 AI_MODEL = "gpt-4o-mini"
 MAX_CANDIDATES_FOR_AI = 5
@@ -81,11 +88,20 @@ def score_candidate_heuristic(
     content_tokens = _tokenize(segment.get("content", "")[:160])
     wanted = query_tokens | desc_tokens | content_tokens
 
-    duration = float(video.get("duration") or 0)
+    duration = video_duration_seconds(video)
     width = int(video.get("width") or 0)
     height = int(video.get("height") or 0)
+    segment_duration = segment_duration_seconds(segment)
+    minimum = min_required_clip_duration(segment_duration)
 
-    if duration >= 8:
+    if segment_duration and minimum:
+        if duration >= segment_duration:
+            score += 3.5
+        elif duration >= minimum:
+            score += 2.0
+        else:
+            score -= 6.0
+    elif duration >= 8:
         score += 2.0
     elif duration >= 5:
         score += 1.5
@@ -359,14 +375,17 @@ def pick_best_candidate(
             "ai_skipped": "no_candidates",
         }
 
+    segment_duration = segment_duration_seconds(segment)
     pool_indices: list[int] = []
     pool: list[dict[str, Any]] = []
     for index, video in enumerate(candidates):
         width = int(video.get("width") or 0)
-        duration = float(video.get("duration") or 0)
+        duration = video_duration_seconds(video)
         if width and width < 480:
             continue
-        if duration and duration < 1.5:
+        if not clip_meets_duration_requirement(video, segment_duration):
+            continue
+        if duration and duration < 1.5 and segment_duration is None:
             continue
         if not video.get("thumbnail"):
             continue
