@@ -12,6 +12,7 @@ import {
   qualityTierClass,
   QUALITY_LABELS,
 } from "@/lib/judgment";
+import { isSplitScreenRemotion } from "@/lib/remotion";
 
 type SegmentCardProps = {
   segment: ViewerSegment;
@@ -26,6 +27,8 @@ type SegmentCardProps = {
   onFlagClip: () => void;
   remotionPreviewUrl?: string | null;
   remotionBusy?: boolean;
+  remotionDraftValues?: Record<string, string> | null;
+  onRemotionDraftChange?: (values: Record<string, string>) => void;
   onSaveRemotionProps?: (props: Record<string, unknown>) => Promise<void>;
   onPreviewRemotion?: (props: Record<string, unknown>) => Promise<void>;
   onSuggestRemotionPrompt?: (
@@ -47,6 +50,8 @@ function SegmentCardInner({
   onFlagClip,
   remotionPreviewUrl = null,
   remotionBusy = false,
+  remotionDraftValues = null,
+  onRemotionDraftChange,
   onSaveRemotionProps,
   onPreviewRemotion,
   onSuggestRemotionPrompt,
@@ -65,6 +70,7 @@ function SegmentCardInner({
   const detail = judgmentDetail(selection);
   const folderStatus = segment.folder_status;
   const isRemotion = segment.render_mode === "remotion" && Boolean(segment.remotion?.composition);
+  const isSplitRemotion = isRemotion && isSplitScreenRemotion(segment);
   const isFolderFormat = scriptFormat === "folder";
   const isStock = segment.category.trim().toLowerCase() === "stock";
   const showNoFolderWarning =
@@ -302,14 +308,83 @@ function SegmentCardInner({
 
           {isRemotion ? (
             onSaveRemotionProps && onPreviewRemotion && onSuggestRemotionPrompt ? (
+              <>
               <RemotionSegmentEditor
                 segment={segment}
                 isBusy={isLoading || remotionBusy}
                 previewUrl={remotionPreviewUrl}
+                draftValues={remotionDraftValues}
+                onDraftChange={onRemotionDraftChange}
                 onSave={onSaveRemotionProps}
                 onPreview={onPreviewRemotion}
                 onSuggestPrompt={onSuggestRemotionPrompt}
               />
+              {isSplitRemotion ? (
+                <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-500/8 p-2.5">
+                  <p className="mb-2 text-[0.72rem] leading-snug text-amber-100/90">
+                    Split-screen card: fetch b-roll for the left panel. Query defaults from
+                    script description:{" "}
+                    <span className="text-amber-50">{segment.search_query || "—"}</span>
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => onFetch(false)}
+                      className="glow-btn-primary rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      {hasSelection ? "Reload left b-roll" : "Fetch left b-roll"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => onFetch(true, "mix")}
+                      className="glow-btn-secondary rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      Refetch
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={onChooseFromStorage}
+                      className="glow-btn-secondary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.74rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      <HardDrive className="h-3.5 w-3.5" />
+                      From storage
+                    </button>
+                    <input
+                      type="text"
+                      value={customQuery}
+                      onChange={(event) => onCustomQueryChange(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          onFetch(true);
+                        }
+                      }}
+                      placeholder="Custom left-panel search…"
+                      className="glow-control min-w-0 flex-1 rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                    />
+                  </div>
+                  {hasSelection && inView ? (
+                    <div className="mt-2 overflow-hidden rounded-lg border border-white/10">
+                      <video
+                        src={selection?.url}
+                        className="aspect-video w-full bg-black object-cover"
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(event) => void event.currentTarget.play()}
+                        onMouseLeave={(event) => {
+                          event.currentTarget.pause();
+                          event.currentTarget.currentTime = 0;
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              </>
             ) : (
               <p className="text-[0.72rem] leading-snug text-violet-200/80">
                 This segment uses a Remotion composition instead of stock b-roll.

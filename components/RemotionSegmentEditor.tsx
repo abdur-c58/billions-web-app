@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Play, RotateCcw, Save, Sparkles } from "lucide-react";
 import type { ViewerSegment } from "@/lib/types";
 import {
@@ -18,6 +18,8 @@ type RemotionSegmentEditorProps = {
   segment: ViewerSegment;
   isBusy: boolean;
   previewUrl: string | null;
+  draftValues?: Record<string, string> | null;
+  onDraftChange?: (values: Record<string, string>) => void;
   onPreview: (props: Record<string, unknown>) => Promise<void>;
   onSave: (props: Record<string, unknown>) => Promise<void>;
   onSuggestPrompt: (
@@ -30,6 +32,8 @@ export function RemotionSegmentEditor({
   segment,
   isBusy,
   previewUrl,
+  draftValues = null,
+  onDraftChange,
   onPreview,
   onSave,
   onSuggestPrompt,
@@ -38,40 +42,81 @@ export function RemotionSegmentEditor({
   const fields = useMemo(() => remotionFieldsFor(composition), [composition]);
   const savedValues = useMemo(
     () => propsFromRemotion(segment.remotion),
-    [segment.remotion],
+    [segment.remotion?.composition, segment.remotion?.props],
+  );
+  const savedSerialized = useMemo(
+    () => JSON.stringify(segment.remotion?.props ?? {}),
+    [segment.remotion?.props],
   );
 
-  const [values, setValues] = useState<Record<string, string>>(savedValues);
-  const [extraJson, setExtraJson] = useState("{}");
+  const [internalValues, setInternalValues] = useState(savedValues);
+  const [extraJson, setExtraJson] = useState(() => extraPropsJson(composition, savedValues));
   const [extraJsonError, setExtraJsonError] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(() => segment.remotion?.prompt ?? "");
   const [promptBusy, setPromptBusy] = useState(false);
   const [promptSummary, setPromptSummary] = useState<string | null>(null);
 
+  const values = draftValues ?? internalValues;
+  const lastSegmentIdRef = useRef(segment.segment_id);
+  const lastSavedSerializedRef = useRef(savedSerialized);
+  const dirtyRef = useRef(false);
+
+  const applyValues = (next: Record<string, string>) => {
+    setInternalValues(next);
+    if (onDraftChange) {
+      onDraftChange(next);
+    }
+  };
+
   useEffect(() => {
-    setValues(savedValues);
-    setExtraJson(extraPropsJson(composition, savedValues));
-    setExtraJsonError(null);
-    setPromptSummary(null);
-  }, [composition, segment.segment_id, savedValues]);
+    dirtyRef.current = remotionPropsDirty(composition, values, savedValues);
+  }, [composition, values, savedValues]);
+
+  useEffect(() => {
+    const segmentChanged = lastSegmentIdRef.current !== segment.segment_id;
+    if (segmentChanged) {
+      lastSegmentIdRef.current = segment.segment_id;
+      lastSavedSerializedRef.current = savedSerialized;
+      const next = draftValues ?? savedValues;
+      applyValues(next);
+      setExtraJson(extraPropsJson(composition, next));
+      setExtraJsonError(null);
+      setPromptSummary(null);
+      setPrompt(segment.remotion?.prompt ?? "");
+      return;
+    }
+
+    if (draftValues) {
+      return;
+    }
+
+    if (savedSerialized === lastSavedSerializedRef.current) {
+      return;
+    }
+
+    lastSavedSerializedRef.current = savedSerialized;
+    if (!dirtyRef.current) {
+      applyValues(savedValues);
+      setExtraJson(extraPropsJson(composition, savedValues));
+      setExtraJsonError(null);
+    }
+  }, [composition, draftValues, savedSerialized, savedValues, segment.segment_id]);
 
   const dirty = remotionPropsDirty(composition, values, savedValues);
   const payload = buildRemotionPropsPayload(composition, values);
   const controlsBusy = isBusy || promptBusy;
   const allowExtra = remotionSchemaAllowsExtra(composition);
 
-  const syncValues = (next: Record<string, string>) => {
-    setValues(next);
-    setExtraJson(extraPropsJson(composition, next));
-  };
-
   const updateField = (key: string, value: string) => {
-    syncValues({ ...values, [key]: value });
+    const next = { ...values, [key]: value };
+    applyValues(next);
+    setExtraJson(extraPropsJson(composition, next));
     setPromptSummary(null);
   };
 
   const resetFields = () => {
-    syncValues(savedValues);
+    applyValues(savedValues);
+    setExtraJson(extraPropsJson(composition, savedValues));
     setExtraJsonError(null);
     setPromptSummary(null);
   };
@@ -79,7 +124,9 @@ export function RemotionSegmentEditor({
   const updateExtraJson = (text: string) => {
     setExtraJson(text);
     try {
-      syncValues(applyExtraPropsJson(composition, values, text));
+      const next = applyExtraPropsJson(composition, values, text);
+      applyValues(next);
+      setExtraJson(extraPropsJson(composition, next));
       setExtraJsonError(null);
       setPromptSummary(null);
     } catch {
@@ -95,7 +142,8 @@ export function RemotionSegmentEditor({
     try {
       const result = await onSuggestPrompt(trimmed, payload);
       const nextValues = mergePropsIntoFormValues(composition, values, result.props);
-      syncValues(nextValues);
+      applyValues(nextValues);
+      setExtraJson(extraPropsJson(composition, nextValues));
       const nextPayload = buildRemotionPropsPayload(composition, nextValues);
       await onSave(nextPayload);
       setPromptSummary(
@@ -109,6 +157,16 @@ export function RemotionSegmentEditor({
   return (
     <div className="flex flex-col gap-2.5">
       <div className="rounded-lg border border-violet-400/20 bg-violet-500/8 p-2.5">
+        {segment.remotion?.prompt ? (
+          <details className="mb-2">
+            <summary className="cursor-pointer text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-violet-200/80">
+              Script motion brief
+            </summary>
+            <p className="mt-1.5 text-[0.72rem] leading-snug text-violet-100/85">
+              {segment.remotion.prompt}
+            </p>
+          </details>
+        ) : null}
         <label className="flex flex-col gap-1.5">
           <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-violet-200/90">
             Describe the look
@@ -221,7 +279,7 @@ export function RemotionSegmentEditor({
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={value || "#5ecf8a"}
+                    value={value.startsWith("#") ? value : "#5ecf8a"}
                     onChange={(event) => updateField(field.key, event.target.value)}
                     className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
                   />

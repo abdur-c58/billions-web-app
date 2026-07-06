@@ -1370,6 +1370,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     audio_path=self.audio_path,
                     timestamps_path=self.timestamps_path,
                     selections_path=self.selections_path,
+                    script_path=self.script_path,
                     output_path=output_path,
                     on_progress=on_progress,
                     cache_dir=self.cache_dir,
@@ -1750,11 +1751,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     self._send_json({"error": "Segment not found"}, HTTPStatus.NOT_FOUND)
                     return
                 if segment.get("render_mode") == "remotion":
-                    self._send_json(
-                        {"error": "Remotion segments are rendered automatically and do not use b-roll fetch."},
-                        HTTPStatus.BAD_REQUEST,
-                    )
-                    return
+                    remotion = segment.get("remotion") or {}
+                    layout = str(remotion.get("layout") or "").strip().lower()
+                    if layout != "split-right":
+                        self._send_json(
+                            {
+                                "error": (
+                                    "Remotion segments are rendered automatically and do not use b-roll fetch."
+                                )
+                            },
+                            HTTPStatus.BAD_REQUEST,
+                        )
+                        return
 
                 query_override = params.get("query", [""])[0].strip() or None
                 provider = params.get("provider", ["mix"])[0].strip().lower()
@@ -2260,12 +2268,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 base_props = dict(remotion.get("props") or {})
                 base_props.update(current_props)
 
+                script_prompt = str(remotion.get("prompt") or "")
+
                 from remotion_ai import suggest_remotion_props
 
                 result = suggest_remotion_props(
                     composition=composition,
                     segment_content=str(segment.get("content") or ""),
                     segment_description=str(segment.get("description") or ""),
+                    script_prompt=script_prompt,
                     current_props=base_props,
                     user_prompt=user_prompt,
                     ai_budget=self.ai_budget if self.use_ai_judge else None,

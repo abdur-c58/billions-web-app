@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent
-EXPORT_API_VERSION = 8  # bump when export pipeline changes (8 = concat timebase fix + narration-master trim)
+EXPORT_API_VERSION = 9  # bump when export pipeline changes (9 = split-screen Remotion + FactCard layout)
 DEFAULT_OUTPUT = ROOT / "final_video.mp4"
 CLIP_CACHE_DIR = ROOT / ".broll_cache"
 SEGMENT_CACHE_DIR = ROOT / ".export_cache" / "segments"
@@ -294,9 +294,31 @@ def narration_timeline_seconds(timestamps_path: Path) -> float:
     return 0.0
 
 
-def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str, Any]]:
+def load_segments(
+    timestamps_path: Path,
+    selections_path: Path,
+    *,
+    script_path: Path | None = None,
+) -> list[dict[str, Any]]:
     timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
     selections = json.loads(selections_path.read_text(encoding="utf-8")).get("segments", {})
+
+    script_remotion_by_id: dict[int, dict[str, Any]] = {}
+    if script_path and script_path.exists():
+        from script_format import parse_segment_render, remotion_payload_from_render
+
+        script_data = json.loads(script_path.read_text(encoding="utf-8"))
+        for beat_block in script_data.get("script", []):
+            for segment in beat_block.get("segments", []):
+                segment_id = segment.get("segment_id")
+                if segment_id is None:
+                    continue
+                render = parse_segment_render(segment)
+                if render.get("mode") != "remotion":
+                    continue
+                payload = remotion_payload_from_render(render)
+                if payload:
+                    script_remotion_by_id[int(segment_id)] = payload
 
     entries = sorted(
         timestamps.get("segments", []),
@@ -341,13 +363,18 @@ def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str
             continue
 
         selection = selections.get(str(segment_id))
+        render_mode = entry.get("render_mode", "broll")
+        remotion = entry.get("remotion")
+        if segment_id is not None and int(segment_id) in script_remotion_by_id:
+            render_mode = "remotion"
+            remotion = script_remotion_by_id[int(segment_id)]
         rows.append(
             {
                 "segment_id": segment_id,
                 "duration": float(duration),
                 "selection": selection,
-                "render_mode": entry.get("render_mode", "broll"),
-                "remotion": entry.get("remotion"),
+                "render_mode": render_mode,
+                "remotion": remotion,
                 "content": entry.get("content", ""),
             }
         )
@@ -571,6 +598,150 @@ def trim_video_to_duration(
     )
 
 
+def render_broll_panel_clip(
+    *,
+    duration: float,
+    selection: dict[str, Any],
+    encoder: str,
+    enc_args: list[str],
+    cache_dir: Path | None,
+    out_width: int,
+    out_height: int,
+    output_path: Path,
+    force: bool = False,
+    should_cancel: CancelCheck | None = None,
+) -> Path:
+    """Render a stock clip scaled to exact panel dimensions."""
+    duration_str = f"{duration:.3f}"
+    if not force and segment_cache_duration_ok(output_path, duration):
+        normalize_segment_timestamps(output_path, should_cancel=should_cancel)
+        return output_path
+
+    clip_cache_dir = (cache_dir / "clips") if cache_dir else CLIP_CACHE_DIR
+    video_id = selection_cache_id(selection)
+    source_path = clip_cache_dir / f"{video_id}.mp4"
+    download_clip(clip_source_url(selection), source_path)
+
+    use_gpu = gpu_scale_available(encoder)
+    credit_filter = build_credit_filter(selection)
+    if use_gpu:
+        vf_parts = [gpu_scale_filter(out_width, out_height)]
+        if credit_filter:
+            vf_parts.append("format=yuv420p")
+            vf_parts.append(credit_filter)
+        input_args = [
+            "-hwaccel", "cuda",
+            "-hwaccel_output_format", "cuda",
+            "-stream_loop", "-1",
+            "-i", str(source_path),
+        ]
+    else:
+        vf_parts = [scale_filter(out_width, out_height)]
+        if credit_filter:
+            vf_parts.append(credit_filter)
+        input_args = ["-stream_loop", "-1", "-i", str(source_path)]
+
+    try:
+        run_ffmpeg(
+            [
+                *input_args,
+                "-t", duration_str,
+                "-vf", ",".join(vf_parts),
+                "-an",
+                *enc_args,
+                "-pix_fmt", "yuv420p",
+                str(output_path),
+            ],
+            should_cancel=should_cancel,
+        )
+    except RuntimeError:
+        if not use_gpu:
+            raise
+        global _gpu_scale_support
+        _gpu_scale_support = False
+        cpu_vf = [scale_filter(out_width, out_height)]
+        if credit_filter:
+            cpu_vf.append(credit_filter)
+        run_ffmpeg(
+            [
+                "-stream_loop", "-1",
+                "-i", str(source_path),
+                "-t", duration_str,
+                "-vf", ",".join(cpu_vf),
+                "-an",
+                *enc_args,
+                "-pix_fmt", "yuv420p",
+                str(output_path),
+            ],
+            should_cancel=should_cancel,
+        )
+    normalize_segment_timestamps(output_path, should_cancel=should_cancel)
+    return output_path
+
+
+def render_black_panel_clip(
+    *,
+    duration: float,
+    out_width: int,
+    out_height: int,
+    output_path: Path,
+    encoder: str,
+    enc_args: list[str],
+    should_cancel: CancelCheck | None = None,
+) -> Path:
+    duration_str = f"{duration:.3f}"
+    run_ffmpeg(
+        [
+            "-f", "lavfi",
+            "-i", f"color=c=black:s={out_width}x{out_height}:r={FPS}",
+            "-t", duration_str,
+            *enc_args,
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ],
+        should_cancel=should_cancel,
+    )
+    normalize_segment_timestamps(output_path, should_cancel=should_cancel)
+    return output_path
+
+
+def composite_split_panels(
+    *,
+    left_path: Path,
+    right_path: Path,
+    output_path: Path,
+    out_width: int,
+    out_height: int,
+    duration: float,
+    enc_args: list[str],
+    should_cancel: CancelCheck | None = None,
+) -> Path:
+    half_w = max(2, out_width // 2)
+    duration_str = f"{duration:.3f}"
+    filter_complex = (
+        f"[0:v]scale={half_w}:{out_height}:force_original_aspect_ratio=increase,"
+        f"crop={half_w}:{out_height},setsar=1[left];"
+        f"[1:v]scale={half_w}:{out_height},setsar=1[right];"
+        f"[left][right]hstack=inputs=2[out]"
+    )
+    run_ffmpeg(
+        [
+            "-i", str(left_path),
+            "-i", str(right_path),
+            "-filter_complex", filter_complex,
+            "-map", "[out]",
+            "-t", duration_str,
+            "-an",
+            *enc_args,
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ],
+        should_cancel=should_cancel,
+    )
+    normalize_segment_timestamps(output_path, should_cancel=should_cancel)
+    return output_path
+
+
 def render_segment_clip(
     segment_id: int,
     duration: float,
@@ -596,25 +767,99 @@ def render_segment_clip(
 
         composition = str(remotion["composition"])
         props = dict(remotion.get("props") or {})
+        layout = str(remotion.get("layout") or "").strip().lower()
+        if layout not in {"split-right", "full"}:
+            layout = "split-right" if composition == "FactCard" else "full"
+        is_split = layout == "split-right" and composition == "FactCard"
+        half_w = max(2, out_width // 2)
+        cache_payload: dict[str, Any] = {
+            "composition": composition,
+            "props": props,
+            "duration": round(duration, 3),
+            "width": out_width,
+            "height": out_height,
+            "layout": layout,
+        }
+        if is_split:
+            cache_payload["selection"] = selection_cache_id(selection)
         cache_id = hashlib.sha256(
-            json.dumps(
-                {
-                    "composition": composition,
-                    "props": props,
-                    "duration": round(duration, 3),
-                    "width": out_width,
-                    "height": out_height,
-                },
-                sort_keys=True,
-                ensure_ascii=False,
-            ).encode("utf-8")
+            json.dumps(cache_payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
         ).hexdigest()[:12]
-        out_path = segment_cache_dir / f"segment_{segment_id:03d}_remotion_{cache_id}_{res_tag}.mp4"
+        out_path = segment_cache_dir / (
+            f"segment_{segment_id:03d}_remotion_{cache_id}_{res_tag}.mp4"
+        )
         if not force and segment_cache_duration_ok(out_path, duration):
             normalize_segment_timestamps(out_path, should_cancel=should_cancel)
             return out_path
+
         remotion_cache = (cache_dir / "remotion") if cache_dir else (ROOT / ".export_cache" / "remotion")
-        rendered = render_remotion_clip(
+
+        if is_split:
+            card_path = segment_cache_dir / (
+                f"segment_{segment_id:03d}_remotion_card_{cache_id}_{res_tag}.mp4"
+            )
+            left_path = segment_cache_dir / (
+                f"segment_{segment_id:03d}_remotion_left_{cache_id}_{res_tag}.mp4"
+            )
+            if not force and card_path.exists() and left_path.exists():
+                composite_split_panels(
+                    left_path=left_path,
+                    right_path=card_path,
+                    output_path=out_path,
+                    out_width=out_width,
+                    out_height=out_height,
+                    duration=duration,
+                    enc_args=enc_args,
+                    should_cancel=should_cancel,
+                )
+                return out_path
+
+            render_remotion_clip(
+                composition=composition,
+                props=props,
+                duration_seconds=duration,
+                output_path=card_path,
+                width=half_w,
+                height=out_height,
+                cache_dir=remotion_cache,
+                force=force,
+            )
+            if selection and selection.get("url"):
+                render_broll_panel_clip(
+                    duration=duration,
+                    selection=selection,
+                    encoder=encoder,
+                    enc_args=enc_args,
+                    cache_dir=cache_dir,
+                    out_width=half_w,
+                    out_height=out_height,
+                    output_path=left_path,
+                    force=force,
+                    should_cancel=should_cancel,
+                )
+            else:
+                render_black_panel_clip(
+                    duration=duration,
+                    out_width=half_w,
+                    out_height=out_height,
+                    output_path=left_path,
+                    encoder=encoder,
+                    enc_args=enc_args,
+                    should_cancel=should_cancel,
+                )
+            composite_split_panels(
+                left_path=left_path,
+                right_path=card_path,
+                output_path=out_path,
+                out_width=out_width,
+                out_height=out_height,
+                duration=duration,
+                enc_args=enc_args,
+                should_cancel=should_cancel,
+            )
+            return out_path
+
+        render_remotion_clip(
             composition=composition,
             props=props,
             duration_seconds=duration,
@@ -624,8 +869,8 @@ def render_segment_clip(
             cache_dir=remotion_cache,
             force=force,
         )
-        normalize_segment_timestamps(rendered, should_cancel=should_cancel)
-        return rendered
+        normalize_segment_timestamps(out_path, should_cancel=should_cancel)
+        return out_path
 
     cache_id = selection_cache_id(selection)
     duration_ms = int(round(duration * 1000))
@@ -1244,6 +1489,7 @@ def export_video(
     resolution: str = DEFAULT_RESOLUTION,
     quality: str = DEFAULT_QUALITY,
     include_subtitles: bool = False,
+    script_path: Path | None = None,
 ) -> dict[str, Any]:
     def progress(stage: str, current: int, total: int, message: str) -> None:
         if on_progress:
@@ -1258,7 +1504,7 @@ def export_video(
 
     _check_cancel(should_cancel)
 
-    segments = load_segments(timestamps_path, selections_path)
+    segments = load_segments(timestamps_path, selections_path, script_path=script_path)
     if not segments:
         raise RuntimeError("No timed segments found in timestamps file")
 
@@ -1299,9 +1545,17 @@ def export_video(
         _check_cancel(should_cancel)
         selection = segment["selection"]
         is_remotion = segment.get("render_mode") == "remotion" and segment.get("remotion")
+        remotion = segment.get("remotion") if is_remotion else None
+        is_split = (
+            is_remotion
+            and str(remotion.get("layout") or "").strip().lower() == "split-right"
+            and str(remotion.get("composition") or "") == "FactCard"
+        )
         if not selection and not is_remotion:
             missing += 1
-        label = "Remotion" if is_remotion else "clip"
+        elif is_split and not selection:
+            missing += 1
+        label = "Remotion split" if is_split else ("Remotion" if is_remotion else "clip")
         progress(
             "prepare",
             index,

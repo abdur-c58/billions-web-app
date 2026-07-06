@@ -91,10 +91,19 @@ def _sanitize_string(value: Any, *, max_length: int = 500) -> str | None:
 
 
 def _sanitize_number(value: Any, definition: dict[str, Any]) -> int | float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped.lower().endswith("px"):
+            stripped = stripped[:-2].strip()
+        try:
+            number = float(stripped)
+        except (TypeError, ValueError):
+            return None
+    else:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
     if not (number == number):  # NaN
         return None
     min_value = definition.get("min")

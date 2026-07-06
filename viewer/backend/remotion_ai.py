@@ -88,12 +88,14 @@ def _build_prompt(
     composition: str,
     segment_content: str,
     segment_description: str,
+    script_prompt: str,
     current_props: dict[str, Any],
     user_prompt: str,
 ) -> str:
     allowed = prop_docs_for_composition(composition)
     schema_lines = "\n".join(f'- "{key}": {desc}' for key, desc in allowed.items())
     current_json = json.dumps(current_props, ensure_ascii=False, indent=2)
+    brief = script_prompt.strip() or "(none)"
 
     return f"""You adjust Remotion motion-graphic cards for a documentary YouTube video.
 
@@ -103,6 +105,9 @@ Segment narration excerpt:
 
 Visual brief:
 {segment_description[:300] or "(none)"}
+
+Script motion brief (from script.json — authoritative creative direction):
+{brief[:900]}
 
 Current props (JSON):
 {current_json}
@@ -125,6 +130,7 @@ Rules:
 - Keep copy edits concise and readable on screen.
 - Prefer layout changes (align, padding, sizes, accentColor) unless the user explicitly asks to rewrite text.
 - Colors must be hex (#rrggbb).
+- Honor the script motion brief when the user request is vague.
 """
 
 
@@ -133,6 +139,7 @@ def suggest_remotion_props(
     composition: str,
     segment_content: str,
     segment_description: str,
+    script_prompt: str = "",
     current_props: dict[str, Any],
     user_prompt: str,
     ai_budget: Any | None = None,
@@ -169,6 +176,7 @@ def suggest_remotion_props(
             composition=composition,
             segment_content=segment_content,
             segment_description=segment_description,
+            script_prompt=script_prompt,
             current_props=base,
             user_prompt=prompt,
         ),

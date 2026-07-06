@@ -25,6 +25,7 @@ import { getSessionHeaders } from "@/lib/session";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
 import {
   isRemotionSegment,
+  isSplitScreenRemotion,
   segmentCountsAsReady,
   segmentNeedsBrollFetch,
 } from "@/lib/remotion";
@@ -84,6 +85,9 @@ export function useBrollViewer() {
   } | null>(null);
   const [remotionPreviewUrls, setRemotionPreviewUrls] = useState<Record<number, string>>({});
   const [remotionBusyIds, setRemotionBusyIds] = useState<Set<number>>(new Set());
+  const [remotionDrafts, setRemotionDrafts] = useState<Record<number, Record<string, string>>>(
+    {},
+  );
 
   const batchRunningRef = useRef(false);
   const exportHashTimerRef = useRef<number | null>(null);
@@ -312,9 +316,9 @@ export function useBrollViewer() {
       provider: FetchProvider = "mix",
     ) => {
       const segment = segmentsRef.current.find((item) => item.segment_id === segmentId);
-      if (segment && isRemotionSegment(segment)) {
+      if (segment && isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) {
         if (!quiet) {
-          showStatus(`Segment ${segmentId} uses Remotion — no b-roll fetch needed.`);
+          showStatus(`Segment ${segmentId} uses full-frame Remotion — no b-roll fetch needed.`);
         }
         return true;
       }
@@ -743,9 +747,13 @@ export function useBrollViewer() {
   );
 
   const refetchAll = useCallback(async (provider: FetchProvider = "mix") => {
-    const targets = segmentsRef.current.filter((segment) => !isRemotionSegment(segment));
+    const targets = segmentsRef.current.filter(
+      (segment) => !isRemotionSegment(segment) || isSplitScreenRemotion(segment),
+    );
     if (!targets.length) return;
-    const skipped = segmentsRef.current.length - targets.length;
+    const skipped = segmentsRef.current.filter(
+      (segment) => isRemotionSegment(segment) && !isSplitScreenRemotion(segment),
+    ).length;
     const confirmed = window.confirm(
       `Refetch all ${targets.length} b-roll segment${targets.length === 1 ? "" : "s"} using ${provider}?` +
         (skipped > 0
@@ -761,7 +769,7 @@ export function useBrollViewer() {
   const refetchReview = useCallback(
     async (provider: FetchProvider = "mix") => {
       const reviewTargets = segmentsRef.current.filter((segment) => {
-        if (isRemotionSegment(segment)) return false;
+        if (isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) return false;
         const tier = segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
         return tier === "review";
       });
@@ -773,7 +781,7 @@ export function useBrollViewer() {
   const refetchUnscored = useCallback(
     async () => {
       const unscoredCount = segmentsRef.current.filter((segment) => {
-        if (isRemotionSegment(segment)) return false;
+        if (isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) return false;
         const selection = segment.selection;
         return Boolean(selection?.url) && !selection?.confidence_source;
       }).length;
@@ -924,6 +932,27 @@ export function useBrollViewer() {
     return objectUrl;
   }, []);
 
+  const updateRemotionDraft = useCallback(
+    (segmentId: number, values: Record<string, string>) => {
+      setRemotionDrafts((current) => ({
+        ...current,
+        [segmentId]: values,
+      }));
+    },
+    [],
+  );
+
+  const clearRemotionDraft = useCallback((segmentId: number) => {
+    setRemotionDrafts((current) => {
+      if (!(segmentId in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[segmentId];
+      return next;
+    });
+  }, []);
+
   const saveRemotionProps = useCallback(
     async (segmentId: number, props: Record<string, unknown>) => {
       setRemotionBusyIds((current) => new Set(current).add(segmentId));
@@ -939,13 +968,15 @@ export function useBrollViewer() {
               ? {
                   ...segment,
                   remotion: {
-                    composition: payload.remotion.composition,
+                    ...segment.remotion,
+                    ...payload.remotion,
                     props: payload.remotion.props ?? {},
                   },
                 }
               : segment,
           ),
         );
+        clearRemotionDraft(segmentId);
         if (payload.export_inputs_hash) {
           setExportInputsHash(payload.export_inputs_hash);
         }
@@ -964,7 +995,7 @@ export function useBrollViewer() {
         });
       }
     },
-    [showStatus],
+    [clearRemotionDraft, showStatus],
   );
 
   const previewRemotion = useCallback(
@@ -1283,6 +1314,8 @@ export function useBrollViewer() {
     refetchFlagConflictSegments,
     remotionPreviewUrls,
     remotionBusyIds,
+    remotionDrafts,
+    updateRemotionDraft,
     saveRemotionProps,
     previewRemotion,
     suggestRemotionPrompt,

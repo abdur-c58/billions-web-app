@@ -117,6 +117,13 @@ export type ScriptFormat = "legacy" | "folder";
 export type RemotionSegmentInfo = {
   composition: string;
   props?: Record<string, unknown>;
+  design?: Record<string, unknown>;
+  prompt?: string;
+  layout?: "split-right" | "full";
+  broll?: {
+    search_query?: string;
+    category?: string;
+  };
 };
 
 export type RemotionScriptSummary = {

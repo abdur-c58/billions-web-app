@@ -12,6 +12,7 @@ from script_format import (
     is_remotion_segment,
     parse_remotion_fields,
     parse_segment_render,
+    remotion_payload_from_render,
 )
 
 PREVIEW_WIDTH = 1280
@@ -33,10 +34,14 @@ def merge_remotion_props(segment: dict[str, Any], updates: dict[str, Any]) -> di
     composition = parsed["composition"]
     merged = dict(parsed.get("props") or {})
     merged.update(sanitize_remotion_props(composition, updates))
-    return {
+    result = {
         "composition": composition,
         "props": merged,
     }
+    for key in ("design", "prompt", "layout", "broll"):
+        if key in parsed:
+            result[key] = parsed[key]
+    return result
 
 
 def update_remotion_segment_props(workspace: Path, segment_id: int, props: dict[str, Any]) -> dict[str, Any]:
@@ -60,6 +65,11 @@ def update_remotion_segment_props(workspace: Path, segment_id: int, props: dict[
         remotion_block = {}
     remotion_block["composition"] = merged["composition"]
     remotion_block["props"] = merged["props"]
+    for key in ("design", "prompt", "layout", "broll"):
+        if key in merged:
+            remotion_block[key] = merged[key]
+        elif key not in remotion_block and key in (segment.get("remotion") or {}):
+            pass
     segment["remotion"] = remotion_block
 
     script_path.write_text(
@@ -74,8 +84,8 @@ def update_remotion_segment_props(workspace: Path, segment_id: int, props: dict[
         for entry in timestamps.get("segments", []):
             if int(entry.get("segment_id", -1)) != segment_id:
                 continue
-            entry["render_mode"] = "remotion"
-            entry["remotion"] = render
+            entry["render_mode"] = render["mode"]
+            entry["remotion"] = remotion_payload_from_render(render)
             break
         timestamps_path.write_text(
             json.dumps(timestamps, indent=2, ensure_ascii=False) + "\n",

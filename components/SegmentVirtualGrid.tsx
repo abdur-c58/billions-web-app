@@ -31,6 +31,8 @@ type SegmentVirtualGridProps = {
   onFlagClip: (segmentId: number) => void;
   remotionPreviewUrls: Record<number, string>;
   remotionBusyIds: Set<number>;
+  remotionDrafts: Record<number, Record<string, string>>;
+  onRemotionDraftChange: (segmentId: number, values: Record<string, string>) => void;
   onSaveRemotionProps: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
   onPreviewRemotion: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
   onSuggestRemotionPrompt: (
@@ -53,6 +55,8 @@ export function SegmentVirtualGrid({
   onFlagClip,
   remotionPreviewUrls,
   remotionBusyIds,
+  remotionDrafts,
+  onRemotionDraftChange,
   onSaveRemotionProps,
   onPreviewRemotion,
   onSuggestRemotionPrompt,
@@ -165,6 +169,10 @@ export function SegmentVirtualGrid({
                   onFlagClip={() => onFlagClip(segment.segment_id)}
                   remotionPreviewUrl={remotionPreviewUrls[segment.segment_id] ?? null}
                   remotionBusy={remotionBusyIds.has(segment.segment_id)}
+                  remotionDraftValues={remotionDrafts[segment.segment_id] ?? null}
+                  onRemotionDraftChange={(values) =>
+                    onRemotionDraftChange(segment.segment_id, values)
+                  }
                   onSaveRemotionProps={(props) =>
                     onSaveRemotionProps(segment.segment_id, props)
                   }

@@ -98,6 +98,67 @@ def _infer_title(content: str, label: str, description: str) -> str:
     return sentence[:120].strip() or "Segment"
 
 
+def remotion_broll_search_query(segment: dict[str, Any]) -> str:
+    """Search query for the left panel of split-screen FactCard segments."""
+    explicit = segment.get("remotion")
+    if isinstance(explicit, dict):
+        broll = explicit.get("broll")
+        if isinstance(broll, dict):
+            query = str(broll.get("search_query") or broll.get("query") or "").strip()
+            if query:
+                return query
+        direct = str(explicit.get("brollQuery") or "").strip()
+        if direct:
+            return direct
+
+    description = str(segment.get("description") or "").strip()
+    description = re.sub(
+        r"^(left side b-roll|left b-roll|b-roll)\s*:\s*",
+        "",
+        description,
+        flags=re.IGNORECASE,
+    )
+    if description:
+        first = re.split(r"[.;]\s+", description, maxsplit=1)[0].strip()
+        return (first or description)[:120]
+    return "documentary landscape"
+
+
+def remotion_broll_category(segment: dict[str, Any]) -> str:
+    explicit = segment.get("remotion")
+    if isinstance(explicit, dict):
+        broll = explicit.get("broll")
+        if isinstance(broll, dict):
+            category = str(broll.get("category") or "").strip().lower()
+            if category in {"stock", "commons"}:
+                return category
+    return "stock"
+
+
+def remotion_layout_mode(segment: dict[str, Any], composition: str) -> str:
+    """Return ``split-right`` (FactCard beside b-roll) or ``full``."""
+    explicit = segment.get("remotion")
+    if isinstance(explicit, dict):
+        layout = str(explicit.get("layout") or "").strip().lower()
+        if layout in {"split-right", "full"}:
+            return layout
+        design = explicit.get("design")
+        if isinstance(design, dict):
+            layout_block = design.get("layout")
+            if isinstance(layout_block, dict):
+                content_width = str(layout_block.get("contentMaxWidth") or "").lower()
+                if "split" in content_width or "right half" in content_width:
+                    return "split-right"
+                if "full" in content_width and "frame" in content_width:
+                    return "full"
+
+    if composition == "TitleCard":
+        return "full"
+    if composition == "FactCard":
+        return "split-right"
+    return "full"
+
+
 def parse_remotion_fields(segment: dict[str, Any]) -> dict[str, Any]:
     """Return normalized Remotion render instructions for a segment."""
     explicit = segment.get("remotion")
@@ -132,7 +193,13 @@ def parse_remotion_fields(segment: dict[str, Any]) -> dict[str, Any]:
         props.update(explicit_props)
 
     if composition == "FactCard":
-        props.setdefault("factNumber", _infer_fact_number(content, label))
+        if "factNumber" not in props:
+            inferred = _infer_fact_number(content, label)
+            if inferred is not None:
+                props["factNumber"] = inferred
+        if props.get("factNumber") is None:
+            props.pop("factNumber", None)
+            props.setdefault("showFactBadge", False)
         props.setdefault("title", _infer_title(content, label, description))
         body = re.sub(r"^fact\s+[\w-]+\s*[.:—-]\s*", "", content, flags=re.IGNORECASE)
         props.setdefault("body", body.strip() or content)
@@ -140,10 +207,36 @@ def parse_remotion_fields(segment: dict[str, Any]) -> dict[str, Any]:
         props.setdefault("title", _infer_title(content, label, description))
         props.setdefault("subtitle", description or content[:160])
 
-    return {
+    layout = remotion_layout_mode(segment, composition)
+    design = explicit.get("design")
+    prompt = explicit.get("prompt")
+    if isinstance(prompt, str):
+        prompt = prompt.strip() or None
+    else:
+        prompt = None
+
+    result: dict[str, Any] = {
         "composition": composition,
         "props": props,
+        "layout": layout,
     }
+    if isinstance(design, dict) and design:
+        result["design"] = design
+    if prompt:
+        result["prompt"] = prompt
+    if layout == "split-right":
+        result["broll"] = {
+            "search_query": remotion_broll_search_query(segment),
+            "category": remotion_broll_category(segment),
+        }
+    return result
+
+
+def remotion_payload_from_render(render: dict[str, Any]) -> dict[str, Any] | None:
+    if render.get("mode") != "remotion":
+        return None
+    keys = ("composition", "props", "design", "prompt", "layout", "broll")
+    return {key: render[key] for key in keys if key in render}
 
 
 def parse_segment_render(segment: dict[str, Any]) -> dict[str, Any]:
@@ -151,8 +244,7 @@ def parse_segment_render(segment: dict[str, Any]) -> dict[str, Any]:
         remotion = parse_remotion_fields(segment)
         return {
             "mode": "remotion",
-            "composition": remotion["composition"],
-            "props": remotion["props"],
+            **remotion,
         }
     search_query, category = parse_segment_broll_fields(segment)
     return {
@@ -278,6 +370,10 @@ def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, An
                 continue
             render = parse_segment_render(segment)
             search_query, category = parse_segment_broll_fields(segment)
+            if render["mode"] == "remotion" and render.get("layout") == "split-right":
+                broll = render.get("broll") or {}
+                search_query = str(broll.get("search_query") or search_query).strip()
+                category = str(broll.get("category") or category or "stock").strip()
             segments.append(
                 {
                     "segment_id": segment["segment_id"],
@@ -290,8 +386,16 @@ def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, An
                     "render_mode": render["mode"],
                     "remotion": (
                         {
-                            "composition": render["composition"],
-                            "props": render.get("props", {}),
+                            key: render[key]
+                            for key in (
+                                "composition",
+                                "props",
+                                "design",
+                                "prompt",
+                                "layout",
+                                "broll",
+                            )
+                            if key in render
                         }
                         if render["mode"] == "remotion"
                         else None

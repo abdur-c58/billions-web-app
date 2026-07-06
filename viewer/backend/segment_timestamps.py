@@ -450,7 +450,11 @@ def get_audio_duration(audio_path: Path) -> float | None:
 
 
 def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
-    from script_format import parse_segment_broll_fields, parse_segment_render
+    from script_format import (
+        parse_segment_broll_fields,
+        parse_segment_render,
+        remotion_payload_from_render,
+    )
 
     segments: list[dict[str, Any]] = []
     for beat_block in script_data.get("script", []):
@@ -461,6 +465,10 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
             description = segment.get("description", "")
             render = parse_segment_render(segment)
             search_query, category = parse_segment_broll_fields(segment)
+            if render["mode"] == "remotion" and render.get("layout") == "split-right":
+                broll = render.get("broll") or {}
+                search_query = str(broll.get("search_query") or search_query).strip()
+                category = str(broll.get("category") or category or "stock").strip()
             segments.append(
                 {
                     "segment_id": segment.get("segment_id"),
@@ -471,7 +479,7 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
                     "script_tokens": expand_tokens(normalize(content)),
                     "description": description,
                     "render_mode": render["mode"],
-                    "remotion": render if render["mode"] == "remotion" else None,
+                    "remotion": remotion_payload_from_render(render),
                     "broll": {
                         "search_query": search_query,
                         "category": category,
