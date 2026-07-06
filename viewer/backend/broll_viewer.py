@@ -2224,6 +2224,70 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
+        if parsed.path == "/api/remotion/suggest":
+            try:
+                if not self._project_ready():
+                    self._send_json({"error": "Project not ready."}, HTTPStatus.BAD_REQUEST)
+                    return
+                body = self._read_json_body()
+                segment_id = int(body["segment_id"])
+                user_prompt = str(body.get("prompt") or "").strip()
+                current_props = body.get("current_props")
+                if not isinstance(current_props, dict):
+                    current_props = {}
+
+                rows = build_segment_rows(
+                    self.script_path,
+                    self.timestamps_path,
+                    self.selections_path,
+                )
+                segment = next(
+                    (row for row in rows if row["segment_id"] == segment_id),
+                    None,
+                )
+                if segment is None:
+                    self._send_json({"error": "Segment not found"}, HTTPStatus.NOT_FOUND)
+                    return
+                if segment.get("render_mode") != "remotion" or not segment.get("remotion"):
+                    self._send_json(
+                        {"error": "Segment is not a Remotion segment."},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                remotion = segment["remotion"]
+                composition = str(remotion["composition"])
+                base_props = dict(remotion.get("props") or {})
+                base_props.update(current_props)
+
+                from remotion_ai import suggest_remotion_props
+
+                result = suggest_remotion_props(
+                    composition=composition,
+                    segment_content=str(segment.get("content") or ""),
+                    segment_description=str(segment.get("description") or ""),
+                    current_props=base_props,
+                    user_prompt=user_prompt,
+                    ai_budget=self.ai_budget if self.use_ai_judge else None,
+                )
+                self._send_json(
+                    {
+                        "segment_id": segment_id,
+                        "composition": composition,
+                        "props": result["props"],
+                        "updates": result.get("updates") or {},
+                        "summary": result.get("summary") or "",
+                        "ai_used": bool(result.get("ai_used")),
+                        "ai_judge": {
+                            "enabled": self.use_ai_judge and bool(os.environ.get("OPENAI_API_KEY")),
+                            **(self.ai_budget.snapshot() if self.ai_budget else {}),
+                        },
+                    }
+                )
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/remotion/preview":
             try:
                 if not self._project_ready():

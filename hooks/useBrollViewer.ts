@@ -15,6 +15,7 @@ import type {
   JudgmentSummary,
   RemotionPreviewResponse,
   RemotionPropsSaveResponse,
+  RemotionSuggestResponse,
   ScriptFormat,
   SegmentsPayload,
   TimestampAlignment,
@@ -994,6 +995,53 @@ export function useBrollViewer() {
     [resolveRemotionPreviewPlayback, showStatus],
   );
 
+  const suggestRemotionPrompt = useCallback(
+    async (
+      segmentId: number,
+      prompt: string,
+      currentProps: Record<string, unknown>,
+    ) => {
+      setRemotionBusyIds((current) => new Set(current).add(segmentId));
+      try {
+        const payload = await apiFetch<RemotionSuggestResponse>("/api/remotion/suggest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            segment_id: segmentId,
+            prompt,
+            current_props: currentProps,
+          }),
+        });
+        if (payload.ai_judge) {
+          setAiJudge(payload.ai_judge);
+        }
+        const summary = payload.summary || "Prompt applied.";
+        showStatus(
+          payload.ai_used
+            ? `Segment ${segmentId}: ${summary}`
+            : `Segment ${segmentId}: ${summary}`,
+        );
+        return {
+          props: payload.props,
+          summary,
+        };
+      } catch (error) {
+        showStatus(
+          error instanceof Error ? error.message : "Could not apply motion prompt",
+          true,
+        );
+        throw error;
+      } finally {
+        setRemotionBusyIds((current) => {
+          const next = new Set(current);
+          next.delete(segmentId);
+          return next;
+        });
+      }
+    },
+    [showStatus],
+  );
+
   const refetchFlagConflictSegments = useCallback(
     async (provider: FetchProvider = "mix") => {
       const targets = flagConflict?.segmentIds ?? [];
@@ -1237,6 +1285,7 @@ export function useBrollViewer() {
     remotionBusyIds,
     saveRemotionProps,
     previewRemotion,
+    suggestRemotionPrompt,
     focusedSegmentId,
     timestampSeekInput,
     setTimestampSeekInput,

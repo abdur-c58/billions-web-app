@@ -126,3 +126,28 @@ export function remotionPropsDirty(
   }
   return false;
 }
+
+export function mergePropsIntoFormValues(
+  composition: string,
+  current: Record<string, string>,
+  updates: Record<string, unknown>,
+): Record<string, string> {
+  const next = { ...current };
+  for (const field of remotionFieldsFor(composition)) {
+    if (!(field.key in updates)) continue;
+    const value = updates[field.key];
+    if (value == null || value === "") {
+      delete next[field.key];
+      continue;
+    }
+    next[field.key] = String(value);
+  }
+  return next;
+}
+
+export function propsToFormValues(
+  composition: string,
+  props: Record<string, unknown>,
+): Record<string, string> {
+  return mergePropsIntoFormValues(composition, {}, props);
+}

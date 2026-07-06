@@ -33,6 +33,11 @@ type SegmentVirtualGridProps = {
   remotionBusyIds: Set<number>;
   onSaveRemotionProps: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
   onPreviewRemotion: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
+  onSuggestRemotionPrompt: (
+    segmentId: number,
+    prompt: string,
+    currentProps: Record<string, unknown>,
+  ) => Promise<{ props: Record<string, unknown>; summary: string }>;
 };
 
 export function SegmentVirtualGrid({
@@ -50,6 +55,7 @@ export function SegmentVirtualGrid({
   remotionBusyIds,
   onSaveRemotionProps,
   onPreviewRemotion,
+  onSuggestRemotionPrompt,
 }: SegmentVirtualGridProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const [columnCount, setColumnCount] = useState(1);
@@ -164,6 +170,9 @@ export function SegmentVirtualGrid({
                   }
                   onPreviewRemotion={(props) =>
                     onPreviewRemotion(segment.segment_id, props)
+                  }
+                  onSuggestRemotionPrompt={(prompt, currentProps) =>
+                    onSuggestRemotionPrompt(segment.segment_id, prompt, currentProps)
                   }
                 />
               ))}

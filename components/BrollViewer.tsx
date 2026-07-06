@@ -743,6 +743,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
         remotionBusyIds={viewer.remotionBusyIds}
         onSaveRemotionProps={viewer.saveRemotionProps}
         onPreviewRemotion={viewer.previewRemotion}
+        onSuggestRemotionPrompt={viewer.suggestRemotionPrompt}
       />
 
       <StorageClipSelectModal

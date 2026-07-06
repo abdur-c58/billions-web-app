@@ -142,6 +142,16 @@ export type RemotionPreviewResponse = {
   duration_seconds: number;
 };
 
+export type RemotionSuggestResponse = {
+  segment_id: number;
+  composition: string;
+  props: Record<string, unknown>;
+  updates: Record<string, unknown>;
+  summary: string;
+  ai_used: boolean;
+  ai_judge?: AiJudgeStatus;
+};
+
 export type SegmentRenderMode = "broll" | "remotion";
 
 export type FolderShortageStrategy = "leave_empty" | "reuse_spaced" | "random_api";

@@ -28,6 +28,10 @@ type SegmentCardProps = {
   remotionBusy?: boolean;
   onSaveRemotionProps?: (props: Record<string, unknown>) => Promise<void>;
   onPreviewRemotion?: (props: Record<string, unknown>) => Promise<void>;
+  onSuggestRemotionPrompt?: (
+    prompt: string,
+    currentProps: Record<string, unknown>,
+  ) => Promise<{ props: Record<string, unknown>; summary: string }>;
 };
 
 function SegmentCardInner({
@@ -45,6 +49,7 @@ function SegmentCardInner({
   remotionBusy = false,
   onSaveRemotionProps,
   onPreviewRemotion,
+  onSuggestRemotionPrompt,
 }: SegmentCardProps) {
   const cardRef = useRef<HTMLElement | null>(null);
   const [inView, setInView] = useState(false);
@@ -296,13 +301,14 @@ function SegmentCardInner({
           ) : null}
 
           {isRemotion ? (
-            onSaveRemotionProps && onPreviewRemotion ? (
+            onSaveRemotionProps && onPreviewRemotion && onSuggestRemotionPrompt ? (
               <RemotionSegmentEditor
                 segment={segment}
                 isBusy={isLoading || remotionBusy}
                 previewUrl={remotionPreviewUrl}
                 onSave={onSaveRemotionProps}
                 onPreview={onPreviewRemotion}
+                onSuggestPrompt={onSuggestRemotionPrompt}
               />
             ) : (
               <p className="text-[0.72rem] leading-snug text-violet-200/80">
