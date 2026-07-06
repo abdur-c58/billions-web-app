@@ -326,6 +326,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
     script_title = None
     segment_count = 0
     script_format = None
+    remotion_summary: dict[str, Any] | None = None
     if script_exists:
         try:
             with paths["script"].open("r", encoding="utf-8") as infile:
@@ -333,12 +334,14 @@ def project_status(workspace: Path) -> dict[str, Any]:
             script_title = script_data.get("title")
             for beat_block in script_data.get("script", []):
                 segment_count += len(beat_block.get("segments", []))
-            from script_format import detect_script_format
+            from script_format import analyze_script_remotion, detect_script_format
 
             script_format = detect_script_format(script_data)
+            remotion_summary = analyze_script_remotion(script_data)
         except (json.JSONDecodeError, OSError):
             script_title = None
             script_format = None
+            remotion_summary = None
 
     aligned_segments = 0
     timed_segments = 0
@@ -362,6 +365,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
     from user_sessions import parse_workspace_scope
 
     project_id = parse_workspace_scope(workspace)
+    from remotion_render import remotion_available
 
     return {
         "workspace": str(workspace.resolve()),
@@ -372,6 +376,8 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "viewer_ready": ready,
         "title": script_title,
         "script_format": script_format,
+        "remotion": remotion_summary,
+        "remotion_runtime_ready": remotion_available(),
         "segment_count": segment_count,
         "aligned_segments": aligned_segments,
         "timed_segments": timed_segments,
@@ -390,6 +396,9 @@ def project_status(workspace: Path) -> dict[str, Any]:
 
 
 def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
+    from script_format import analyze_script_remotion, validate_script_payload
+
+    validate_script_payload(script_data)
     paths = workspace_paths(workspace)
     paths["script"].write_text(
         json.dumps(script_data, indent=2, ensure_ascii=False) + "\n",

@@ -1,5 +1,5 @@
 import { apiFetch, invalidateBackendUrlCache, uploadFormData } from "@/lib/api";
-import type { ScriptFormat } from "@/lib/types";
+import type { ScriptFormat, RemotionScriptSummary } from "@/lib/types";
 
 export type TimestampAlignment = {
   total_segments: number;
@@ -17,6 +17,8 @@ export type ProjectStatus = {
   project_id?: string | null;
   script_uploaded: boolean;
   script_format?: ScriptFormat | null;
+  remotion?: RemotionScriptSummary | null;
+  remotion_runtime_ready?: boolean;
   audio_uploaded: boolean;
   timestamps_ready: boolean;
   viewer_ready: boolean;

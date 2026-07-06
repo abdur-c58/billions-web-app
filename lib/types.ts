@@ -63,6 +63,8 @@ export type ViewerSegment = {
   description: string;
   search_query: string;
   category: string;
+  render_mode?: SegmentRenderMode;
+  remotion?: RemotionSegmentInfo | null;
   folder_status?: SegmentFolderStatus;
   timing: SegmentTiming;
   selection?: SegmentSelection | null;
@@ -111,6 +113,22 @@ export type FlagClipResponse = {
 };
 
 export type ScriptFormat = "legacy" | "folder";
+
+export type RemotionSegmentInfo = {
+  composition: string;
+  props?: Record<string, unknown>;
+};
+
+export type RemotionScriptSummary = {
+  detected: boolean;
+  segment_count: number;
+  segment_ids?: number[];
+  compositions: string[];
+  total_segments: number;
+  broll_segment_count: number;
+};
+
+export type SegmentRenderMode = "broll" | "remotion";
 
 export type FolderShortageStrategy = "leave_empty" | "reuse_spaced" | "random_api";
 

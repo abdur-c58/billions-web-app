@@ -1,0 +1,85 @@
+{
+  "title": "Venom: Poison and Medicine (sample)",
+  "channel": "Restful Library",
+  "script": [
+    {
+      "beat": 1,
+      "label": "Hook",
+      "segments": [
+        {
+          "segment_id": 1,
+          "content": "Welcome back. Tonight we're exploring how the same molecules that can kill you are now being turned into life-saving drugs.",
+          "description": "dark laboratory bokeh",
+          "type": ["laboratory night", "commons"]
+        },
+        {
+          "segment_id": 2,
+          "content": "From cone snails to scorpions, venom is one of nature's most sophisticated chemical libraries.",
+          "description": "marine snail close up",
+          "type": ["cone snail", "commons"]
+        }
+      ]
+    },
+    {
+      "beat": 2,
+      "label": "Fact cards",
+      "segments": [
+        {
+          "segment_id": 3,
+          "content": "Fact one. Cone snail venom contains more than one hundred distinct peptides, and a single species may produce over fifty thousand unique toxin variants.",
+          "description": "Animated fact card",
+          "type": "remotion:fact-card",
+          "remotion": {
+            "composition": "FactCard",
+            "props": {
+              "accentColor": "#5ecf8a"
+            }
+          }
+        },
+        {
+          "segment_id": 4,
+          "content": "Researchers catalog these peptides the way librarians catalog books — each molecule filed by structure, target, and effect.",
+          "description": "scientist cataloging samples",
+          "type": ["research library", "commons"]
+        },
+        {
+          "segment_id": 5,
+          "content": "Fact two. One peptide from cone snail venom, ziconotide, became an FDA-approved pain drug that works when opioids fail.",
+          "description": "Animated fact card",
+          "type": ["remotion", "fact-card"]
+        }
+      ]
+    },
+    {
+      "beat": 3,
+      "label": "Title moment",
+      "segments": [
+        {
+          "segment_id": 6,
+          "content": "The venom that kills you is also saving lives — and scientists finally mapped how.",
+          "description": "Title motion graphic",
+          "type": "remotion:title-card",
+          "remotion": {
+            "composition": "TitleCard",
+            "props": {
+              "title": "Venom as Medicine",
+              "subtitle": "How lethal peptides become therapies"
+            }
+          }
+        },
+        {
+          "segment_id": 7,
+          "content": "Modern labs use automated screening to test thousands of venom fractions against ion channels in a single afternoon.",
+          "description": "automated lab screening",
+          "type": ["lab automation", "commons"]
+        },
+        {
+          "segment_id": 8,
+          "content": "If this blend of science and wonder helps you unwind, you're welcome to like and subscribe.",
+          "description": "soft channel end card",
+          "type": ["abstract particles", "commons"]
+        }
+      ]
+    }
+  ]
+}

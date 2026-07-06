@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Flag, HardDrive, Play } from "lucide-react";
+import { ChevronDown, ChevronUp, Flag, HardDrive, Play, Sparkles } from "lucide-react";
 import type { PexelsVideo, ScriptFormat, ViewerSegment } from "@/lib/types";
 import { formatTiming } from "@/lib/format";
 import type { FetchProvider } from "@/hooks/useBrollViewer";
@@ -50,6 +50,7 @@ function SegmentCardInner({
   const qualityLabel = selection?.quality_label || QUALITY_LABELS[qualityTier];
   const detail = judgmentDetail(selection);
   const folderStatus = segment.folder_status;
+  const isRemotion = segment.render_mode === "remotion" && Boolean(segment.remotion?.composition);
   const isFolderFormat = scriptFormat === "folder";
   const isStock = segment.category.trim().toLowerCase() === "stock";
   const showNoFolderWarning =
@@ -60,6 +61,8 @@ function SegmentCardInner({
 
   const cardGlowClass = isFocused
     ? "glow-card glow-card-focused"
+    : isRemotion
+      ? "glow-card glow-card-good"
     : segment.selection_flagged
       ? "glow-card glow-card-flagged"
       : qualityTier === "good"
@@ -113,7 +116,9 @@ function SegmentCardInner({
           {segment.beat}. {segment.label || "Untitled beat"}
         </span>
         <span className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(229,229,229,0.12)] px-2 py-0.5 text-[0.68rem] text-[var(--foreground)]">
-          {segment.search_query || "No search term"}
+          {isRemotion
+            ? `Remotion · ${segment.remotion?.composition}`
+            : segment.search_query || "No search term"}
         </span>
         {showFolderTypeBadge ? (
           <span className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(163,163,163,0.12)] px-2 py-0.5 text-[0.68rem] text-[var(--muted)]">
@@ -134,7 +139,12 @@ function SegmentCardInner({
         >
           {formatTiming(segment.timing)}
         </span>
-        {hasSelection ? (
+        {isRemotion ? (
+          <span className="glow-badge inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-[rgba(167,139,250,0.16)] px-2 py-0.5 text-[0.68rem] font-semibold text-violet-200">
+            <Sparkles className="h-3 w-3 shrink-0" />
+            Auto motion
+          </span>
+        ) : hasSelection ? (
           <span
             className={`inline-flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-full px-2 py-0.5 text-[0.68rem] font-semibold ${qualityTierClass(qualityTier)}`}
             title={detail}
@@ -187,7 +197,28 @@ function SegmentCardInner({
       <div className="flex flex-1 flex-col gap-2.5 px-3 py-2.5 pb-3">
         <div className="grid gap-2">
           <div className="glow-video-frame relative aspect-video overflow-hidden rounded-[10px] bg-black">
-            {hasSelection && videoActive ? (
+            {isRemotion ? (
+              <div className="flex h-full flex-col justify-between bg-[linear-gradient(145deg,#071018,#132337)] p-4 text-left text-white">
+                <div>
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                    {segment.remotion?.composition}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-snug">
+                    {String(segment.remotion?.props?.title || segment.label || "Motion segment")}
+                  </p>
+                  {segment.remotion?.props?.body ? (
+                    <p className="mt-2 line-clamp-4 text-[0.72rem] leading-relaxed text-white/75">
+                      {String(segment.remotion.props.body)}
+                    </p>
+                  ) : segment.remotion?.props?.subtitle ? (
+                    <p className="mt-2 line-clamp-3 text-[0.72rem] leading-relaxed text-white/75">
+                      {String(segment.remotion.props.subtitle)}
+                    </p>
+                  ) : null}
+                </div>
+                <p className="text-[0.68rem] text-white/55">Rendered automatically during export</p>
+              </div>
+            ) : hasSelection && videoActive ? (
               <video
                 src={selection?.url}
                 poster={selection?.thumbnail || undefined}
@@ -235,12 +266,17 @@ function SegmentCardInner({
             ) : null}
           </div>
 
-          {detail ? (
+          {detail && !isRemotion ? (
             <p className="text-[0.72rem] leading-snug text-[var(--muted)]" title={detail}>
               {detail}
             </p>
           ) : null}
 
+          {isRemotion ? (
+            <p className="text-[0.72rem] leading-snug text-violet-200/80">
+              This segment uses a Remotion composition instead of stock b-roll. No fetch is required.
+            </p>
+          ) : (
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
@@ -346,8 +382,9 @@ function SegmentCardInner({
               </span>
             ) : null}
           </div>
+          )}
 
-          {alternatives.length > 0 ? (
+          {!isRemotion && alternatives.length > 0 ? (
             <div>
               <button
                 type="button"

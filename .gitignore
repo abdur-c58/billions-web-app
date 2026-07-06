@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+__pycache__/
+*.py[cod]
 
 # debug
 npm-debug.log*
@@ -45,3 +47,10 @@ next-env.d.ts
 viewer/backend/workspace/
 viewer/backend/**/.broll_cache/
 viewer/backend/**/.export_cache/
+
+# whisper / export caches (repo root)
+.whisper_cache/
+.export_cache/
+
+# remotion local render artifacts
+remotion/.remotion/

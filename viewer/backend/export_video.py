@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -25,7 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent
-EXPORT_API_VERSION = 6  # bump when export pipeline changes (6 = resolution + quality params)
+EXPORT_API_VERSION = 7  # bump when export pipeline changes (7 = Remotion segment renders)
 DEFAULT_OUTPUT = ROOT / "final_video.mp4"
 CLIP_CACHE_DIR = ROOT / ".broll_cache"
 SEGMENT_CACHE_DIR = ROOT / ".export_cache" / "segments"
@@ -345,6 +346,9 @@ def load_segments(timestamps_path: Path, selections_path: Path) -> list[dict[str
                 "segment_id": segment_id,
                 "duration": float(duration),
                 "selection": selection,
+                "render_mode": entry.get("render_mode", "broll"),
+                "remotion": entry.get("remotion"),
+                "content": entry.get("content", ""),
             }
         )
         prev_end = end_seconds
@@ -547,17 +551,51 @@ def render_segment_clip(
     out_height: int = HEIGHT,
     force: bool = False,
     should_cancel: CancelCheck | None = None,
+    remotion: dict[str, Any] | None = None,
 ) -> Path:
     clip_cache_dir = (cache_dir / "clips") if cache_dir else CLIP_CACHE_DIR
     segment_cache_dir = (cache_dir / "segments") if cache_dir else SEGMENT_CACHE_DIR
     segment_cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_id = selection_cache_id(selection)
     res_tag = f"{out_width}x{out_height}"
+    duration_str = f"{duration:.3f}"
+
+    if remotion and remotion.get("composition"):
+        from remotion_render import render_remotion_clip
+
+        composition = str(remotion["composition"])
+        props = dict(remotion.get("props") or {})
+        cache_id = hashlib.sha256(
+            json.dumps(
+                {
+                    "composition": composition,
+                    "props": props,
+                    "duration": round(duration, 3),
+                    "width": out_width,
+                    "height": out_height,
+                },
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()[:12]
+        out_path = segment_cache_dir / f"segment_{segment_id:03d}_remotion_{cache_id}_{res_tag}.mp4"
+        if not force and out_path.exists() and out_path.stat().st_size > 0:
+            return out_path
+        remotion_cache = (cache_dir / "remotion") if cache_dir else (ROOT / ".export_cache" / "remotion")
+        return render_remotion_clip(
+            composition=composition,
+            props=props,
+            duration_seconds=duration,
+            output_path=out_path,
+            width=out_width,
+            height=out_height,
+            cache_dir=remotion_cache,
+            force=force,
+        )
+
+    cache_id = selection_cache_id(selection)
     out_path = segment_cache_dir / f"segment_{segment_id:03d}_{cache_id}_{res_tag}.mp4"
     if not force and out_path.exists() and out_path.stat().st_size > 0:
         return out_path
-
-    duration_str = f"{duration:.3f}"
 
     if selection and selection.get("url"):
         video_id = selection_cache_id(selection)
@@ -1197,13 +1235,15 @@ def export_video(
     for index, segment in enumerate(segments, start=1):
         _check_cancel(should_cancel)
         selection = segment["selection"]
-        if not selection:
+        is_remotion = segment.get("render_mode") == "remotion" and segment.get("remotion")
+        if not selection and not is_remotion:
             missing += 1
+        label = "Remotion" if is_remotion else "clip"
         progress(
             "prepare",
             index,
             len(segments),
-            f"Segment {segment['segment_id']} ({segment['duration']:.1f}s)",
+            f"Segment {segment['segment_id']} ({segment['duration']:.1f}s, {label})",
         )
         segment_files.append(
             render_segment_clip(
@@ -1217,6 +1257,7 @@ def export_video(
                 out_height=out_height,
                 force=fresh,
                 should_cancel=should_cancel,
+                remotion=segment.get("remotion") if is_remotion else None,
             )
         )
 

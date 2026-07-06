@@ -450,7 +450,7 @@ def get_audio_duration(audio_path: Path) -> float | None:
 
 
 def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
-    from script_format import parse_segment_broll_fields
+    from script_format import parse_segment_broll_fields, parse_segment_render
 
     segments: list[dict[str, Any]] = []
     for beat_block in script_data.get("script", []):
@@ -459,6 +459,7 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
         for segment in beat_block.get("segments", []):
             content = str(segment.get("content", "")).strip()
             description = segment.get("description", "")
+            render = parse_segment_render(segment)
             search_query, category = parse_segment_broll_fields(segment)
             segments.append(
                 {
@@ -469,6 +470,8 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
                     "word_count": count_words(content),
                     "script_tokens": expand_tokens(normalize(content)),
                     "description": description,
+                    "render_mode": render["mode"],
+                    "remotion": render if render["mode"] == "remotion" else None,
                     "broll": {
                         "search_query": search_query,
                         "category": category,
@@ -1282,6 +1285,8 @@ def build_whisper_timeline(
             "word_count": segment["word_count"],
             "description": segment["description"],
             "broll": segment["broll"],
+            "render_mode": segment.get("render_mode", "broll"),
+            "remotion": segment.get("remotion"),
             "alignment": {
                 "status": alignment_status,
                 "matched_words": matched_script_tokens,
@@ -1337,6 +1342,8 @@ def build_estimate_timeline(script_data: dict[str, Any], wpm: float, min_duratio
                 "word_count": segment["word_count"],
                 "description": segment["description"],
                 "broll": segment["broll"],
+                "render_mode": segment.get("render_mode", "broll"),
+                "remotion": segment.get("remotion"),
                 "alignment": {
                     "status": "estimated",
                     "matched_words": 0,

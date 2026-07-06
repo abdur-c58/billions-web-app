@@ -117,20 +117,45 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     : "Upload your documentary script JSON."}
                 </p>
                 {setup.status?.script_uploaded ? (
-                  <p
-                    className={`mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium ${
-                      setup.status.script_format === "folder"
-                        ? "text-emerald-300"
-                        : "text-[var(--muted)]"
-                    }`}
-                  >
-                    {setup.status.script_format === "folder" ? (
-                      <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    )}
-                    Folder fetch
-                  </p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                    <p
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        setup.status.script_format === "folder"
+                          ? "text-emerald-300"
+                          : "text-[var(--muted)]"
+                      }`}
+                    >
+                      {setup.status.script_format === "folder" ? (
+                        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                      Folder fetch
+                    </p>
+                    <p
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        setup.status.remotion?.detected ? "text-violet-300" : "text-[var(--muted)]"
+                      }`}
+                    >
+                      {setup.status.remotion?.detected ? (
+                        <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                      Remotion
+                      {setup.status.remotion?.detected
+                        ? ` · ${setup.status.remotion.segment_count} scene${
+                            setup.status.remotion.segment_count === 1 ? "" : "s"
+                          } (${setup.status.remotion.compositions.join(", ")})`
+                        : ""}
+                    </p>
+                    {setup.status.remotion?.detected && setup.status.remotion_runtime_ready === false ? (
+                      <p className="mt-1 text-xs text-amber-200">
+                        Run <code className="text-[var(--foreground)]">npm install</code> in{" "}
+                        <code className="text-[var(--foreground)]">remotion/</code> before export.
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
