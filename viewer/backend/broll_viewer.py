@@ -1929,6 +1929,24 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
+        if parsed.path == "/api/remotion/preview-file":
+            try:
+                filename = Path((params.get("file") or [""])[0]).name
+                if not filename or ".." in filename or "/" in filename or "\\" in filename:
+                    self._send_json({"error": "Preview filename required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                if self.workspace_mode and self._active_workspace() is None:
+                    self._send_json({"error": "Select a project first."}, HTTPStatus.BAD_REQUEST)
+                    return
+                preview_path = self.cache_dir / "remotion_previews" / filename
+                if not preview_path.exists():
+                    self._send_json({"error": "Preview not found"}, HTTPStatus.NOT_FOUND)
+                    return
+                self._send_file(preview_path, inline=True)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/export/download":
             try:
                 qp = urllib.parse.parse_qs(parsed.query)
@@ -2172,6 +2190,126 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json({"segment_id": segment_id, "selection": saved})
             except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/remotion/props":
+            try:
+                if not self._project_ready():
+                    self._send_json({"error": "Project not ready."}, HTTPStatus.BAD_REQUEST)
+                    return
+                body = self._read_json_body()
+                segment_id = int(body["segment_id"])
+                props = body.get("props")
+                if not isinstance(props, dict):
+                    raise ValueError("props object is required.")
+                from remotion_editor import update_remotion_segment_props
+
+                workspace = self._active_workspace()
+                if workspace is None:
+                    raise ValueError("Select a project first.")
+                remotion = update_remotion_segment_props(workspace, segment_id, props)
+                self._send_json(
+                    {
+                        "segment_id": segment_id,
+                        "remotion": remotion,
+                        "export_inputs_hash": compute_export_inputs_hash(
+                            timestamps_path=self.timestamps_path,
+                            selections_path=self.selections_path,
+                            audio_path=self.audio_path,
+                        ),
+                    }
+                )
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/remotion/preview":
+            try:
+                if not self._project_ready():
+                    self._send_json({"error": "Project not ready."}, HTTPStatus.BAD_REQUEST)
+                    return
+                body = self._read_json_body()
+                segment_id = int(body["segment_id"])
+                props_override = body.get("props")
+                save_first = body.get("save", False)
+                if isinstance(save_first, str):
+                    save_first = save_first.lower() in {"1", "true", "yes"}
+
+                workspace = self._active_workspace()
+                if workspace is None:
+                    raise ValueError("Select a project first.")
+
+                if save_first and isinstance(props_override, dict):
+                    from remotion_editor import update_remotion_segment_props
+
+                    update_remotion_segment_props(workspace, segment_id, props_override)
+
+                rows = build_segment_rows(
+                    self.script_path,
+                    self.timestamps_path,
+                    self.selections_path,
+                )
+                segment = next(
+                    (row for row in rows if row["segment_id"] == segment_id),
+                    None,
+                )
+                if segment is None:
+                    self._send_json({"error": "Segment not found"}, HTTPStatus.NOT_FOUND)
+                    return
+                if segment.get("render_mode") != "remotion" or not segment.get("remotion"):
+                    self._send_json(
+                        {"error": "Segment is not a Remotion segment."},
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+
+                remotion = segment["remotion"]
+                composition = str(remotion["composition"])
+                props = dict(remotion.get("props") or {})
+                if isinstance(props_override, dict):
+                    from remotion_editor import find_script_segment, merge_remotion_props
+
+                    script_data = read_json(self.script_path, {})
+                    script_segment = find_script_segment(script_data, segment_id)
+                    if script_segment is not None:
+                        merged = merge_remotion_props(script_segment, props_override)
+                        props = merged["props"]
+
+                from remotion_editor import (
+                    preview_cache_name,
+                    render_remotion_segment_preview,
+                    segment_preview_duration_seconds,
+                )
+
+                duration_seconds = segment_preview_duration_seconds(
+                    segment_id=segment_id,
+                    timestamps_path=self.timestamps_path,
+                )
+                preview_path = render_remotion_segment_preview(
+                    workspace=workspace,
+                    cache_dir=self.cache_dir,
+                    segment_id=segment_id,
+                    composition=composition,
+                    props=props,
+                    duration_seconds=duration_seconds,
+                    force=bool(props_override),
+                )
+                preview_name = preview_cache_name(
+                    segment_id, composition, props, duration_seconds
+                )
+                preview_url = f"/api/remotion/preview-file?file={urllib.parse.quote(preview_name)}"
+                self._send_json(
+                    {
+                        "segment_id": segment_id,
+                        "composition": composition,
+                        "props": props,
+                        "preview_url": preview_url,
+                        "duration_seconds": duration_seconds,
+                    }
+                )
+            except Exception as exc:
+                print(f"Remotion preview failed: {exc}")
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 

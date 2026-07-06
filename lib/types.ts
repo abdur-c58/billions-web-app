@@ -128,6 +128,20 @@ export type RemotionScriptSummary = {
   broll_segment_count: number;
 };
 
+export type RemotionPropsSaveResponse = {
+  segment_id: number;
+  remotion: RemotionSegmentInfo;
+  export_inputs_hash: string;
+};
+
+export type RemotionPreviewResponse = {
+  segment_id: number;
+  composition: string;
+  props: Record<string, unknown>;
+  preview_url: string;
+  duration_seconds: number;
+};
+
 export type SegmentRenderMode = "broll" | "remotion";
 
 export type FolderShortageStrategy = "leave_empty" | "reuse_spaced" | "random_api";

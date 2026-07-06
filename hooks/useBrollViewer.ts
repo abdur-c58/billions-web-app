@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiFetch, isRetryableFetchError, retryDelayMs, sleep } from "@/lib/api";
+import { apiFetch, isRetryableFetchError, resolveBrollApiUrl, retryDelayMs, sleep } from "@/lib/api";
 import { regenerateThumbnailPrompts, regenerateYoutubeDescription } from "@/lib/export";
 import { formatDuration, truncateExportMessage } from "@/lib/format";
 import { findSegmentAtExportTime, formatTimestampClock, parseTimestamp } from "@/lib/timestamp";
@@ -13,11 +13,14 @@ import type {
   FolderFetchPlan,
   FolderShortageStrategy,
   JudgmentSummary,
+  RemotionPreviewResponse,
+  RemotionPropsSaveResponse,
   ScriptFormat,
   SegmentsPayload,
   TimestampAlignment,
   ViewerSegment,
 } from "@/lib/types";
+import { getSessionHeaders } from "@/lib/session";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
 import {
   isRemotionSegment,
@@ -78,6 +81,8 @@ export function useBrollViewer() {
     segmentIds: number[];
     affectedCount: number;
   } | null>(null);
+  const [remotionPreviewUrls, setRemotionPreviewUrls] = useState<Record<number, string>>({});
+  const [remotionBusyIds, setRemotionBusyIds] = useState<Set<number>>(new Set());
 
   const batchRunningRef = useRef(false);
   const exportHashTimerRef = useRef<number | null>(null);
@@ -87,6 +92,7 @@ export function useBrollViewer() {
   const segmentsRef = useRef(segments);
   const videoDurationRef = useRef(videoDurationS);
   const scriptFormatRef = useRef(scriptFormat);
+  const remotionBlobUrlsRef = useRef<Record<number, string>>({});
 
   useEffect(() => {
     customQueriesRef.current = customQueries;
@@ -103,6 +109,14 @@ export function useBrollViewer() {
   useEffect(() => {
     scriptFormatRef.current = scriptFormat;
   }, [scriptFormat]);
+
+  useEffect(() => {
+    return () => {
+      for (const url of Object.values(remotionBlobUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, []);
 
   const showStatus = useCallback((message: string, isError = false) => {
     setStatusMessage(message);
@@ -878,6 +892,108 @@ export function useBrollViewer() {
     showStatus("Flagged for future fetches only — current selections unchanged");
   }, [showStatus]);
 
+  const resolveRemotionPreviewPlayback = useCallback(async (segmentId: number, apiPath: string) => {
+    const fetchUrl = await resolveBrollApiUrl(apiPath);
+    const response = await fetch(fetchUrl, { headers: getSessionHeaders() });
+    if (!response.ok) {
+      let message = "Remotion preview unavailable";
+      try {
+        const payload = (await response.json()) as { error?: string };
+        if (payload.error) message = payload.error;
+      } catch {
+        // Response was not JSON.
+      }
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    if (!blob.size) {
+      throw new Error("Remotion preview is empty");
+    }
+
+    const playbackBlob =
+      blob.type === "video/mp4" ? blob : new Blob([blob], { type: "video/mp4" });
+    const objectUrl = URL.createObjectURL(playbackBlob);
+    const prior = remotionBlobUrlsRef.current[segmentId];
+    if (prior) {
+      URL.revokeObjectURL(prior);
+    }
+    remotionBlobUrlsRef.current[segmentId] = objectUrl;
+    setRemotionPreviewUrls((current) => ({ ...current, [segmentId]: objectUrl }));
+    return objectUrl;
+  }, []);
+
+  const saveRemotionProps = useCallback(
+    async (segmentId: number, props: Record<string, unknown>) => {
+      setRemotionBusyIds((current) => new Set(current).add(segmentId));
+      try {
+        const payload = await apiFetch<RemotionPropsSaveResponse>("/api/remotion/props", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ segment_id: segmentId, props }),
+        });
+        setSegments((current) =>
+          current.map((segment) =>
+            segment.segment_id === segmentId
+              ? {
+                  ...segment,
+                  remotion: {
+                    composition: payload.remotion.composition,
+                    props: payload.remotion.props ?? {},
+                  },
+                }
+              : segment,
+          ),
+        );
+        if (payload.export_inputs_hash) {
+          setExportInputsHash(payload.export_inputs_hash);
+        }
+        showStatus(`Segment ${segmentId}: motion settings saved`);
+      } catch (error) {
+        showStatus(
+          error instanceof Error ? error.message : "Failed to save motion settings",
+          true,
+        );
+        throw error;
+      } finally {
+        setRemotionBusyIds((current) => {
+          const next = new Set(current);
+          next.delete(segmentId);
+          return next;
+        });
+      }
+    },
+    [showStatus],
+  );
+
+  const previewRemotion = useCallback(
+    async (segmentId: number, props: Record<string, unknown>) => {
+      setRemotionBusyIds((current) => new Set(current).add(segmentId));
+      try {
+        const payload = await apiFetch<RemotionPreviewResponse>("/api/remotion/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ segment_id: segmentId, props }),
+        });
+        await resolveRemotionPreviewPlayback(segmentId, payload.preview_url);
+        showStatus(`Segment ${segmentId}: motion preview ready`);
+      } catch (error) {
+        showStatus(
+          error instanceof Error ? error.message : "Remotion preview failed",
+          true,
+        );
+        throw error;
+      } finally {
+        setRemotionBusyIds((current) => {
+          const next = new Set(current);
+          next.delete(segmentId);
+          return next;
+        });
+      }
+    },
+    [resolveRemotionPreviewPlayback, showStatus],
+  );
+
   const refetchFlagConflictSegments = useCallback(
     async (provider: FetchProvider = "mix") => {
       const targets = flagConflict?.segmentIds ?? [];
@@ -1117,6 +1233,10 @@ export function useBrollViewer() {
     flagConflict,
     dismissFlagConflict,
     refetchFlagConflictSegments,
+    remotionPreviewUrls,
+    remotionBusyIds,
+    saveRemotionProps,
+    previewRemotion,
     focusedSegmentId,
     timestampSeekInput,
     setTimestampSeekInput,

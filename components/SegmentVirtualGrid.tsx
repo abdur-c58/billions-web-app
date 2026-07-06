@@ -8,7 +8,7 @@ import { SegmentCard } from "@/components/SegmentCard";
 
 const CARD_MIN_WIDTH = 300;
 const GRID_GAP_PX = 14;
-const ROW_HEIGHT_ESTIMATE = 540;
+const ROW_HEIGHT_ESTIMATE = 820;
 
 function columnCountForWidth(width: number): number {
   return Math.max(1, Math.floor((width + GRID_GAP_PX) / (CARD_MIN_WIDTH + GRID_GAP_PX)));
@@ -29,6 +29,10 @@ type SegmentVirtualGridProps = {
   ) => void;
   onChooseFromStorage: (segmentId: number) => void;
   onFlagClip: (segmentId: number) => void;
+  remotionPreviewUrls: Record<number, string>;
+  remotionBusyIds: Set<number>;
+  onSaveRemotionProps: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
+  onPreviewRemotion: (segmentId: number, props: Record<string, unknown>) => Promise<void>;
 };
 
 export function SegmentVirtualGrid({
@@ -42,6 +46,10 @@ export function SegmentVirtualGrid({
   onSelectAlternative,
   onChooseFromStorage,
   onFlagClip,
+  remotionPreviewUrls,
+  remotionBusyIds,
+  onSaveRemotionProps,
+  onPreviewRemotion,
 }: SegmentVirtualGridProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const [columnCount, setColumnCount] = useState(1);
@@ -149,6 +157,14 @@ export function SegmentVirtualGrid({
                   }
                   onChooseFromStorage={() => onChooseFromStorage(segment.segment_id)}
                   onFlagClip={() => onFlagClip(segment.segment_id)}
+                  remotionPreviewUrl={remotionPreviewUrls[segment.segment_id] ?? null}
+                  remotionBusy={remotionBusyIds.has(segment.segment_id)}
+                  onSaveRemotionProps={(props) =>
+                    onSaveRemotionProps(segment.segment_id, props)
+                  }
+                  onPreviewRemotion={(props) =>
+                    onPreviewRemotion(segment.segment_id, props)
+                  }
                 />
               ))}
             </div>

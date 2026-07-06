@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Flag, HardDrive, Play, Sparkles } from "lucide-
 import type { PexelsVideo, ScriptFormat, ViewerSegment } from "@/lib/types";
 import { formatTiming } from "@/lib/format";
 import type { FetchProvider } from "@/hooks/useBrollViewer";
+import { RemotionSegmentEditor } from "@/components/RemotionSegmentEditor";
 import {
   computeQualityTier,
   judgmentDetail,
@@ -23,6 +24,10 @@ type SegmentCardProps = {
   onSelectAlternative: (videoIndex: number) => void;
   onChooseFromStorage: () => void;
   onFlagClip: () => void;
+  remotionPreviewUrl?: string | null;
+  remotionBusy?: boolean;
+  onSaveRemotionProps?: (props: Record<string, unknown>) => Promise<void>;
+  onPreviewRemotion?: (props: Record<string, unknown>) => Promise<void>;
 };
 
 function SegmentCardInner({
@@ -36,6 +41,10 @@ function SegmentCardInner({
   onSelectAlternative,
   onChooseFromStorage,
   onFlagClip,
+  remotionPreviewUrl = null,
+  remotionBusy = false,
+  onSaveRemotionProps,
+  onPreviewRemotion,
 }: SegmentCardProps) {
   const cardRef = useRef<HTMLElement | null>(null);
   const [inView, setInView] = useState(false);
@@ -198,26 +207,40 @@ function SegmentCardInner({
         <div className="grid gap-2">
           <div className="glow-video-frame relative aspect-video overflow-hidden rounded-[10px] bg-black">
             {isRemotion ? (
-              <div className="flex h-full flex-col justify-between bg-[linear-gradient(145deg,#071018,#132337)] p-4 text-left text-white">
-                <div>
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-violet-200">
-                    {segment.remotion?.composition}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold leading-snug">
-                    {String(segment.remotion?.props?.title || segment.label || "Motion segment")}
-                  </p>
-                  {segment.remotion?.props?.body ? (
-                    <p className="mt-2 line-clamp-4 text-[0.72rem] leading-relaxed text-white/75">
-                      {String(segment.remotion.props.body)}
+              remotionPreviewUrl ? (
+                <video
+                  src={remotionPreviewUrl}
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="block h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full flex-col justify-between bg-[linear-gradient(145deg,#071018,#132337)] p-4 text-left text-white">
+                  <div>
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-violet-200">
+                      {segment.remotion?.composition}
                     </p>
-                  ) : segment.remotion?.props?.subtitle ? (
-                    <p className="mt-2 line-clamp-3 text-[0.72rem] leading-relaxed text-white/75">
-                      {String(segment.remotion.props.subtitle)}
+                    <p className="mt-2 text-sm font-semibold leading-snug">
+                      {String(segment.remotion?.props?.title || segment.label || "Motion segment")}
                     </p>
-                  ) : null}
+                    {segment.remotion?.props?.body ? (
+                      <p className="mt-2 line-clamp-4 text-[0.72rem] leading-relaxed text-white/75">
+                        {String(segment.remotion.props.body)}
+                      </p>
+                    ) : segment.remotion?.props?.subtitle ? (
+                      <p className="mt-2 line-clamp-3 text-[0.72rem] leading-relaxed text-white/75">
+                        {String(segment.remotion.props.subtitle)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="text-[0.68rem] text-white/55">
+                    Customize below, then Preview
+                  </p>
                 </div>
-                <p className="text-[0.68rem] text-white/55">Rendered automatically during export</p>
-              </div>
+              )
             ) : hasSelection && videoActive ? (
               <video
                 src={selection?.url}
@@ -259,9 +282,9 @@ function SegmentCardInner({
                 No b-roll yet — click Fetch
               </div>
             )}
-            {isLoading ? (
+            {isLoading || remotionBusy ? (
               <div className="absolute inset-0 grid place-items-center bg-black/55 text-sm text-white">
-                Fetching…
+                {remotionBusy ? "Rendering preview…" : "Fetching…"}
               </div>
             ) : null}
           </div>
@@ -273,9 +296,19 @@ function SegmentCardInner({
           ) : null}
 
           {isRemotion ? (
-            <p className="text-[0.72rem] leading-snug text-violet-200/80">
-              This segment uses a Remotion composition instead of stock b-roll. No fetch is required.
-            </p>
+            onSaveRemotionProps && onPreviewRemotion ? (
+              <RemotionSegmentEditor
+                segment={segment}
+                isBusy={isLoading || remotionBusy}
+                previewUrl={remotionPreviewUrl}
+                onSave={onSaveRemotionProps}
+                onPreview={onPreviewRemotion}
+              />
+            ) : (
+              <p className="text-[0.72rem] leading-snug text-violet-200/80">
+                This segment uses a Remotion composition instead of stock b-roll.
+              </p>
+            )
           ) : (
           <div className="flex flex-wrap items-center gap-1.5">
             <button

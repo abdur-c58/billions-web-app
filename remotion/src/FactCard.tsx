@@ -6,12 +6,15 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { layoutStyles, type LayoutProps } from "./layout";
 
-export type FactCardProps = {
+export type FactCardProps = LayoutProps & {
   factNumber?: number | null;
   title?: string;
   body?: string;
   accentColor?: string;
+  titleSize?: number;
+  bodySize?: number;
   durationInFrames?: number;
 };
 
@@ -20,11 +23,17 @@ export const FactCard: React.FC<FactCardProps> = ({
   title = "Fact",
   body = "",
   accentColor = "#5ecf8a",
+  textAlign = "left",
+  verticalAlign = "top",
+  padding = 96,
+  titleSize = 68,
+  bodySize = 34,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = spring({ frame, fps, config: { damping: 200 } });
   const label = factNumber ? `Fact ${factNumber}` : "Fact";
+  const layout = layoutStyles({ textAlign, verticalAlign, padding });
 
   return (
     <AbsoluteFill
@@ -32,14 +41,16 @@ export const FactCard: React.FC<FactCardProps> = ({
         background: "linear-gradient(145deg, #071018 0%, #0f1c2b 55%, #132337 100%)",
         color: "#f4f7fb",
         fontFamily: "Segoe UI, system-ui, sans-serif",
-        padding: 96,
+        display: "flex",
+        flexDirection: "column",
+        ...layout.container,
       }}
     >
       <div
         style={{
           transform: `translateY(${(1 - enter) * 40}px)`,
           opacity: enter,
-          maxWidth: 1400,
+          ...layout.content,
         }}
       >
         <div
@@ -61,7 +72,7 @@ export const FactCard: React.FC<FactCardProps> = ({
         <h1
           style={{
             marginTop: 36,
-            fontSize: 68,
+            fontSize: titleSize,
             lineHeight: 1.1,
             fontWeight: 800,
             maxWidth: 1200,
@@ -72,7 +83,7 @@ export const FactCard: React.FC<FactCardProps> = ({
         <p
           style={{
             marginTop: 28,
-            fontSize: 34,
+            fontSize: bodySize,
             lineHeight: 1.45,
             color: "rgba(244,247,251,0.82)",
             maxWidth: 1180,

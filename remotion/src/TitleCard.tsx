@@ -6,11 +6,14 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { layoutStyles, type LayoutProps } from "./layout";
 
-export type TitleCardProps = {
+export type TitleCardProps = LayoutProps & {
   title?: string;
   subtitle?: string;
   accentColor?: string;
+  titleSize?: number;
+  subtitleSize?: number;
   durationInFrames?: number;
 };
 
@@ -18,10 +21,16 @@ export const TitleCard: React.FC<TitleCardProps> = ({
   title = "Title",
   subtitle = "",
   accentColor = "#7db7ff",
+  textAlign = "center",
+  verticalAlign = "center",
+  padding = 120,
+  titleSize = 84,
+  subtitleSize = 36,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = spring({ frame, fps, config: { damping: 180 } });
+  const layout = layoutStyles({ textAlign, verticalAlign, padding });
 
   return (
     <AbsoluteFill
@@ -30,17 +39,16 @@ export const TitleCard: React.FC<TitleCardProps> = ({
           "radial-gradient(circle at 20% 20%, rgba(125,183,255,0.18), transparent 35%), linear-gradient(160deg, #05070d 0%, #10182a 100%)",
         color: "#f8fbff",
         fontFamily: "Segoe UI, system-ui, sans-serif",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 120,
+        display: "flex",
+        flexDirection: "column",
+        ...layout.container,
       }}
     >
       <div
         style={{
-          textAlign: "center",
           transform: `scale(${0.92 + enter * 0.08})`,
           opacity: enter,
-          maxWidth: 1500,
+          ...layout.content,
         }}
       >
         <div
@@ -49,7 +57,7 @@ export const TitleCard: React.FC<TitleCardProps> = ({
             height: 6,
             borderRadius: 999,
             background: accentColor,
-            margin: "0 auto 36px",
+            margin: textAlign === "center" ? "0 auto 36px" : "0 0 36px",
             opacity: interpolate(frame, [0, 12], [0, 1], {
               extrapolateRight: "clamp",
             }),
@@ -57,7 +65,7 @@ export const TitleCard: React.FC<TitleCardProps> = ({
         />
         <h1
           style={{
-            fontSize: 84,
+            fontSize: titleSize,
             lineHeight: 1.05,
             fontWeight: 800,
             letterSpacing: -1.5,
@@ -69,7 +77,7 @@ export const TitleCard: React.FC<TitleCardProps> = ({
           <p
             style={{
               marginTop: 28,
-              fontSize: 36,
+              fontSize: subtitleSize,
               lineHeight: 1.4,
               color: "rgba(248,251,255,0.78)",
             }}
