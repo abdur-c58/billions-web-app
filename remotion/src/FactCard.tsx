@@ -6,10 +6,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { loadFont as loadSpecialEliteFont } from "@remotion/google-fonts/SpecialElite";
 import { layoutStyles, type LayoutProps } from "./layout";
 
 const DEFAULT_FACT_BACKGROUND =
   "linear-gradient(145deg, #071018 0%, #0f1c2b 55%, #132337 100%)";
+const { fontFamily: specialEliteFontFamily } = loadSpecialEliteFont();
 
 export type FactCardProps = LayoutProps & {
   factNumber?: number | null;
@@ -38,7 +40,7 @@ export const FactCard: React.FC<FactCardProps> = ({
   textColor = "#f4f7fb",
   bodyColor = "rgba(244,247,251,0.82)",
   backgroundGradient = DEFAULT_FACT_BACKGROUND,
-  fontFamily = "Segoe UI, system-ui, sans-serif",
+  fontFamily = `${specialEliteFontFamily}, Georgia, serif`,
   showFactBadge = true,
   textAlign = "left",
   verticalAlign = "top",

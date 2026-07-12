@@ -329,8 +329,6 @@ def apply_folder_fetch_plan(
     assignments: list[dict[str, Any]],
     *,
     cache_dir: Path | None = None,
-    use_ai: bool = True,
-    ai_budget: Any | None = None,
     judgment_cache: Any | None = None,
     flagged_path: Path | None = None,
 ) -> dict[str, Any]:
@@ -366,8 +364,6 @@ def apply_folder_fetch_plan(
                     provider_override="random",
                     segment=segment,
                     cache_dir=cache_dir,
-                    use_ai=use_ai,
-                    ai_budget=ai_budget,
                     judgment_cache=judgment_cache,
                     flagged_path=flagged_path,
                 )
@@ -409,7 +405,6 @@ def apply_folder_fetch_plan(
                 "confidence": 1.0,
                 "confidence_source": "manual",
                 "needs_review": False,
-                "ai_skipped": "folder_fetch",
             },
         )
         applied.append(

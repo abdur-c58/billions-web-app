@@ -6,7 +6,6 @@ import { regenerateThumbnailPrompts, regenerateYoutubeDescription } from "@/lib/
 import { formatDuration, truncateExportMessage } from "@/lib/format";
 import { findSegmentAtExportTime, formatTimestampClock, parseTimestamp } from "@/lib/timestamp";
 import type {
-  AiJudgeStatus,
   ExportSnapshot,
   FetchPayload,
   FlagClipResponse,
@@ -25,7 +24,7 @@ import { getSessionHeaders } from "@/lib/session";
 import { computeQualityTier, summarizeJudgments, type QualityTier } from "@/lib/judgment";
 import {
   isRemotionSegment,
-  isSplitScreenRemotion,
+  remotionNeedsBroll,
   segmentCountsAsReady,
   segmentNeedsBrollFetch,
 } from "@/lib/remotion";
@@ -63,7 +62,6 @@ export function useBrollViewer() {
   const [beatFilter, setBeatFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>("");
-  const [aiJudge, setAiJudge] = useState<AiJudgeStatus>({ enabled: false });
   const [customQueries, setCustomQueries] = useState<Record<number, string>>({});
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
   const [batchRunning, setBatchRunning] = useState(false);
@@ -223,9 +221,6 @@ export function useBrollViewer() {
       typeof payload.video_duration_s === "number" ? payload.video_duration_s : null,
     );
     setTimestampAlignment(payload.timestamp_alignment ?? null);
-    if (payload.ai_judge) {
-      setAiJudge(payload.ai_judge);
-    }
     setScriptFormat(payload.script_format === "folder" ? "folder" : "legacy");
     setExportInputsHash(payload.export_inputs_hash ?? null);
     setTitle(payload.title || "Billions");
@@ -242,7 +237,6 @@ export function useBrollViewer() {
         features?: string[];
         export_api_version?: number;
         export_mux_mode?: string;
-        ai_judge?: AiJudgeStatus;
         pexels_key_count?: number;
         fetch_concurrency?: number;
         pixabay_enabled?: boolean;
@@ -255,9 +249,6 @@ export function useBrollViewer() {
         throw new Error(
           "Export API is outdated. Restart backend: npm run dev:api",
         );
-      }
-      if (health.ai_judge) {
-        setAiJudge(health.ai_judge);
       }
       const concurrency =
         health.fetch_concurrency ?? health.pexels_key_count ?? DEFAULT_FETCH_CONCURRENCY;
@@ -316,7 +307,7 @@ export function useBrollViewer() {
       provider: FetchProvider = "mix",
     ) => {
       const segment = segmentsRef.current.find((item) => item.segment_id === segmentId);
-      if (segment && isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) {
+      if (segment && isRemotionSegment(segment) && !remotionNeedsBroll(segment)) {
         if (!quiet) {
           showStatus(`Segment ${segmentId} uses full-frame Remotion — no b-roll fetch needed.`);
         }
@@ -748,11 +739,11 @@ export function useBrollViewer() {
 
   const refetchAll = useCallback(async (provider: FetchProvider = "mix") => {
     const targets = segmentsRef.current.filter(
-      (segment) => !isRemotionSegment(segment) || isSplitScreenRemotion(segment),
+      (segment) => !isRemotionSegment(segment) || remotionNeedsBroll(segment),
     );
     if (!targets.length) return;
     const skipped = segmentsRef.current.filter(
-      (segment) => isRemotionSegment(segment) && !isSplitScreenRemotion(segment),
+      (segment) => isRemotionSegment(segment) && !remotionNeedsBroll(segment),
     ).length;
     const confirmed = window.confirm(
       `Refetch all ${targets.length} b-roll segment${targets.length === 1 ? "" : "s"} using ${provider}?` +
@@ -769,7 +760,7 @@ export function useBrollViewer() {
   const refetchReview = useCallback(
     async (provider: FetchProvider = "mix") => {
       const reviewTargets = segmentsRef.current.filter((segment) => {
-        if (isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) return false;
+        if (isRemotionSegment(segment) && !remotionNeedsBroll(segment)) return false;
         const tier = segment.selection?.quality_tier ?? computeQualityTier(segment.selection);
         return tier === "review";
       });
@@ -781,7 +772,7 @@ export function useBrollViewer() {
   const refetchUnscored = useCallback(
     async () => {
       const unscoredCount = segmentsRef.current.filter((segment) => {
-        if (isRemotionSegment(segment) && !isSplitScreenRemotion(segment)) return false;
+        if (isRemotionSegment(segment) && !remotionNeedsBroll(segment)) return false;
         const selection = segment.selection;
         return Boolean(selection?.url) && !selection?.confidence_source;
       }).length;
@@ -802,7 +793,7 @@ export function useBrollViewer() {
         const payload = await apiFetch<{ updated: number }>("/api/rescore/unscored", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ai: true }),
+          body: JSON.stringify({}),
         });
         await loadSegments();
         showStatus(`Rescored ${payload.updated ?? 0} unscored clip(s).`);
@@ -1043,9 +1034,6 @@ export function useBrollViewer() {
             current_props: currentProps,
           }),
         });
-        if (payload.ai_judge) {
-          setAiJudge(payload.ai_judge);
-        }
         const summary = payload.summary || "Prompt applied.";
         showStatus(
           payload.ai_used
@@ -1275,7 +1263,6 @@ export function useBrollViewer() {
     qualityFilter,
     setQualityFilter,
     judgmentSummary,
-    aiJudge,
     beats,
     customQueries,
     setCustomQueries,

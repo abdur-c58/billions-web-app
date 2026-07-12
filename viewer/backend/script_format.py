@@ -136,17 +136,22 @@ def remotion_broll_category(segment: dict[str, Any]) -> str:
 
 
 def remotion_layout_mode(segment: dict[str, Any], composition: str) -> str:
-    """Return ``split-right`` (FactCard beside b-roll) or ``full``."""
+    """Return ``split-right``, ``overlay``, or ``full``."""
     explicit = segment.get("remotion")
     if isinstance(explicit, dict):
         layout = str(explicit.get("layout") or "").strip().lower()
-        if layout in {"split-right", "full"}:
+        if layout in {"split-right", "full", "overlay"}:
             return layout
         design = explicit.get("design")
         if isinstance(design, dict):
             layout_block = design.get("layout")
             if isinstance(layout_block, dict):
+                mode = str(layout_block.get("mode") or "").strip().lower()
+                if mode in {"split-right", "full", "overlay"}:
+                    return mode
                 content_width = str(layout_block.get("contentMaxWidth") or "").lower()
+                if "overlay" in content_width or "popup" in content_width or "lower-third" in content_width:
+                    return "overlay"
                 if "split" in content_width or "right half" in content_width:
                     return "split-right"
                 if "full" in content_width and "frame" in content_width:
@@ -224,18 +229,24 @@ def parse_remotion_fields(segment: dict[str, Any]) -> dict[str, Any]:
         result["design"] = design
     if prompt:
         result["prompt"] = prompt
-    if layout == "split-right":
+    if layout in {"split-right", "overlay"}:
         result["broll"] = {
             "search_query": remotion_broll_search_query(segment),
             "category": remotion_broll_category(segment),
         }
+    overlay = explicit.get("overlay")
+    if layout == "overlay":
+        if isinstance(overlay, dict) and overlay:
+            result["overlay"] = overlay
+        else:
+            result["overlay"] = {"position": "lower-third"}
     return result
 
 
 def remotion_payload_from_render(render: dict[str, Any]) -> dict[str, Any] | None:
     if render.get("mode") != "remotion":
         return None
-    keys = ("composition", "props", "design", "prompt", "layout", "broll")
+    keys = ("composition", "props", "design", "prompt", "layout", "broll", "overlay")
     return {key: render[key] for key in keys if key in render}
 
 
@@ -370,7 +381,7 @@ def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, An
                 continue
             render = parse_segment_render(segment)
             search_query, category = parse_segment_broll_fields(segment)
-            if render["mode"] == "remotion" and render.get("layout") == "split-right":
+            if render["mode"] == "remotion" and render.get("layout") in {"split-right", "overlay"}:
                 broll = render.get("broll") or {}
                 search_query = str(broll.get("search_query") or search_query).strip()
                 category = str(broll.get("category") or category or "stock").strip()
@@ -394,6 +405,7 @@ def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, An
                                 "prompt",
                                 "layout",
                                 "broll",
+                                "overlay",
                             )
                             if key in render
                         }

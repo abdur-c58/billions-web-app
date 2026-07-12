@@ -66,8 +66,8 @@ from broll_clip_filters import (
     pexels_min_duration_param,
     segment_duration_seconds,
 )
+from ai_budget import AiBudget
 from broll_judge import (
-    AiBudget,
     JudgmentCache,
     enrich_selection_judgment,
     pick_best_candidate,
@@ -700,11 +700,8 @@ def save_segment_selection(
             "confidence",
             "confidence_source",
             "needs_review",
-            "ai_model",
-            "ai_reason",
-            "ai_skipped",
-            "subject_match",
-            "tone_match",
+            "match_reason",
+            "heuristic_scores",
         ):
             if field in judgment:
                 entry[field] = judgment[field]
@@ -785,8 +782,6 @@ def fetch_segment_video(
     *,
     segment: dict[str, Any] | None = None,
     cache_dir: Path | None = None,
-    use_ai: bool = True,
-    ai_budget: AiBudget | None = None,
     judgment_cache: JudgmentCache | None = None,
     flagged_path: Path | None = None,
 ) -> dict[str, Any]:
@@ -975,8 +970,6 @@ def fetch_segment_video(
             query_used,
             segment_id=segment_id,
             cache_dir=cache_dir,
-            use_ai=use_ai,
-            budget=ai_budget,
             judgment_cache=judgment_cache,
         )
         result_index = int(judgment.get("best_index", result_index))
@@ -1015,8 +1008,6 @@ def rescore_unscored_segments(
     timestamps_path: Path,
     *,
     cache_dir: Path | None,
-    use_ai: bool,
-    ai_budget: AiBudget | None,
     judgment_cache: JudgmentCache | None,
 ) -> dict[str, Any]:
     rows = build_segment_rows(script_path, timestamps_path, selections_path)
@@ -1038,8 +1029,6 @@ def rescore_unscored_segments(
             str(current.get("query_used") or row.get("search_query") or ""),
             segment_id=segment_id,
             cache_dir=cache_dir or script_path.parent / ".broll_cache",
-            use_ai=use_ai,
-            budget=ai_budget,
             judgment_cache=judgment_cache,
         )
 
@@ -1094,8 +1083,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
     export_status_file = VIDEO_DIR / ".broll_export_status.json"
     flagged_path = VIDEO_DIR / ".broll_flagged.json"
     cache_dir = VIDEO_DIR / ".broll_cache"
-    use_ai_judge = True
-    ai_budget: AiBudget | None = None
+    remotion_budget: AiBudget | None = None
     judgment_cache: JudgmentCache | None = None
     workspace_mode = False
 
@@ -1651,7 +1639,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/health":
-            ai_snapshot = self.ai_budget.snapshot() if self.ai_budget else {}
             pool = get_pexels_pool()
             pixabay_enabled = bool(os.environ.get("PIXABAY_API_KEY"))
             self._send_json(
@@ -1665,7 +1652,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         "fetch",
                         "select",
                         "export",
-                        "ai_judge",
                         "pixabay",
                         "provider_modes",
                         "project_upload",
@@ -1675,10 +1661,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     "pixabay_enabled": pixabay_enabled,
                     "provider_modes": ["mix", "pexels", "pixabay", "random"],
                     "fetch_concurrency": pool.size,
-                    "ai_judge": {
-                        "enabled": self.use_ai_judge and bool(os.environ.get("OPENAI_API_KEY")),
-                        **ai_snapshot,
-                    },
                     "project_folder": str(self.project_dir),
                     "script": str(self.script_path),
                     "workspace_mode": self.workspace_mode,
@@ -1726,7 +1708,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             script_format = detect_script_format(script_data)
             enrich_segments_folder_status(rows, script_format)
             timestamps_meta = read_json(self.timestamps_path, {})
-            ai_snapshot = self.ai_budget.snapshot() if self.ai_budget else {}
             timestamp_alignment = _alignment_summary_from_timestamps_file(timestamps_meta)
 
             self._send_json(
@@ -1744,10 +1725,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         selections_path=self.selections_path,
                         audio_path=self.audio_path,
                     ),
-                    "ai_judge": {
-                        "enabled": self.use_ai_judge and bool(os.environ.get("OPENAI_API_KEY")),
-                        **ai_snapshot,
-                    },
                 }
             )
             return
@@ -1827,7 +1804,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 if segment.get("render_mode") == "remotion":
                     remotion = segment.get("remotion") or {}
                     layout = str(remotion.get("layout") or "").strip().lower()
-                    if layout != "split-right":
+                    if layout not in {"split-right", "overlay"}:
                         self._send_json(
                             {
                                 "error": (
@@ -1840,7 +1817,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
                 query_override = params.get("query", [""])[0].strip() or None
                 provider = params.get("provider", ["mix"])[0].strip().lower()
-                use_ai = params.get("ai", ["true"])[0].lower() not in {"0", "false", "no"}
                 payload = fetch_segment_video(
                     self.selections_path,
                     self.script_path,
@@ -1851,8 +1827,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     provider_override=provider,
                     segment=segment,
                     cache_dir=self.cache_dir,
-                    use_ai=self.use_ai_judge and use_ai,
-                    ai_budget=self.ai_budget,
                     judgment_cache=self.judgment_cache,
                     flagged_path=self.flagged_path,
                 )
@@ -2226,8 +2200,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         workspace / "broll_selections.json",
                         workspace / "script.mp3",
                         workspace / "final_video.mp4",
-                        use_ai_judge=self.use_ai_judge,
-                        ai_max_calls=self.ai_budget.max_calls if self.ai_budget else 100,
                     )
 
                 snapshot = start_segment_timestamps(
@@ -2267,7 +2239,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         "confidence": 1.0,
                         "confidence_source": "manual",
                         "needs_review": False,
-                        "ai_skipped": None,
                     },
                 )
                 self._send_json({"segment_id": segment_id, "selection": saved})
@@ -2353,7 +2324,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     script_prompt=script_prompt,
                     current_props=base_props,
                     user_prompt=user_prompt,
-                    ai_budget=self.ai_budget if self.use_ai_judge else None,
+                    ai_budget=self.remotion_budget,
                 )
                 self._send_json(
                     {
@@ -2363,10 +2334,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         "updates": result.get("updates") or {},
                         "summary": result.get("summary") or "",
                         "ai_used": bool(result.get("ai_used")),
-                        "ai_judge": {
-                            "enabled": self.use_ai_judge and bool(os.environ.get("OPENAI_API_KEY")),
-                            **(self.ai_budget.snapshot() if self.ai_budget else {}),
-                        },
                     }
                 )
             except Exception as exc:
@@ -2520,8 +2487,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     segments_by_id,
                     plan["assignments"],
                     cache_dir=self.cache_dir,
-                    use_ai=self.use_ai_judge,
-                    ai_budget=self.ai_budget,
                     judgment_cache=self.judgment_cache,
                     flagged_path=self.flagged_path,
                 )
@@ -2572,7 +2537,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         "confidence": 1.0,
                         "confidence_source": "manual",
                         "needs_review": False,
-                        "ai_skipped": None,
                     },
                 )
                 self._send_json({"segment_id": segment_id, "selection": saved})
@@ -2739,15 +2703,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/rescore/unscored":
             try:
-                body = self._read_json_body() if self.headers.get("Content-Length") else {}
-                use_ai = str(body.get("ai", "true")).lower() not in {"0", "false", "no"}
                 payload = rescore_unscored_segments(
                     self.selections_path,
                     self.script_path,
                     self.timestamps_path,
                     cache_dir=self.cache_dir,
-                    use_ai=self.use_ai_judge and use_ai,
-                    ai_budget=self.ai_budget,
                     judgment_cache=self.judgment_cache,
                 )
                 self._send_json(payload)
@@ -2841,17 +2801,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
     parser.add_argument("--no-browser", action="store_true")
-    parser.add_argument(
-        "--no-ai-judge",
-        action="store_true",
-        help="Disable OpenAI thumbnail judging (heuristics only).",
-    )
-    parser.add_argument(
-        "--ai-max-calls",
-        type=int,
-        default=100,
-        help="Max OpenAI judge calls per day (default: 100).",
-    )
     return parser.parse_args()
 
 
@@ -2898,9 +2847,6 @@ def configure_handler_paths(
     selections_path: Path,
     audio_path: Path,
     output_path: Path,
-    *,
-    use_ai_judge: bool,
-    ai_max_calls: int,
 ) -> Path:
     project_dir = script_path.parent
     export_status_file = project_dir / ".broll_export_status.json"
@@ -2915,8 +2861,7 @@ def configure_handler_paths(
     BrollViewerHandler.export_status_file = export_status_file
     BrollViewerHandler.flagged_path = project_dir / ".broll_flagged.json"
     BrollViewerHandler.cache_dir = cache_dir
-    BrollViewerHandler.use_ai_judge = use_ai_judge
-    BrollViewerHandler.ai_budget = AiBudget(cache_dir, max_calls=ai_max_calls)
+    BrollViewerHandler.remotion_budget = AiBudget(cache_dir)
     BrollViewerHandler.judgment_cache = JudgmentCache(cache_dir)
     return project_dir
 
@@ -2948,8 +2893,6 @@ def main() -> None:
         selections_path,
         audio_path,
         output_path,
-        use_ai_judge=not args.no_ai_judge,
-        ai_max_calls=args.ai_max_calls,
     )
     BrollViewerHandler.workspace_mode = workspace_mode
 
@@ -2999,16 +2942,6 @@ def main() -> None:
         "Pixabay API: "
         + ("enabled" if os.environ.get("PIXABAY_API_KEY") else "disabled (set PIXABAY_API_KEY)")
     )
-    if BrollViewerHandler.use_ai_judge and os.environ.get("OPENAI_API_KEY"):
-        budget = BrollViewerHandler.ai_budget.snapshot()
-        print(
-            "AI judge: enabled "
-            f"({budget['remaining']}/{budget['max_calls']} calls remaining today)"
-        )
-    elif BrollViewerHandler.use_ai_judge:
-        print("AI judge: enabled but OPENAI_API_KEY missing — heuristics only")
-    else:
-        print("AI judge: disabled")
 
     if not args.no_browser:
         webbrowser.open(url)

@@ -465,7 +465,7 @@ def iter_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:
             description = segment.get("description", "")
             render = parse_segment_render(segment)
             search_query, category = parse_segment_broll_fields(segment)
-            if render["mode"] == "remotion" and render.get("layout") == "split-right":
+            if render["mode"] == "remotion" and render.get("layout") in {"split-right", "overlay"}:
                 broll = render.get("broll") or {}
                 search_query = str(broll.get("search_query") or search_query).strip()
                 category = str(broll.get("category") or category or "stock").strip()

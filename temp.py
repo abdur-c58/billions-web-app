@@ -1,437 +1,653 @@
+import argparse
 import json
+from pathlib import Path
 
-facts = [
-    {"beat":1,"label":"Hook","segments":[
-        {"segment_id":1,"content":"Welcome to the Restful Library. Tonight, we're going somewhere very few people ever go.","description":"Dark cave entrance with soft light","type":["cave entrance","commons"]},
-        {"segment_id":2,"content":"We're going underground, into the world of caves, where sunlight disappears and time moves differently.","description":"Darkening cave passage","type":["cave passage","commons"]},
-        {"segment_id":3,"content":"You don't need to do anything right now. Just get comfortable, let your eyes close if they want to, and follow us down.","description":"Soft darkness gradient","type":["dark gradient","commons"]},
-        {"segment_id":4,"content":"Caves cover every continent on Earth. They exist beneath deserts, beneath glaciers, beneath the floors of oceans, and beneath cities we have lived in for centuries.","description":"World map cave locations","type":["world map","commons"]},
-        {"segment_id":5,"content":"Most of them have never been entered by a human being. Some may never be.","description":"Unexplored cave passage dark","type":["cave dark","commons"]},
-        {"segment_id":6,"content":"And yet within them there is life, there is history, there is geology that took millions of years to form, and there is a quiet that is unlike any other quiet on Earth.","description":"Still underground pool","type":["underground pool","commons"]},
-        {"segment_id":7,"content":"Some of what you'll hear tonight will sound impossible. All of it is real.","description":"Cave crystal formations","type":["cave crystal","commons"]},
-        {"segment_id":8,"content":"If you enjoy falling asleep to facts and wonder, you're welcome to like and subscribe. It helps others find their way here too.","description":"Channel card soft cave glow","type":["cave glow","commons"]},
-    ]},
-    {"beat":2,"label":"Framing the Underground World","segments":[
-        {"segment_id":9,"content":"Caves are not all the same. They form in different ways, in different rock, under different conditions, and they host different worlds inside.","description":"Cave type comparison diagram","type":["cave types","commons"]},
-        {"segment_id":10,"content":"The most common type is the solution cave, carved over thousands of years by slightly acidic water dissolving limestone.","description":"Limestone cave interior","type":["limestone cave","commons"]},
-        {"segment_id":11,"content":"But there are also lava tubes, formed when the outer shell of a lava flow cools while molten rock continues moving beneath it.","description":"Lava tube interior dark","type":["lava tube","commons"]},
-        {"segment_id":12,"content":"There are sea caves, carved by waves. There are ice caves, formed within glaciers. There are fracture caves, opened by the splitting of rock under pressure.","description":"Sea cave coastal waves","type":["sea cave","commons"]},
-        {"segment_id":13,"content":"Each type has its own character, its own formations, its own darkness, and its own inhabitants.","description":"Cave variety montage","type":["cave variety","commons"]},
-        {"segment_id":14,"content":"What they all share is this: once you go deep enough, the surface world disappears entirely.","description":"Cave depth darkness","type":["cave depth","commons"]},
-        {"segment_id":15,"content":"No wind. No weather. No seasons. Just rock, water, time, and whatever has learned to live there.","description":"Still dark cave interior","type":["cave interior","commons"]},
-        {"segment_id":16,"content":"Let's begin at the surface and work our way down.","description":"Cave entrance daylight fading","type":["cave fading","commons"]},
-    ]},
-    {"beat":3,"label":"Facts 1-25: Formation and Rock","segments":[
-        {"segment_id":17,"content":"Fact one. Most of the world's caves are carved from limestone, a sedimentary rock made largely from the shells and skeletons of ancient marine organisms.","description":"Limestone rock texture","type":["limestone rock","commons"]},
-        {"segment_id":18,"content":"That means many cave walls were once the sea floor, and the rock you touch inside a cave may be hundreds of millions of years old.","description":"Ancient rock layers","type":["rock layers","commons"]},
-        {"segment_id":19,"content":"Fact two. Rainwater absorbs carbon dioxide from the air and soil as it falls, becoming a weak carbonic acid.","description":"Rainwater soil absorption","type":["rainwater soil","commons"]},
-        {"segment_id":20,"content":"Over thousands of years, this slightly acidic water seeps through cracks in limestone, slowly dissolving the rock and widening passages into caves.","description":"Water seeping rock crack","type":["rock crack","commons"]},
-        {"segment_id":21,"content":"Fact three. The process is extraordinarily slow. A cave passage might take between ten thousand and a million years to form to a size a person could walk through.","description":"Time geological scale","type":["geological time","commons"]},
-        {"segment_id":22,"content":"Every cave you can stand inside is the product of patience measured in eons.","description":"Wide cave chamber","type":["cave chamber","commons"]},
-        {"segment_id":23,"content":"Fact four. Stalactites hang from cave ceilings. Stalagmites grow up from cave floors. Both form when mineral-rich water drips and deposits calcium carbonate.","description":"Stalactite stalagmite formation","type":["stalactite","commons"]},
-        {"segment_id":24,"content":"A stalactite grows about one cubic inch every 100 to 150 years. The formations you see in caves are often older than human civilization.","description":"Cave formation growth","type":["cave formation","commons"]},
-        {"segment_id":25,"content":"Fact five. When a stalactite and a stalagmite meet, they form a column. This can take hundreds of thousands of years.","description":"Cave column formation","type":["cave column","commons"]},
-        {"segment_id":26,"content":"In some chambers, rows of columns rise like the pillars of a buried cathedral, built without any architect, shaped only by dripping water and time.","description":"Cave pillars cathedral","type":["cave pillars","commons"]},
-        {"segment_id":27,"content":"Fact six. Flowstone is a smooth sheet of calcite that forms when a thin film of water flows across a cave floor or wall, depositing minerals as it goes.","description":"Flowstone smooth cave","type":["flowstone","commons"]},
-        {"segment_id":28,"content":"It looks almost like frozen water, pale and translucent, but it is solid stone that formed over tens of thousands of years.","description":"Pale flowstone surface","type":["flowstone surface","commons"]},
-        {"segment_id":29,"content":"Fact seven. Cave pearls are small spheres of calcium carbonate that form in shallow pools when dripping water causes mineral deposits to build up around a grain of sand or sediment.","description":"Cave pearl formation pool","type":["cave pearl","commons"]},
-        {"segment_id":30,"content":"Some are perfectly round, their surfaces smoothed by the constant motion of the water around them.","description":"Round cave pearl close","type":["pearl round","commons"]},
-        {"segment_id":31,"content":"Fact eight. Helictites are among the strangest cave formations. They grow in seemingly impossible directions, curving sideways, upward, or in spirals.","description":"Helictite twisted formation","type":["helictite","commons"]},
-        {"segment_id":32,"content":"They grow so slowly that gravity has almost no effect on them, allowing them to extend in whatever direction the flow of water pushes them, however subtly.","description":"Spiral cave growth","type":["spiral growth","commons"]},
-        {"segment_id":33,"content":"Fact nine. Moonmilk is a soft, white, paste-like mineral deposit sometimes found on cave walls and ceilings. It looks as though someone has spread wet plaster across the rock.","description":"White moonmilk cave wall","type":["moonmilk","commons"]},
-        {"segment_id":34,"content":"It is made of crystalline calcite and may contain microbial communities living within it, though scientists are still working to understand it fully.","description":"White paste mineral cave","type":["mineral paste","commons"]},
-        {"segment_id":35,"content":"Fact ten. Gypsum is another mineral found in caves, forming crystals, flowers, and long delicate needles that can project from walls at any angle.","description":"Gypsum crystal cave","type":["gypsum crystal","commons"]},
-        {"segment_id":36,"content":"Gypsum flowers bloom outward from the wall in curling white petals, each one a crystal grown so slowly it has no particular direction it must follow.","description":"Gypsum flower white","type":["gypsum flower","commons"]},
-        {"segment_id":37,"content":"Fact eleven. Lechuguilla Cave in New Mexico contains some of the most extraordinary mineral formations ever found, including sulfuric acid-formed passages carved from the inside out.","description":"Interior cave mineral","type":["cave mineral","commons"]},
-        {"segment_id":38,"content":"Most caves form by water moving down through rock. Lechuguilla formed by hydrogen sulfide gas rising up through limestone, dissolving it in an entirely different way.","description":"Unusual cave passage","type":["cave unusual","commons"]},
-        {"segment_id":39,"content":"Fact twelve. Lava tubes form not from dissolving rock but from flowing fire. When a lava flow crusts on the outside, molten rock continues to move through the inside.","description":"Lava flow crust forming","type":["lava flow","commons"]},
-        {"segment_id":40,"content":"When the lava drains away, it leaves a hollow tube behind, sometimes miles long, with a smooth undulating floor and a ceiling that bears the marks of flowing fire.","description":"Lava tube hollow interior","type":["tube interior","commons"]},
-        {"segment_id":41,"content":"Fact thirteen. The Kazumura Cave in Hawaii is the longest and deepest lava tube system known on Earth, extending over 40 miles and descending nearly 3,600 feet.","description":"Long dark tube passage","type":["tube passage","commons"]},
-        {"segment_id":42,"content":"Fact fourteen. Ice caves are caves within or beneath glaciers, carved by meltwater and reshaped constantly as the ice moves.","description":"Ice cave blue interior","type":["ice cave","commons"]},
-        {"segment_id":43,"content":"Their walls glow a deep blue because dense ice absorbs red light and scatters blue, the same reason the sea appears blue in clear water.","description":"Blue ice cave glow","type":["blue ice","commons"]},
-        {"segment_id":44,"content":"Fact fifteen. Anchialine caves are coastal caves connected to the sea by underwater passages but with no surface opening to the ocean. Their water rises and falls with the tide.","description":"Coastal anchialine cave","type":["anchialine cave","commons"]},
-        {"segment_id":45,"content":"They contain unique ecosystems found nowhere else on Earth, isolated for millions of years, hosting species that have lost their eyes and their pigment.","description":"Pale eyeless cave creature","type":["eyeless creature","commons"]},
-        {"segment_id":46,"content":"Fact sixteen. Karst topography is the landscape that forms when soluble rock like limestone is slowly dissolved by water over millions of years.","description":"Karst limestone landscape","type":["karst landscape","commons"]},
-        {"segment_id":47,"content":"It creates sinkholes, disappearing rivers, and vast underground cave systems. Much of the world's underground water flows through karst rock.","description":"Sinkhole karst surface","type":["sinkhole","commons"]},
-        {"segment_id":48,"content":"Fact seventeen. About 20 percent of the Earth's land surface is karst or covered by rocks that could produce karst.","description":"Karst global coverage","type":["global karst","commons"]},
-        {"segment_id":49,"content":"Beneath many towns and cities, the ground is honeycombed with passages that have taken millions of years to form.","description":"Underground city passages","type":["underground passages","commons"]},
-        {"segment_id":50,"content":"Fact eighteen. Speleothem is the scientific term for all cave formations made by mineral deposits, from stalactites to cave pearls to flowstone.","description":"Various speleothems","type":["speleothem","commons"]},
-        {"segment_id":51,"content":"Speleothems are records of the past. They contain layers that capture ancient climate conditions, air chemistry, and even the presence of ancient wildfires.","description":"Speleothem layers record","type":["speleothem layers","commons"]},
-        {"segment_id":52,"content":"Fact nineteen. Scientists drill into speleothems and read their layers the way they read tree rings, extracting a detailed record of rainfall, temperature, and conditions over thousands of years.","description":"Scientist drilling speleothem","type":["core drilling","commons"]},
-        {"segment_id":53,"content":"A single stalactite in a remote cave might contain a climate record stretching back hundreds of thousands of years.","description":"Ancient stalactite close","type":["ancient stalactite","commons"]},
-        {"segment_id":54,"content":"Fact twenty. Cave mud is one of the richest archives of prehistoric life. Pollen, seeds, bones, and even DNA can be preserved in undisturbed cave sediment for tens of thousands of years.","description":"Cave mud sediment layer","type":["cave sediment","commons"]},
-        {"segment_id":55,"content":"In some caves, the mud itself has not been disturbed since ancient humans or animals last walked there.","description":"Undisturbed cave floor mud","type":["cave floor","commons"]},
-        {"segment_id":56,"content":"Fact twenty-one. Some of the oldest known art made by humans is found inside caves. Paintings of animals, handprints, and symbols have been found on cave walls across Europe, Asia, and Africa.","description":"Ancient cave painting","type":["cave painting","commons"]},
-        {"segment_id":57,"content":"The artists carried light deep into the earth, found the right stone surfaces, and created images that have lasted for more than thirty thousand years.","description":"Prehistoric art dark cave","type":["prehistoric art","commons"]},
-        {"segment_id":58,"content":"Fact twenty-two. The Chauvet Cave in France contains paintings estimated at over thirty-six thousand years old, making them among the oldest confirmed art ever found.","description":"Ancient painted cave wall","type":["painted cave","commons"]},
-        {"segment_id":59,"content":"The artists rendered horses, rhinos, mammoths, and bears with a skill and confidence that suggests a long tradition of craft, not early experimentation.","description":"Animal cave art prehistoric","type":["animal art","commons"]},
-        {"segment_id":60,"content":"Fact twenty-three. Hand stencils appear in caves on every inhabited continent. A person pressed their hand against the wall and blew pigment around it, leaving a negative shape in red or black.","description":"Hand stencil cave wall","type":["hand stencil","commons"]},
-        {"segment_id":61,"content":"The same gesture, made by people separated by oceans and tens of thousands of years. A hand reaching out of the deep past.","description":"Cave hand print ancient","type":["hand print","commons"]},
-        {"segment_id":62,"content":"Fact twenty-four. Cave bears, an extinct species larger than modern grizzly bears, sheltered and hibernated in European caves for hundreds of thousands of years.","description":"Cave bear skeleton ancient","type":["cave bear","commons"]},
-        {"segment_id":63,"content":"Their claw marks are still visible on the walls of some caves. Their bones litter the floors of others, preserved in the cold and the dark.","description":"Bear claw marks stone","type":["claw marks","commons"]},
-        {"segment_id":64,"content":"Fact twenty-five. Some caves served as burial sites for ancient humans. The remains found inside have provided vital information about our ancestors' beliefs, rituals, and physical form.","description":"Ancient burial cave","type":["cave burial","commons"]},
-        {"segment_id":65,"content":"The cave preserved what the open air would have destroyed. The dark was, in a way, a kind of care.","description":"Protected ancient remains","type":["ancient remains","commons"]},
-    ]},
-    {"beat":4,"label":"First Soft Tease","segments":[
-        {"segment_id":66,"content":"We're only just inside. The passages go much deeper, and the caves get much stranger.","description":"Deeper passage ahead","type":["passage ahead","commons"]},
-        {"segment_id":67,"content":"If you're still with us, stay a little longer. The geology is remarkable, but the life down here is something else entirely.","description":"Faint cave life glow","type":["life glow","commons"]},
-        {"segment_id":68,"content":"And if you've already drifted, that's exactly where you should be. The caves will be here when you return.","description":"Quiet dark chamber","type":["quiet chamber","commons"]},
-        {"segment_id":69,"content":"Take a slow breath. Let the stillness settle around you.","description":"Still cave air dark","type":["still cave","commons"]},
-    ]},
-    {"beat":5,"label":"Facts 26-55: Cave Life","segments":[
-        {"segment_id":70,"content":"Fact twenty-six. Caves are one of the most extreme environments on Earth. No sunlight. Near-constant temperature. High humidity. And yet, life fills them.","description":"Cave life diversity","type":["cave diversity","commons"]},
-        {"segment_id":71,"content":"Scientists who study cave life call themselves biospeleologists, and what they find again and again is that caves are not dead places. They are places of adaptation.","description":"Cave scientist exploring","type":["cave science","commons"]},
-        {"segment_id":72,"content":"Fact twenty-seven. Troglobites are animals that live their entire lives in caves and cannot survive outside them. They have evolved over millions of years specifically for cave life.","description":"Cave-adapted animal","type":["cave animal","commons"]},
-        {"segment_id":73,"content":"They tend to have no eyes, or eyes so reduced as to be functionless. They have no pigment, giving them a pale, almost translucent appearance.","description":"Pale translucent cave fish","type":["pale fish","commons"]},
-        {"segment_id":74,"content":"Fact twenty-eight. Without eyes to maintain, cave animals redirect energy to other senses. Their lateral lines, antennae, and chemical receptors are often far more developed than those of surface relatives.","description":"Cave animal sensory","type":["cave sensory","commons"]},
-        {"segment_id":75,"content":"They navigate by touch, by vibration, by chemistry. Darkness has not blinded them. It has simply changed what they need to see.","description":"Cave animal navigating dark","type":["dark navigation","commons"]},
-        {"segment_id":76,"content":"Fact twenty-nine. The cave fish Astyanax mexicanus exists in two forms. One lives in surface streams with full eyes. The other lives in nearby caves and is blind.","description":"Cave fish surface fish pair","type":["cave fish","commons"]},
-        {"segment_id":77,"content":"Scientists study both to understand how evolution works when a population is cut off in a new environment. The cave form has been in darkness for only about ten thousand years.","description":"Evolution cave fish diagram","type":["evolution diagram","commons"]},
-        {"segment_id":78,"content":"Fact thirty. Cave fish often develop enlarged jaws and more taste buds than surface fish, compensating for the inability to use vision when hunting.","description":"Cave fish jaw enlarged","type":["fish jaw","commons"]},
-        {"segment_id":79,"content":"Fact thirty-one. Olms are pale, eel-like amphibians found only in the underground rivers of southern Europe. They are sometimes called the human fish because their skin color resembles pale human skin.","description":"Olm pale cave amphibian","type":["olm","commons"]},
-        {"segment_id":80,"content":"They have no functional eyes, external gills they keep throughout their adult lives, and can survive without food for up to ten years.","description":"Olm gills cave water","type":["cave amphibian","commons"]},
-        {"segment_id":81,"content":"Fact thirty-two. Olms can live for over 100 years, making them among the longest-lived amphibians known. They grow slowly, mature slowly, and reproduce rarely.","description":"Long-lived cave creature","type":["cave longevity","commons"]},
-        {"segment_id":82,"content":"Cave life does not hurry. The resources are scarce, and patience is a survival strategy.","description":"Still cave creature","type":["cave patience","commons"]},
-        {"segment_id":83,"content":"Fact thirty-three. Cave crickets, also called camel crickets, are among the most common cave-dwelling insects. Their long antennae probe the dark for food, and their pale bodies reflect almost no light.","description":"Cave cricket dark","type":["cave cricket","commons"]},
-        {"segment_id":84,"content":"They spend their days inside caves and emerge at night to forage, carrying nutrients from the surface world underground.","description":"Cricket foraging dark","type":["cricket dark","commons"]},
-        {"segment_id":85,"content":"Fact thirty-four. Bats are not troglobites. They are trogloxenes, animals that use caves but spend part of their life outside them. They are among the most important links between cave and surface ecosystems.","description":"Bat cave roost","type":["bat roost","commons"]},
-        {"segment_id":86,"content":"Their guano, deposited in enormous quantities on cave floors, is the primary food source for many cave invertebrates. Without bats, many cave ecosystems would collapse.","description":"Cave guano floor insects","type":["cave guano","commons"]},
-        {"segment_id":87,"content":"Fact thirty-five. Some caves are home to millions of bats. Bracken Cave in Texas houses a colony of Mexican free-tailed bats estimated at fifteen to twenty million individuals.","description":"Bat colony cave exit","type":["bat colony","commons"]},
-        {"segment_id":88,"content":"Each evening, the bats pour out of the cave entrance in a column that can last for hours, visible from miles away, a living river of wings.","description":"Bats emerging cave dusk","type":["bats emerging","commons"]},
-        {"segment_id":89,"content":"Fact thirty-six. Cave spiders are found in caves worldwide. Most are troglobites, entirely adapted to darkness, with long legs that help them detect vibrations.","description":"Cave spider web dark","type":["cave spider","commons"]},
-        {"segment_id":90,"content":"Some spin webs across cave passages and wait patiently, sometimes for weeks, for prey to wander through.","description":"Spider web cave passage","type":["spider web","commons"]},
-        {"segment_id":91,"content":"Fact thirty-seven. The cave weta of New Zealand is a large, slow-moving insect that shelters in caves during the day. It has survived largely unchanged for over thirty million years.","description":"Cave weta insect rock","type":["cave weta","commons"]},
-        {"segment_id":92,"content":"Fact thirty-eight. Pseudoscorpions, tiny arachnids less than a centimeter long, live in caves worldwide. They prey on springtails, mites, and other small cave invertebrates.","description":"Pseudoscorpion tiny arachnid","type":["pseudoscorpion","commons"]},
-        {"segment_id":93,"content":"They have no venom glands despite their scorpion-like pincers. They grip and crush rather than sting, quiet and methodical in the dark.","description":"Small arachnid cave","type":["cave arachnid","commons"]},
-        {"segment_id":94,"content":"Fact thirty-nine. Springtails are among the most abundant animals in caves. Tiny, wingless, and almost invisible, they feed on fungi, bacteria, and decaying organic matter.","description":"Springtail colony cave","type":["springtail","commons"]},
-        {"segment_id":95,"content":"They are often the foundation of cave food webs, converting organic debris into energy that other animals can access.","description":"Cave food web base","type":["food web","commons"]},
-        {"segment_id":96,"content":"Fact forty. Cave beetles have some of the most dramatic eye reduction of any coleoptera. Some have entirely lost their eyes over millions of years of underground isolation.","description":"Cave beetle pale","type":["cave beetle","commons"]},
-        {"segment_id":97,"content":"Each cave system may harbor its own unique beetle species, cut off from neighboring populations long ago and evolved in isolation since.","description":"Isolated beetle species","type":["isolated beetle","commons"]},
-        {"segment_id":98,"content":"Fact forty-one. Cave crayfish are among the most striking freshwater cave animals. They are white or pale pink, entirely blind, and often larger than their surface relatives.","description":"Cave crayfish white","type":["cave crayfish","commons"]},
-        {"segment_id":99,"content":"They can detect the chemical traces of organic matter in water and use this sense to locate food across the floors of underground rivers.","description":"Pale crayfish water","type":["pale crayfish","commons"]},
-        {"segment_id":100,"content":"Fact forty-two. Cave shrimp are found in cave waters across the world. In anchialine caves, they sometimes exist in spectacular numbers despite having almost no identifiable food source.","description":"Cave shrimp water colony","type":["cave shrimp","commons"]},
-        {"segment_id":101,"content":"Scientists suspect they feed on microbial mats growing on rock surfaces, communities of bacteria and archaea that get their energy from chemical reactions rather than sunlight.","description":"Microbial mat cave rock","type":["microbial mat","commons"]},
-        {"segment_id":102,"content":"Fact forty-three. Chemosynthetic bacteria living in caves derive their energy from chemical compounds in the rock and water rather than from the sun.","description":"Cave bacteria chemosynthetic","type":["cave bacteria","commons"]},
-        {"segment_id":103,"content":"This is the same process found at deep sea hydrothermal vents. Life does not require sunlight. It requires energy, and energy can come from chemistry.","description":"Chemical energy dark life","type":["dark life","commons"]},
-        {"segment_id":104,"content":"Fact forty-four. Some caves in Romania and elsewhere harbor ecosystems that have been isolated from the surface for millions of years and run entirely on chemosynthesis.","description":"Isolated cave ecosystem","type":["isolated ecosystem","commons"]},
-        {"segment_id":105,"content":"Movile Cave in Romania, sealed from the surface for about five million years, hosts a community of over fifty unique species found nowhere else on Earth.","description":"Sealed cave ecosystem Romania","type":["sealed cave","commons"]},
-        {"segment_id":106,"content":"Fact forty-five. The air inside Movile Cave is toxic to humans without equipment. It contains almost no oxygen and high concentrations of hydrogen sulfide and carbon dioxide.","description":"Toxic cave air measurement","type":["cave air","commons"]},
-        {"segment_id":107,"content":"And yet, inside that toxic air, blind spiders hunt blind water scorpions. Pale leeches graze on microbial mats. Life has made itself entirely at home in conditions that would kill us within minutes.","description":"Cave life toxic conditions","type":["extreme cave","commons"]},
-        {"segment_id":108,"content":"Fact forty-six. Fungi are among the most important decomposers in cave ecosystems. They break down organic material that falls or washes into the cave and make nutrients available to other organisms.","description":"Cave fungi pale growth","type":["cave fungi","commons"]},
-        {"segment_id":109,"content":"Some fungi in caves are bioluminescent, producing a faint glow in the absolute dark, though scientists are still investigating why.","description":"Glowing fungi dark cave","type":["glowing fungi","commons"]},
-        {"segment_id":110,"content":"Fact forty-seven. Cave millipedes and centipedes are often pale and elongated, their legs long enough to feel surfaces ahead of them as they move.","description":"Cave millipede pale","type":["cave millipede","commons"]},
-        {"segment_id":111,"content":"Some cave centipedes are among the most voracious predators in cave systems, hunting anything small enough to subdue.","description":"Cave centipede hunting","type":["cave centipede","commons"]},
-        {"segment_id":112,"content":"Fact forty-eight. Snottites are colonies of bacteria that hang from cave ceilings in delicate, gelatinous strands. They produce sulfuric acid as a metabolic byproduct.","description":"Snottite cave ceiling drip","type":["snottite","commons"]},
-        {"segment_id":113,"content":"They look fragile, almost like cave stalactites made of living slime. The drops that fall from them are more acidic than battery acid.","description":"Acidic drip cave ceiling","type":["cave drip","commons"]},
-        {"segment_id":114,"content":"Fact forty-nine. Cave life evolves quickly once a population is isolated. Within tens of thousands of years, animals can lose their eyes, shed their pigment, and develop new sensory systems.","description":"Cave evolution speed","type":["cave evolution","commons"]},
-        {"segment_id":115,"content":"Each cave is like a separate island, its own experiment in what life becomes when cut off from the light.","description":"Cave island isolation","type":["cave isolation","commons"]},
-        {"segment_id":116,"content":"Fact fifty. Some of the oldest continuously surviving animal populations on Earth live in caves. Cut off from predators, from climate change, from disease, they have endured quietly for millions of years.","description":"Ancient cave population","type":["ancient population","commons"]},
-        {"segment_id":117,"content":"The cave is not a trap. For many animals, it is a refuge. A place where the world cannot reach them.","description":"Safe cave refuge","type":["cave refuge","commons"]},
-    ]},
-    {"beat":6,"label":"Second Soft Tease","segments":[
-        {"segment_id":118,"content":"We're going deeper now. Past the creatures, into the geology and the water and the silence that holds everything together.","description":"Deep cave passage ahead","type":["deep passage","commons"]},
-        {"segment_id":119,"content":"If you're still listening, stay. The caves get quieter and the facts get stranger.","description":"Quiet cave chamber ahead","type":["quiet cave","commons"]},
-        {"segment_id":120,"content":"And if you've drifted off, that's perfectly fine. Rest easy. The rock is patient.","description":"Dark still cave water","type":["dark water","commons"]},
-    ]},
-    {"beat":7,"label":"Facts 51-85: Water, Darkness, and Deep Caves","segments":[
-        {"segment_id":121,"content":"Fact fifty-one. Underground rivers are among the most powerful geological forces on Earth. They carve passages, dissolve chambers, and transport sediment across enormous distances entirely out of sight.","description":"Underground river cave","type":["underground river","commons"]},
-        {"segment_id":122,"content":"Some underground rivers are miles long and decades old, flowing in darkness through rock that has never seen sunlight.","description":"Dark river cave passage","type":["river passage","commons"]},
-        {"segment_id":123,"content":"Fact fifty-two. The world's largest known underground river is in Puerto Rico, flowing beneath the Rio Camuy cave system. Boats can travel along it for significant distances.","description":"Underground boat river","type":["river boat","commons"]},
-        {"segment_id":124,"content":"Fact fifty-three. Some surface rivers disappear entirely into sinkholes called swallow holes, flowing underground for miles before reappearing at a spring somewhere else entirely.","description":"River disappearing sinkhole","type":["swallow hole","commons"]},
-        {"segment_id":125,"content":"Hydrologists sometimes trace these invisible journeys by putting dye into the swallow hole and watching for it to appear downstream.","description":"Dye tracing river","type":["dye tracing","commons"]},
-        {"segment_id":126,"content":"Fact fifty-four. Cave pools are among the most still bodies of water on Earth. Undisturbed for centuries or longer, they have no waves, no wind-driven currents, and almost no surface movement.","description":"Cave pool still mirror","type":["cave pool","commons"]},
-        {"segment_id":127,"content":"Their surfaces can be so perfectly still that the ceiling appears in them as a mirror image, indistinguishable from the real thing.","description":"Mirror pool cave ceiling","type":["pool mirror","commons"]},
-        {"segment_id":128,"content":"Fact fifty-five. The water in some cave pools has been flowing through the rock for thousands of years before reaching the surface. This water can be extraordinarily pure.","description":"Pure cave water pool","type":["pure water","commons"]},
-        {"segment_id":129,"content":"Cave aquifers supply drinking water to hundreds of millions of people worldwide. The caves beneath us are part of the infrastructure of human survival.","description":"Aquifer water supply","type":["aquifer","commons"]},
-        {"segment_id":130,"content":"Fact fifty-six. In the deepest caves, temperature stays nearly constant year-round, usually close to the average annual surface temperature of that region.","description":"Constant temperature cave","type":["cave temperature","commons"]},
-        {"segment_id":131,"content":"In a cave, there are no seasons. The same cool air, the same humidity, the same stillness, every day, for thousands of years.","description":"Timeless cave air","type":["timeless cave","commons"]},
-        {"segment_id":132,"content":"Fact fifty-seven. The darkness in a deep cave is total. Not like a dark room with a little light under the door. There is no light of any kind that your eyes could use.","description":"Total darkness cave","type":["cave darkness","commons"]},
-        {"segment_id":133,"content":"After a few minutes in true cave darkness, some people begin to experience visual hallucinations, because the brain, receiving no input, begins to generate its own.","description":"Darkness human perception","type":["darkness perception","commons"]},
-        {"segment_id":134,"content":"Fact fifty-eight. The silence in a deep cave is equally profound. With no wind, no animals, no water movement nearby, the only sounds are your own heartbeat and your own breathing.","description":"Silent cave interior","type":["cave silence","commons"]},
-        {"segment_id":135,"content":"Some cavers describe this silence as one of the most unsettling and most peaceful experiences they have ever had.","description":"Peaceful cave experience","type":["peaceful cave","commons"]},
-        {"segment_id":136,"content":"Fact fifty-nine. Cave diving is one of the most technically demanding activities on Earth. Divers navigate completely submerged passages in total darkness, often with no way to surface if something goes wrong.","description":"Cave diver underwater","type":["cave diver","commons"]},
-        {"segment_id":137,"content":"They carry redundant equipment, lay guide lines through passages, and must manage their air supply with exact precision for every meter they go in.","description":"Cave diving gear","type":["diving gear","commons"]},
-        {"segment_id":138,"content":"Fact sixty. Some of the world's deepest cave systems have been explored partly by diving through flooded passages to reach dry chambers on the other side.","description":"Flooded cave passage","type":["flooded cave","commons"]},
-        {"segment_id":139,"content":"These flooded sections, called sumps, can be just a few meters long or several kilometers. Every one of them must be navigated blind.","description":"Sump underwater dark","type":["cave sump","commons"]},
-        {"segment_id":140,"content":"Fact sixty-one. The Veryovkina Cave in Georgia is the deepest known cave on Earth, reaching a depth of over 7,200 feet. Explorers took days to descend to its lowest known point.","description":"Deep cave descent vertical","type":["cave descent","commons"]},
-        {"segment_id":141,"content":"At that depth, the atmosphere changes. Air pressure is slightly higher. The cave breathes differently.","description":"Deep cave atmosphere","type":["cave atmosphere","commons"]},
-        {"segment_id":142,"content":"Fact sixty-two. The Mammoth Cave system in Kentucky is the longest known cave system on Earth, with over 400 mapped miles of passages.","description":"Long cave passage map","type":["long passage","commons"]},
-        {"segment_id":143,"content":"Scientists believe the full extent of the system is far larger. New passages are still being discovered connecting to the known network.","description":"Cave mapping exploration","type":["cave mapping","commons"]},
-        {"segment_id":144,"content":"Fact sixty-three. Cave mapping is painstaking work. Explorers carry instruments to measure the direction and distance of every passage, building three-dimensional maps of spaces that cannot be photographed from above.","description":"Cave survey instruments","type":["cave survey","commons"]},
-        {"segment_id":145,"content":"A surveyed cave map often looks like a branching, tangled nervous system, full of loops and dead ends and connections that make no intuitive sense until you are inside them.","description":"Cave map diagram","type":["cave map","commons"]},
-        {"segment_id":146,"content":"Fact sixty-four. Vertical pits in caves, called shafts or pitches, can descend for hundreds of feet. Some are wide enough that a person rappelling down cannot see the walls.","description":"Vertical cave shaft dark","type":["cave shaft","commons"]},
-        {"segment_id":147,"content":"Cavers descend these on ropes in absolute darkness, trusting their rigging and their training, listening to the sound of their own movement.","description":"Caver rappelling dark shaft","type":["cave rappel","commons"]},
-        {"segment_id":148,"content":"Fact sixty-five. The Majlis al Jinn cave in Oman contains one of the largest cave chambers by volume in the world. Its floor could hold several large sports stadiums.","description":"Vast cave chamber volume","type":["vast chamber","commons"]},
-        {"segment_id":149,"content":"Inside such a chamber, sound behaves strangely. Voices carry in unexpected directions. Echoes arrive long after you expect them. The cave speaks back in its own time.","description":"Cave echo chamber","type":["cave echo","commons"]},
-        {"segment_id":150,"content":"Fact sixty-six. Cave photography requires enormous patience and specialized equipment. The total darkness means photographers must create every source of light themselves.","description":"Cave photography lighting","type":["cave photography","commons"]},
-        {"segment_id":151,"content":"A single photograph of a large cave chamber might require hours of preparation, dozens of people positioned with lights, and multiple exposures combined.","description":"Cave photograph setup","type":["cave photograph","commons"]},
-        {"segment_id":152,"content":"Fact sixty-seven. The acoustics of caves have fascinated humans for tens of thousands of years. Some researchers believe that the locations of prehistoric cave paintings correlate with where cave acoustics were most dramatic.","description":"Cave acoustic resonance","type":["cave acoustics","commons"]},
-        {"segment_id":153,"content":"The ancients may have chosen sites where the rock seemed to speak back, where echoes gave the walls a kind of voice.","description":"Ancient cave ritual","type":["cave ritual","commons"]},
-        {"segment_id":154,"content":"Fact sixty-eight. Underground wind can be powerful in large cave systems, especially near entrances or where passages of different sizes connect. Some cave openings roar with moving air.","description":"Cave wind entrance","type":["cave wind","commons"]},
-        {"segment_id":155,"content":"This breathing of the cave is caused by changes in air pressure between the inside and outside, driven by temperature and weather far above.","description":"Cave breathing air flow","type":["cave airflow","commons"]},
-        {"segment_id":156,"content":"Fact sixty-nine. Caves that breathe noticeably were often considered sacred or supernatural by people who lived near them. An entrance that exhaled cold air in summer or warm air in winter felt alive.","description":"Cave sacred entrance ancient","type":["sacred cave","commons"]},
-        {"segment_id":157,"content":"Fact seventy. Many ancient cultures used caves as temples, tombs, or places of oracle. The Delphi oracle in ancient Greece was said to emerge from a cave where vapors rose from the earth.","description":"Ancient cave oracle","type":["cave oracle","commons"]},
-        {"segment_id":158,"content":"The vapors were likely ethylene gas seeping from geological faults, with genuine psychoactive effects. The earth was speaking, in its own chemical way.","description":"Cave gas fissure","type":["cave gas","commons"]},
-        {"segment_id":159,"content":"Fact seventy-one. Some caves have been used as natural cold storage by humans for thousands of years. The constant cool temperature and humidity are ideal for preserving food, wine, and other materials.","description":"Cave cellar storage","type":["cave cellar","commons"]},
-        {"segment_id":160,"content":"Many famous wine cellars and cheese caves in Europe are simply limestone caverns that have been put to use by people in the right place.","description":"Wine cellar cave","type":["wine cellar","commons"]},
-        {"segment_id":161,"content":"Fact seventy-two. The remains of some of our most ancient relatives have been found in cave systems in South Africa.","description":"Hominid fossil cave","type":["fossil cave","commons"]},
-        {"segment_id":162,"content":"The Rising Star Cave System contains the fossils of a species called Homo naledi, found in a chamber so remote that only the most slender and agile scientists could reach it.","description":"Cave fossil discovery","type":["fossil discovery","commons"]},
-        {"segment_id":163,"content":"Fact seventy-three. The depth at which these fossils were found, and the absence of other animal bones nearby, suggests Homo naledi may have intentionally placed their dead in the cave, one of the earliest known examples of deliberate burial.","description":"Ancient burial cave evidence","type":["burial evidence","commons"]},
-        {"segment_id":164,"content":"Fact seventy-four. In 2023, engravings on the cave walls near the fossils were confirmed to be made by Homo naledi, pushing back evidence of symbolic behavior by hundreds of thousands of years.","description":"Ancient engraving cave wall","type":["cave engraving","commons"]},
-        {"segment_id":165,"content":"Minds capable of symbols, of ritual, of caring for the dead, were older and more widespread than we had imagined.","description":"Ancient mind cave art","type":["ancient mind","commons"]},
-        {"segment_id":166,"content":"Fact seventy-five. Caves near the sea often preserve evidence of human life going back tens of thousands of years. Rising sea levels have drowned most coastal human sites, but elevated sea caves sometimes survive.","description":"Coastal cave ancient evidence","type":["coastal cave","commons"]},
-        {"segment_id":167,"content":"The cave has been, again and again, the place where things are kept.","description":"Cave preservation ancient","type":["cave kept","commons"]},
-    ]},
-    {"beat":8,"label":"Facts 76-105: Crystal Caves and Extremes","segments":[
-        {"segment_id":168,"content":"Fact seventy-six. The Cave of Crystals in Chihuahua, Mexico contains the largest natural crystals ever found. Some of the selenite beams are over thirty-six feet long and weigh fifty tons.","description":"Giant crystal cave Mexico","type":["giant crystal","commons"]},
-        {"segment_id":169,"content":"The crystals grew in a shallow pool of mineral-rich water that stayed at about 136 degrees Fahrenheit for hundreds of thousands of years.","description":"Crystal formation hot water","type":["crystal formation","commons"]},
-        {"segment_id":170,"content":"Fact seventy-seven. The Cave of Crystals is now drained and accessible to researchers, but only for short visits. The heat and humidity, over 90 percent, can kill an unprotected person within fifteen minutes.","description":"Extreme cave heat humid","type":["extreme heat","commons"]},
-        {"segment_id":171,"content":"Researchers wear special suits filled with ice to survive inside long enough to study the formations.","description":"Researcher cave ice suit","type":["ice suit","commons"]},
-        {"segment_id":172,"content":"Fact seventy-eight. Beneath the Crystal Cave, additional chambers were found containing even older crystals, some enclosing pockets of ancient water sealed inside the crystal for forty-nine thousand years.","description":"Water trapped crystal ancient","type":["water crystal","commons"]},
-        {"segment_id":173,"content":"Inside those pockets, scientists found microorganisms still alive, dormant for fifty thousand years, revived when the crystal was opened.","description":"Ancient microbe revival crystal","type":["ancient microbe","commons"]},
-        {"segment_id":174,"content":"Fact seventy-nine. Some caves contain rare minerals that only form in the unique chemical and pressure conditions found underground, substances that don't occur anywhere on the surface.","description":"Rare mineral underground","type":["rare mineral","commons"]},
-        {"segment_id":175,"content":"Crystals, flower-shaped growths, and delicate needles of material with names almost as strange as their compositions form in the dark, in passages no one has visited.","description":"Unknown mineral cave passage","type":["unknown mineral","commons"]},
-        {"segment_id":176,"content":"Fact eighty. The Waitomo Caves in New Zealand are lit by thousands of bioluminescent glowworms clinging to the ceiling and emitting blue-green light to attract prey.","description":"Glowworm cave ceiling blue","type":["glowworm cave","commons"]},
-        {"segment_id":177,"content":"The glowworms are the larvae of a fungus gnat, and they cast just enough light to make the cave ceiling look like a starfield in a dark blue sky.","description":"Glowworm starfield ceiling","type":["glowworm ceiling","commons"]},
-        {"segment_id":178,"content":"Fact eighty-one. The light from glowworms is produced by a chemical reaction involving the compound luciferin. It is entirely cold, generating almost no heat.","description":"Luciferin glow chemical","type":["luciferin","commons"]},
-        {"segment_id":179,"content":"Each glowworm hangs threads of sticky mucus below itself, and the blue light it produces attracts small flying insects that become trapped in those threads.","description":"Glowworm threads trap","type":["glowworm thread","commons"]},
-        {"segment_id":180,"content":"Fact eighty-two. Glowworm populations in some caves are so dense that visitors traveling by boat beneath them must keep silent, because any noise causes the worms to switch off their light.","description":"Glow worm boat silence","type":["boat silence","commons"]},
-        {"segment_id":181,"content":"The caves are held in quiet because the life inside requires it. A lesson worth carrying upward.","description":"Quiet cave water boat","type":["cave quiet","commons"]},
-        {"segment_id":182,"content":"Fact eighty-three. Some caves function as natural windmills. In mountains with multiple entrances at different elevations, cold air sinks and warm air rises, creating a constant internal airflow.","description":"Cave wind natural draft","type":["cave draft","commons"]},
-        {"segment_id":183,"content":"In some countries, this cold cave air is piped into buildings as a natural cooling system, a free and ancient form of climate control.","description":"Cave cooling system","type":["cave cooling","commons"]},
-        {"segment_id":184,"content":"Fact eighty-four. Cave clouds are a real phenomenon. When warm, moist air from outside meets the cold interior of a cave, it can condense into visible mist hanging at the cave entrance like fog in miniature.","description":"Cave cloud mist entrance","type":["cave mist","commons"]},
-        {"segment_id":185,"content":"Fact eighty-five. Caves near active volcanoes can be filled with sulfurous gas, boiling pools, and mineral deposits forming in real time. They are among the most dynamic geological environments on Earth.","description":"Volcanic cave sulfur pool","type":["volcanic cave","commons"]},
-        {"segment_id":186,"content":"Fact eighty-six. Thurston Lava Tube in Hawaii is one of the most visited cave systems in the world. It formed in an eruption roughly 500 years ago and is still a geologically recent feature.","description":"Lava tube recent Hawaii","type":["recent lava","commons"]},
-        {"segment_id":187,"content":"By geological standards, 500 years is barely a moment. The cave is, in geological terms, brand new.","description":"New geological cave","type":["geological new","commons"]},
-        {"segment_id":188,"content":"Fact eighty-seven. Mars has lava tubes thought to be far larger than anything on Earth. Because of Mars's lower gravity and different geological history, the tubes could be wide enough to contain a small city.","description":"Mars lava tube concept","type":["mars tube","commons"]},
-        {"segment_id":189,"content":"Scientists have proposed that future human settlers on Mars might shelter inside these tubes, using the rock as protection from radiation and temperature extremes.","description":"Mars cave shelter concept","type":["mars shelter","commons"]},
-        {"segment_id":190,"content":"Fact eighty-eight. The Moon also has lava tubes, detected by satellite gravity measurements. Some may be structurally intact, hundreds of meters wide, and sealed from the surface.","description":"Moon lava tube lunar","type":["lunar tube","commons"]},
-        {"segment_id":191,"content":"A cave on the Moon, sheltered from cosmic radiation and the extreme temperature swings of the lunar surface, might be the most hospitable place for humans anywhere beyond Earth.","description":"Lunar cave habitation","type":["lunar cave","commons"]},
-        {"segment_id":192,"content":"Fact eighty-nine. At the opposite extreme from the crystal cave's heat, some caves in permafrost regions stay frozen year-round, their walls coated in ice and their floors covered in frost crystals that have never melted.","description":"Frozen cave permafrost","type":["frozen cave","commons"]},
-        {"segment_id":193,"content":"In permafrost caves, ice formations can grow slowly over centuries, capturing bubbles of ancient air within their layers.","description":"Cave ice formation ancient","type":["ice formation","commons"]},
-        {"segment_id":194,"content":"Fact ninety. Ancient ice in polar caves has been used to reconstruct the composition of Earth's atmosphere going back hundreds of thousands of years.","description":"Ice core ancient air","type":["ice core","commons"]},
-        {"segment_id":195,"content":"Each bubble is a sample of the sky from a world long gone, preserved in ice, waiting for someone to release it.","description":"Ancient air bubble ice","type":["air bubble","commons"]},
-        {"segment_id":196,"content":"Fact ninety-one. Some caves have been used as natural calendars. On specific days of the year, sunlight enters cave entrances and illuminates particular points on the cave wall, marking solstices or equinoxes.","description":"Cave calendar solar light","type":["cave calendar","commons"]},
-        {"segment_id":197,"content":"Ancient peoples around the world noticed and used these natural astronomical instruments, reading the sky from within the earth.","description":"Cave solar alignment ancient","type":["solar alignment","commons"]},
-        {"segment_id":198,"content":"Fact ninety-two. Cueva de la Pileta in Spain contains paintings and symbols going back at least twenty-five thousand years, including fish, horses, and bison rendered by people for whom these animals were daily reality.","description":"Spanish cave painting fish","type":["cave fish art","commons"]},
-        {"segment_id":199,"content":"Fact ninety-three. Some cave paintings include geometric symbols that appear across cultures separated by thousands of miles and years. Dots, lines, hand stencils, spirals, appearing again and again.","description":"Geometric cave symbols","type":["cave symbols","commons"]},
-        {"segment_id":200,"content":"Researchers have proposed these may reflect patterns generated by the human brain under certain states, a visual language rooted in the structure of the nervous system itself.","description":"Human visual pattern","type":["visual pattern","commons"]},
-        {"segment_id":201,"content":"Fact ninety-four. The discovery of cave paintings at El Castillo in Spain that may be over forty thousand years old challenged the long-held belief that sophisticated symbolic thought arose only with anatomically modern humans.","description":"Old cave art discovery","type":["cave art age","commons"]},
-        {"segment_id":202,"content":"It suggested that Neanderthals or other archaic humans may have also produced symbolic art, long before they were thought capable of it.","description":"Neanderthal art possibility","type":["neanderthal art","commons"]},
-        {"segment_id":203,"content":"Fact ninety-five. Caves in Indonesia contain some of the oldest figurative art ever found. A painting of a pig in Sulawesi has been dated to over forty-five thousand years ago.","description":"Sulawesi pig cave painting","type":["sulawesi art","commons"]},
-        {"segment_id":204,"content":"The oldest known narrative scene, showing human-like figures hunting animals, was also found in Indonesia. The cave is still revealing things.","description":"Narrative cave painting","type":["narrative painting","commons"]},
-        {"segment_id":205,"content":"Fact ninety-six. Salt caves form when water dissolves halite, or rock salt, rather than calcium carbonate, creating chambers with walls of crystalline white mineral.","description":"Salt cave formation","type":["salt cave","commons"]},
-        {"segment_id":206,"content":"The largest salt cave system in the world is beneath Mount Sedom in Israel, at the southern end of the Dead Sea, formed from one of the most ancient salt deposits on Earth.","description":"Salt cave Israel","type":["salt formation","commons"]},
-        {"segment_id":207,"content":"Fact ninety-seven. Salt caves are sometimes used as health retreats because the air inside is low in allergens and bacteria, and the microclimate can benefit people with respiratory conditions.","description":"Salt cave health retreat","type":["salt therapy","commons"]},
-        {"segment_id":208,"content":"Fact ninety-eight. Some caves are so old that geologists have difficulty dating them at all. A cave passage may have formed, been filled with sediment, and been re-excavated multiple times over millions of years.","description":"Ancient cave age uncertain","type":["cave age","commons"]},
-        {"segment_id":209,"content":"The cave's history is written in layers, but those layers have been rearranged, dissolved, and redeposited so many times that reading them requires careful and painstaking analysis.","description":"Cave layer history","type":["cave history","commons"]},
-        {"segment_id":210,"content":"Fact ninety-nine. Blue John Cavern in England contains a uniquely banded purple and yellow fluorite mineral found nowhere else on Earth. It has been mined and carved for jewelry since Roman times.","description":"Banded mineral cave unique","type":["banded mineral","commons"]},
-        {"segment_id":211,"content":"Fact one hundred. Caves can host entire communities of microorganisms on their walls, ceilings, and floors, each occupying a slightly different chemical niche, invisible without magnification but present everywhere.","description":"Cave microbe community wall","type":["cave microbe","commons"]},
-        {"segment_id":212,"content":"Pause here for a moment. If your eyes are heavy, let them close. The caves will wait. They have waited for a very long time.","description":"Cave pause breathe moment","type":["pause breathe","commons"]},
-    ]},
-    {"beat":9,"label":"Third Soft Tease","segments":[
-        {"segment_id":213,"content":"We're deep in the cave now. The walls are close, the air is still, and the silence is complete.","description":"Close cave walls still","type":["close walls","commons"]},
-        {"segment_id":214,"content":"If you're still here, stay a little longer. We'll talk about the explorers, the underground cities, and the caves we haven't yet found.","description":"Explorer cave ahead","type":["explorer ahead","commons"]},
-        {"segment_id":215,"content":"And if you've slipped away into sleep, the cave keeps without you. It always has.","description":"Cave kept quiet dark","type":["kept quiet","commons"]},
-        {"segment_id":216,"content":"Let your breathing slow. Let the weight of the day settle the way sediment settles, quietly, without effort, finding its level.","description":"Sediment settling calm","type":["sediment settling","commons"]},
-    ]},
-    {"beat":10,"label":"Facts 101-135: Exploration and Human Stories","segments":[
-        {"segment_id":217,"content":"Fact one hundred and one. The modern sport of caving began in earnest in the late nineteenth century, when explorers started descending into cave systems with ropes, lanterns, and scientific curiosity.","description":"Early cave explorer lantern","type":["cave explorer","commons"]},
-        {"segment_id":218,"content":"Before that, caves were mostly places people feared or worshipped, rarely entered for leisure or science.","description":"Historical cave entrance","type":["historical cave","commons"]},
-        {"segment_id":219,"content":"Fact one hundred and two. Édouard-Alfred Martel, a French lawyer, is considered the father of modern speleology. In the 1890s he explored dozens of cave systems across Europe, developing methods for surveying and studying caves scientifically.","description":"Early speleologist exploring","type":["early explorer","commons"]},
-        {"segment_id":220,"content":"He descended into caves that no one had entered before, in the dark, without safety equipment we would consider basic today.","description":"Historical cave descent","type":["cave descent old","commons"]},
-        {"segment_id":221,"content":"Fact one hundred and three. Modern cavers carry multiple light sources because a single failed light in a cave with no visible exit route would be a serious emergency.","description":"Caver multiple lights","type":["caver lights","commons"]},
-        {"segment_id":222,"content":"Redundancy is the guiding principle. In a cave, having only one of anything essential is the same as having none.","description":"Backup light cave safety","type":["backup light","commons"]},
-        {"segment_id":223,"content":"Fact one hundred and four. Cave rescue operations are among the most technically demanding rescue operations in existence. Rescuers must navigate all the same hazards as the people they are rescuing, often in worse conditions.","description":"Cave rescue team","type":["cave rescue","commons"]},
-        {"segment_id":224,"content":"In 2018, twelve boys and their soccer coach were trapped in a cave in Thailand for over two weeks before a multinational rescue effort extracted them safely.","description":"Cave rescue Thailand","type":["rescue Thailand","commons"]},
-        {"segment_id":225,"content":"Fact one hundred and five. The rescue involved cave divers from multiple countries navigating flooded passages to reach the boys, who were miles inside on a ledge above rising water.","description":"Diver rescue flooded cave","type":["rescue diver","commons"]},
-        {"segment_id":226,"content":"The boys were sedated to calm them before being guided through the flooded tunnels. It remains one of the most remarkable rescue operations in history.","description":"Cave rescue remarkable","type":["rescue remarkable","commons"]},
-        {"segment_id":227,"content":"Fact one hundred and six. Cavers who spend extended time underground often experience a disruption of their circadian rhythm. Without light cues, the body's internal clock drifts.","description":"Cave time perception dark","type":["time drift","commons"]},
-        {"segment_id":228,"content":"In isolation experiments inside caves, subjects without access to clocks or daylight began to adopt cycles of up to 48 hours, sleeping and waking in patterns very different from the surface world.","description":"Cave isolation experiment","type":["isolation experiment","commons"]},
-        {"segment_id":229,"content":"Fact one hundred and seven. Michel Siffre, a French geologist, spent two months in a cave in 1962 in total isolation with no time cues. He thought only 34 days had passed when he emerged.","description":"Cave isolation researcher","type":["cave researcher","commons"]},
-        {"segment_id":230,"content":"He returned in 1972 and spent six months underground alone. By the end, his sense of time had become almost entirely unmoored.","description":"Long cave isolation dark","type":["isolation dark","commons"]},
-        {"segment_id":231,"content":"Fact one hundred and eight. Cave systems are among the best places to search for pristine water unaltered by modern human activity.","description":"Pristine cave water sample","type":["pristine water","commons"]},
-        {"segment_id":232,"content":"Scientists collect water samples from deep cave pools to establish a baseline for what pre-industrial water chemistry looked like.","description":"Water chemistry baseline","type":["water chemistry","commons"]},
-        {"segment_id":233,"content":"Fact one hundred and nine. Some cave pools have remained sealed from the surface for millions of years. When opened, they offer a direct window into past geological and chemical conditions.","description":"Sealed pool ancient water","type":["sealed pool","commons"]},
-        {"segment_id":234,"content":"The first contact with the outside world these pools have had in millions of years is a scientist's sampling tube, lowered gently into the dark.","description":"Sample tube dark pool","type":["sample tube","commons"]},
-        {"segment_id":235,"content":"Fact one hundred and ten. Not all cave discoveries require technical caving. Many caves were first discovered by accident, through collapsed sinkholes, drained lakes, or construction projects.","description":"Accidental cave discovery","type":["accidental discovery","commons"]},
-        {"segment_id":236,"content":"The Lascaux Cave in France, one of the most famous cave painting sites in the world, was discovered in 1940 by a group of teenagers following a dog into a hole in the ground.","description":"Lascaux cave discovery","type":["lascaux discovery","commons"]},
-        {"segment_id":237,"content":"Fact one hundred and eleven. The Lascaux paintings include over six hundred animals and symbols, and the techniques used, perspective, shading, layered pigments, are more sophisticated than many expected of artists from seventeen thousand years ago.","description":"Lascaux cave art detail","type":["lascaux art","commons"]},
-        {"segment_id":238,"content":"Fact one hundred and twelve. The opening of Lascaux to tourists caused rapid deterioration of the paintings due to carbon dioxide, heat, and introduced bacteria from visitors' breath and bodies.","description":"Cave art deterioration","type":["art deterioration","commons"]},
-        {"segment_id":239,"content":"It was closed in 1963. A replica, built to exact scale, was opened nearby so the world could see what the original contains without destroying it.","description":"Cave replica preservation","type":["cave replica","commons"]},
-        {"segment_id":240,"content":"Fact one hundred and thirteen. Preserving cave environments is a delicate challenge. Even a single visit by a caver introduces bacteria, changes the humidity, and leaves physical traces that can persist for centuries.","description":"Cave preservation fragile","type":["cave preservation","commons"]},
-        {"segment_id":241,"content":"Some cave formations can be ruined by the oils left by a single handprint, which encourage the growth of bacteria that stain the calcite brown over time.","description":"Cave handprint bacteria","type":["handprint bacteria","commons"]},
-        {"segment_id":242,"content":"Fact one hundred and fourteen. Show caves, developed for tourists, have been an important part of human culture for centuries. The earliest were lit by candles and guided by local people who knew every passage by feel.","description":"Show cave torch visitors","type":["show cave","commons"]},
-        {"segment_id":243,"content":"Today, carefully designed lighting illuminates cave features without damaging them, and timed visits limit the buildup of carbon dioxide from visitors' breath.","description":"Cave lighting design","type":["cave lighting","commons"]},
-        {"segment_id":244,"content":"Fact one hundred and fifteen. Some show caves have been used as concert halls. The natural acoustics and the resonant chambers create a sound environment unlike anything above ground.","description":"Cave concert acoustic","type":["cave concert","commons"]},
-        {"segment_id":245,"content":"Music inside a cave travels differently. Frequencies behave in unfamiliar ways. The echoes have different textures. It can feel like being inside the instrument itself.","description":"Cave sound music unique","type":["cave music","commons"]},
-        {"segment_id":246,"content":"Fact one hundred and sixteen. Caves near the coast are sometimes flooded and drained by tides multiple times a day, creating extreme conditions that few organisms can tolerate.","description":"Tidal cave coastal","type":["tidal cave","commons"]},
-        {"segment_id":247,"content":"Those that do are specialists in rapid change, retreating and advancing with the water, surviving the alternation of wet and dry with remarkable precision.","description":"Tidal cave life adapting","type":["cave adaptation","commons"]},
-        {"segment_id":248,"content":"Fact one hundred and seventeen. Some of the deepest cave systems in the world are still being actively explored. New passages are discovered each year as cavers push further into unmapped territory.","description":"New cave passage found","type":["new passage","commons"]},
-        {"segment_id":249,"content":"In some ranges, the caves are still growing larger, dissolving slowly year by year, changing in ways that will only be apparent after thousands more years have passed.","description":"Cave growing slowly","type":["cave growing","commons"]},
-        {"segment_id":250,"content":"Fact one hundred and eighteen. The Krubera Cave in Georgia was, for many years, the deepest known cave in the world. Expeditions to its lowest points required weeks underground.","description":"Deep cave expedition team","type":["cave expedition","commons"]},
-        {"segment_id":251,"content":"Teams camp underground for days at a time, eating, sleeping, and working in chambers far from any surface, with no communication with the outside world.","description":"Underground camp cave","type":["underground camp","commons"]},
-        {"segment_id":252,"content":"Fact one hundred and nineteen. Cave camps require everything to be carried in on human backs. There are no machines that can operate in the spaces cavers navigate. Only people.","description":"Cave carry gear passage","type":["cave carry","commons"]},
-        {"segment_id":253,"content":"Every meal, every rope, every piece of technical equipment must be carried through crawlways, lowered down vertical drops, and dragged through flooded sections.","description":"Caver gear crawlway","type":["crawlway gear","commons"]},
-        {"segment_id":254,"content":"Fact one hundred and twenty. Cave earth, the mix of clay, silt, and organic material that accumulates on cave floors, is in some caves several meters deep and entirely undisturbed.","description":"Cave earth undisturbed","type":["cave earth","commons"]},
-        {"segment_id":255,"content":"Scientists excavate this material carefully, finding evidence of ancient floods, animal activity, and climate shifts, a timeline encoded in mud.","description":"Cave mud excavation","type":["mud excavation","commons"]},
-        {"segment_id":256,"content":"Fact one hundred and twenty-one. Paleontologists have found the bones of animals in caves that were not cave dwellers, carried there by predators or fallen through sinkholes.","description":"Animal bone cave paleontology","type":["cave paleontology","commons"]},
-        {"segment_id":257,"content":"These accidental archives can contain bones from hundreds of species across thousands of years, giving scientists a snapshot of the ecosystem that existed above the cave.","description":"Bone archive cave species","type":["bone archive","commons"]},
-        {"segment_id":258,"content":"Fact one hundred and twenty-two. The cave lion was a massive Ice Age predator that sheltered in cave systems across Europe and Asia. Its bones are sometimes found alongside cave bear bones, two enormous animals using the same space across different seasons.","description":"Cave lion bone ancient","type":["cave lion","commons"]},
-        {"segment_id":259,"content":"Fact one hundred and twenty-three. Hyenas in prehistoric Europe dragged their kills into caves, where the bones accumulated over generations. Some caves are filled with thousands of animal bones brought in by hyenas over hundreds of thousands of years.","description":"Hyena bone cave pile","type":["hyena cave","commons"]},
-        {"segment_id":260,"content":"The cave was a pantry for the hyena, a gallery for us. The same space, two entirely different purposes, separated by time.","description":"Cave pantry ancient","type":["cave purpose","commons"]},
-        {"segment_id":261,"content":"Fact one hundred and twenty-four. Some cave systems contain hot springs where geothermally heated water rises from deep within the earth, maintaining constant temperatures regardless of the surface climate.","description":"Cave hot spring thermal","type":["cave spring","commons"]},
-        {"segment_id":262,"content":"Around these springs, warm ecosystems persist even in cold regions, their residents warmed by the earth's own internal heat.","description":"Warm cave ecosystem","type":["warm ecosystem","commons"]},
-        {"segment_id":263,"content":"Fact one hundred and twenty-five. In some caves, the water is so rich in dissolved minerals that objects left in the water for extended periods become coated in calcite.","description":"Calcite coated object cave","type":["calcite coating","commons"]},
-        {"segment_id":264,"content":"Tools accidentally left behind by early cave explorers have been found years later transformed into stone-like objects, their original shapes preserved in mineral.","description":"Object calcite transformed","type":["transformed object","commons"]},
-        {"segment_id":265,"content":"Fact one hundred and twenty-six. Many cultures around the world have stories of underground realms, gods who live beneath the earth, rivers of the underworld, and caves as gateways between the living and the dead.","description":"Underworld myth cave","type":["underworld myth","commons"]},
-        {"segment_id":266,"content":"These stories arose independently, on different continents, among people with no contact. The cave speaks something deep in the human imagination.","description":"Cave imagination deep","type":["imagination cave","commons"]},
-        {"segment_id":267,"content":"Fact one hundred and twenty-seven. Plato's famous allegory of the cave imagines prisoners who mistake shadows on a cave wall for reality, a metaphor for ignorance and enlightenment that has lasted for two thousand years.","description":"Plato cave allegory","type":["cave allegory","commons"]},
-        {"segment_id":268,"content":"The image endures because the cave itself endures, dark, enclosed, full of shapes that might be real or might be shadows, depending on where you stand.","description":"Shadow cave wall thought","type":["shadow wall","commons"]},
-    ]},
-    {"beat":11,"label":"Facts 128-155: Underground Cities and Future Discovery","segments":[
-        {"segment_id":269,"content":"Fact one hundred and twenty-eight. LiDAR, a remote sensing technology that uses laser pulses to map terrain, has revealed cave openings in forests and jungles that were invisible from the ground.","description":"LiDAR forest cave detection","type":["lidar cave","commons"]},
-        {"segment_id":270,"content":"Aerial surveys with LiDAR are now finding cave entrances at a rate that field explorers could never match on foot.","description":"Aerial cave survey","type":["aerial survey","commons"]},
-        {"segment_id":271,"content":"Fact one hundred and twenty-nine. The Hang Son Doong cave in Vietnam was known only to local hunters for decades before explorers entered it in 2009.","description":"Hang Son Doong Vietnam","type":["large cave","commons"]},
-        {"segment_id":272,"content":"It is the largest cave passage in the world by volume, large enough to contain a full-sized aircraft, with a jungle and clouds forming inside it.","description":"Cave jungle inside","type":["jungle cave","commons"]},
-        {"segment_id":273,"content":"Fact one hundred and thirty. Hang Son Doong contains its own weather system. Clouds form where moist air rises into the cooler upper reaches of the cave, and light rain can fall inside it.","description":"Cave cloud rain forming","type":["cave rain","commons"]},
-        {"segment_id":274,"content":"Sunlight enters through two massive collapsed sections of the ceiling, called dolines, creating columns of light in which plants grow in a cave forest.","description":"Cave doline sunlight forest","type":["doline light","commons"]},
-        {"segment_id":275,"content":"Fact one hundred and thirty-one. Several animal species in Hang Son Doong are found nowhere else, isolated in the cave's unique microclimate, adapted to a world with partial light and extraordinary scale.","description":"Unique cave species","type":["unique species","commons"]},
-        {"segment_id":276,"content":"The cave is large enough to have its own geography, its own climate zones, its own food chains. It is a world within a world.","description":"Cave world within","type":["world within","commons"]},
-        {"segment_id":277,"content":"Fact one hundred and thirty-two. Geologists believe there may be even larger cave systems not yet discovered. The geology of certain karst regions suggests caverns that dwarf even the largest known caves could be waiting beneath unexplored ground.","description":"Undiscovered cave system","type":["undiscovered cave","commons"]},
-        {"segment_id":278,"content":"Fact one hundred and thirty-three. Underground lakes are found in caves on every continent except Antarctica. Some are enormous, stretching for kilometers in total darkness.","description":"Underground lake dark","type":["underground lake","commons"]},
-        {"segment_id":279,"content":"Lake Vostok in Antarctica is technically an underground lake, locked beneath four kilometers of ice for at least fifteen million years, its liquid water kept unfrozen by geothermal heat.","description":"Vostok lake Antarctic ice","type":["ice lake","commons"]},
-        {"segment_id":280,"content":"Fact one hundred and thirty-four. Drilling into Lake Vostok, completed in 2012, revealed bacteria in the ice above the lake, suggesting that life has persisted in that extreme environment.","description":"Drill ice lake bacteria","type":["drill bacteria","commons"]},
-        {"segment_id":281,"content":"What lives in the lake itself is still largely unknown. The water has not been sampled directly without contamination risk.","description":"Unknown lake life","type":["unknown lake","commons"]},
-        {"segment_id":282,"content":"Fact one hundred and thirty-five. Deep cave microbes are among the most extreme life forms known. Some live in rock, deriving energy from iron, sulfur, or manganese, with no organic carbon at all.","description":"Rock microbe cave extreme","type":["rock microbe","commons"]},
-        {"segment_id":283,"content":"These organisms, sometimes called rock eaters, extend our understanding of where life can survive, with implications for the search for life on other planets.","description":"Lithotrophic microbe","type":["lithotrophic","commons"]},
-        {"segment_id":284,"content":"Fact one hundred and thirty-six. Scientists working in deep cave systems have found bacteria resistant to every known antibiotic, even though they have been isolated from the surface for millions of years.","description":"Antibiotic resistant cave bacteria","type":["resistant bacteria","commons"]},
-        {"segment_id":285,"content":"These bacteria evolved resistance not to fight human medicine, but as a natural weapon in their competition with other microorganisms. Resistance is older and more widespread than we realized.","description":"Bacteria competition cave","type":["bacteria competition","commons"]},
-        {"segment_id":286,"content":"Fact one hundred and thirty-seven. Some cave bacteria produce compounds that may become the basis for new antibiotics, medicines not yet discovered, waiting in the dark.","description":"Cave antibiotic potential","type":["antibiotic potential","commons"]},
-        {"segment_id":287,"content":"Fact one hundred and thirty-eight. Microbes extracted from cave environments have also been found to have applications in bioremediation, breaking down pollutants that human technology struggles to address.","description":"Bioremediation cave microbe","type":["bioremediation","commons"]},
-        {"segment_id":288,"content":"The cave, always, turns out to contain more than anyone expected.","description":"Cave more than expected","type":["cave surprise","commons"]},
-        {"segment_id":289,"content":"Fact one hundred and thirty-nine. Some cave systems are used as research sites for long-duration isolation experiments related to space travel, because the conditions, constant temperature, no daylight, limited communication, mimic those of a long space mission.","description":"Cave space research isolation","type":["space isolation","commons"]},
-        {"segment_id":290,"content":"What researchers learn about the human mind and body in caves helps inform how people might behave on multi-year journeys to other worlds.","description":"Cave mind space research","type":["mind research","commons"]},
-        {"segment_id":291,"content":"Fact one hundred and forty. Caves have been used as shelters in almost every war. Their stability, concealment, and natural climate control made them ideal as command posts, hospitals, and refuges.","description":"Cave war shelter historical","type":["cave shelter","commons"]},
-        {"segment_id":292,"content":"In some conflicts, entire communities retreated underground for months at a time, carving additional spaces in the rock and living in a temporary underworld.","description":"Community underground cave","type":["cave community","commons"]},
-        {"segment_id":293,"content":"Fact one hundred and forty-one. Derinkuyu in Turkey is an ancient underground city carved into volcanic rock, large enough to have housed up to twenty thousand people along with their livestock and food stores.","description":"Underground city Turkey","type":["underground city","commons"]},
-        {"segment_id":294,"content":"It had ventilation shafts, wells, stables, wine cellars, and places of worship, all carved into the earth at least fifteen hundred years ago.","description":"Underground city interior carved","type":["carved city","commons"]},
-        {"segment_id":295,"content":"Fact one hundred and forty-two. Derinkuyu descends eighteen levels underground to a depth of about sixty meters. Its heavy stone doors could be rolled closed from the inside to seal it against attack.","description":"Underground door stone sealed","type":["stone door","commons"]},
-        {"segment_id":296,"content":"Fact one hundred and forty-three. There are dozens of ancient underground cities in the Cappadocia region of Turkey, many still partially unexplored. New chambers are still being discovered by homeowners digging basements.","description":"Cappadocia underground city","type":["cappadocia","commons"]},
-        {"segment_id":297,"content":"Fact one hundred and forty-four. Patagonia, Borneo, Papua New Guinea, and the mountains of central Asia all contain vast cave systems that remain almost entirely unexplored.","description":"Unexplored cave region world","type":["unexplored region","commons"]},
-        {"segment_id":298,"content":"The blank spaces on cave maps are still enormous. The underground is, in many ways, the last major unexplored frontier on the surface of the Earth.","description":"Cave frontier unexplored","type":["cave frontier","commons"]},
-        {"segment_id":299,"content":"Fact one hundred and forty-five. Some cave passages are too narrow for humans to enter but have been explored using robots, small cameras on flexible cables, and remotely operated vehicles designed for tight spaces.","description":"Cave robot small passage","type":["cave robot","commons"]},
-        {"segment_id":300,"content":"These tiny explorers have revealed chambers with formations, pools, and life that no person has ever seen directly and may never see in person.","description":"Robot cave discovery","type":["robot discovery","commons"]},
-        {"segment_id":301,"content":"Fact one hundred and forty-six. Acoustic cave surveys use sound waves to map the shape and extent of passages without entering them.","description":"Acoustic cave survey","type":["acoustic survey","commons"]},
-        {"segment_id":302,"content":"Geologists lower microphones into drill holes and create sound pulses, then analyze the returning echoes to build a three-dimensional picture of the cave system below.","description":"Acoustic drill survey","type":["drill survey","commons"]},
-        {"segment_id":303,"content":"Fact one hundred and forty-seven. Ground-penetrating radar can detect cave passages from the surface in some rock types, allowing scientists to map caves without anyone going underground at all.","description":"Ground radar cave detection","type":["radar detection","commons"]},
-        {"segment_id":304,"content":"Fact one hundred and forty-eight. The Cueva del Milodón in Chile contains the remains of the giant ground sloth, an animal that lived until about ten thousand years ago, preserved in the cave's cold and stable conditions.","description":"Ground sloth cave Chile","type":["ground sloth","commons"]},
-        {"segment_id":305,"content":"When early explorers found fresh-looking skin and dung, they initially thought the animal might still be alive. The cave had preserved it so well it barely looked ancient.","description":"Sloth skin cave preserved","type":["sloth remains","commons"]},
-        {"segment_id":306,"content":"Fact one hundred and forty-nine. Some caves in New Zealand preserve the moa, an extinct giant bird, in the form of bones and feathers that have lasted hundreds of years in the cave's dry interior.","description":"Moa bone cave feather","type":["moa cave","commons"]},
-        {"segment_id":307,"content":"Caves have a way of keeping things. Of holding what the open air would erase.","description":"Cave keeping preserved","type":["cave keeping","commons"]},
-        {"segment_id":308,"content":"Fact one hundred and fifty. The Earth contains an estimated four to five times more bacteria living in caves and subsurface rock than exist on the entire surface.","description":"Subsurface bacteria estimate","type":["subsurface bacteria","commons"]},
-        {"segment_id":309,"content":"The underground is not the empty basement of the world. It is, by number of organisms, the world's dominant biome.","description":"Underground biome dominant","type":["underground biome","commons"]},
-    ]},
-    {"beat":12,"label":"Fourth Soft Tease","segments":[
-        {"segment_id":310,"content":"We're approaching the end of our time underground. Just a few more facts, and then we'll surface slowly, the way light returns in the morning.","description":"Surface approaching cave","type":["surface approaching","commons"]},
-        {"segment_id":311,"content":"If you're still with us, thank you. If you've drifted off, we'll be gentle with the rest.","description":"Gentle cave end","type":["gentle end","commons"]},
-    ]},
-    {"beat":13,"label":"Facts 151-170: The Cave and the Future","segments":[
-        {"segment_id":312,"content":"Fact one hundred and fifty-one. Speleogenesis, the process by which caves form, is still not fully understood. New mechanisms are still being identified, and some caves have formed in ways that don't fit existing models.","description":"Cave formation mystery","type":["cave mystery","commons"]},
-        {"segment_id":313,"content":"Every cave that breaks the rules teaches us something about the flexibility of geology and the creativity of natural processes.","description":"Geology flexibility cave","type":["geology flexible","commons"]},
-        {"segment_id":314,"content":"Fact one hundred and fifty-two. Caves may play an important role in future climate research. Their stable environments and their geological records are among the best archives of past climate available anywhere on Earth.","description":"Climate archive cave","type":["climate cave","commons"]},
-        {"segment_id":315,"content":"As the climate changes, scientists are increasingly turning to caves to understand how past warm periods affected rainfall patterns, glaciers, and sea levels.","description":"Rainfall cave record","type":["rainfall record","commons"]},
-        {"segment_id":316,"content":"Fact one hundred and fifty-three. Caves and aquifers are deeply connected. The health of a cave system often reflects the quality of the groundwater in the region, making caves early warning systems for pollution.","description":"Aquifer cave pollution","type":["pollution warning","commons"]},
-        {"segment_id":317,"content":"When surface chemicals appear in cave water, it can indicate that the rock above is failing to filter contaminants, and that drinking water supplies may be at risk.","description":"Contaminant cave water","type":["cave contaminant","commons"]},
-        {"segment_id":318,"content":"Fact one hundred and fifty-four. Cave conservation is a relatively young field. For most of human history, caves were mined, used, and explored without much thought for what they contained.","description":"Cave conservation modern","type":["cave conservation","commons"]},
-        {"segment_id":319,"content":"Only in the last century have protected cave areas been established, and only recently has the full scope of what they contain been appreciated.","description":"Protected cave area","type":["protected cave","commons"]},
-        {"segment_id":320,"content":"Fact one hundred and fifty-five. Some cave species are critically endangered because their entire range is a single cave system. If that system is destroyed or contaminated, the species disappears permanently.","description":"Endangered cave species","type":["endangered cave","commons"]},
-        {"segment_id":321,"content":"There are cave-adapted animals that exist nowhere on Earth except in one particular underground stream in one particular cave. Their extinction would be total and irreversible.","description":"Single cave species","type":["single species","commons"]},
-        {"segment_id":322,"content":"Fact one hundred and fifty-six. DNA extracted from cave sediment is revealing species that were never recorded because they left no bones, only genetic traces washed in by water or carried in on the fur of animals.","description":"DNA cave sediment species","type":["sediment DNA","commons"]},
-        {"segment_id":323,"content":"The cave is recording life around it even when no one is watching.","description":"Cave recording life","type":["recording life","commons"]},
-        {"segment_id":324,"content":"Fact one hundred and fifty-seven. Some caves are slowly becoming caves right now. Passages that are tight cracks today may be human-navigable in ten thousand years.","description":"Forming cave passage future","type":["future cave","commons"]},
-        {"segment_id":325,"content":"There are caves forming beneath us, unseen, dissolving grain by grain toward a shape that no one living today will ever see.","description":"Cave forming now unseen","type":["cave now","commons"]},
-        {"segment_id":326,"content":"Fact one hundred and fifty-eight. Some speleothems that took hundreds of thousands of years to form are being damaged by commercial quarrying of limestone nearby.","description":"Speleothem damage quarrying","type":["speleothem damage","commons"]},
-        {"segment_id":327,"content":"Vibrations from blasting reverberate through the rock, cracking formations that took longer to grow than our species has existed.","description":"Limestone blast crack","type":["rock blast","commons"]},
-        {"segment_id":328,"content":"Fact one hundred and fifty-nine. On the other hand, some caves damaged by past human activity are slowly recovering. Formations broken or coated in soot from old lanterns are gradually being encrusted by fresh calcite.","description":"Cave healing calcite growth","type":["cave healing","commons"]},
-        {"segment_id":329,"content":"The cave is patient. Given time, it tends toward the beautiful.","description":"Cave patient beautiful","type":["patient beautiful","commons"]},
-        {"segment_id":330,"content":"Fact one hundred and sixty. New caves continue to be discovered every year. In 2019, a cave system in Quintana Roo, Mexico was confirmed as the largest known underwater cave in the world, with over 215 miles of mapped passages.","description":"Underwater cave Mexico","type":["underwater cave","commons"]},
-        {"segment_id":331,"content":"It connects multiple cave systems beneath the Yucatan Peninsula and contains fossils, ancient human remains, and the bones of extinct megafauna.","description":"Yucatan cave fossils","type":["yucatan cave","commons"]},
-        {"segment_id":332,"content":"Fact one hundred and sixty-one. The Yucatan's underwater cave system contains evidence of human habitation going back at least thirteen thousand years, making it one of the most significant archaeological sites in the Americas.","description":"Ancient habitation cave underwater","type":["ancient habitation","commons"]},
-        {"segment_id":333,"content":"Fact one hundred and sixty-two. In some caves, the floor is a living crust of microbial communities that can be disturbed by a single footprint and take decades to recover.","description":"Cave floor crust microbial","type":["floor crust","commons"]},
-        {"segment_id":334,"content":"Cavers in sensitive systems sometimes carry their waste out in sealed containers and wear specially laundered gear to avoid introducing outside organisms.","description":"Cave clean gear practice","type":["clean gear","commons"]},
-        {"segment_id":335,"content":"Fact one hundred and sixty-three. The future of cave exploration may involve artificial intelligence analyzing drone footage to detect formations and passages beyond what human explorers could reach in a lifetime.","description":"AI drone cave future","type":["cave future","commons"]},
-        {"segment_id":336,"content":"We are building machines to take our curiosity into places our bodies cannot follow.","description":"Machine cave curiosity","type":["machine curiosity","commons"]},
-        {"segment_id":337,"content":"Fact one hundred and sixty-four. Mineral-rich cave water sometimes precipitates into structures so strange they have no common name, curlicues, nets, funnels, and shelves of calcite that seem to have grown according to their own private logic.","description":"Strange mineral growth cave","type":["strange growth","commons"]},
-        {"segment_id":338,"content":"Scientists photograph and catalog them. But the naming has fallen behind the discovery, which is, perhaps, as it should be.","description":"Cave discovery naming","type":["naming discovery","commons"]},
-        {"segment_id":339,"content":"Fact one hundred and sixty-five. Some cave formations respond visibly to atmospheric pressure changes. Sensitive formations drip at different rates when weather systems pass above.","description":"Cave formation pressure change","type":["pressure change","commons"]},
-        {"segment_id":340,"content":"The cave is not isolated from the world above. It breathes with it, responds to it, records it in stone.","description":"Cave respond world above","type":["cave respond","commons"]},
-        {"segment_id":341,"content":"Fact one hundred and sixty-six. Water dripping into a cave may have traveled for months through hundreds of meters of rock, picking up minerals along the way, before emerging as a stalactite drop.","description":"Water journey through rock","type":["water journey","commons"]},
-        {"segment_id":342,"content":"Each drop is the end of a long journey. Each formation is the record of millions of such journeys, laid down over thousands of years.","description":"Drop record journey","type":["drop record","commons"]},
-        {"segment_id":343,"content":"Fact one hundred and sixty-seven. As sea levels rise, some coastal cave systems are being inundated more frequently, altering their chemistry, threatening their ecosystems, and erasing their archaeological record.","description":"Coastal cave sea rise","type":["sea rise cave","commons"]},
-        {"segment_id":344,"content":"Changes happening at the surface are reaching places that have been stable for millions of years. The world above and the world below are not as separate as they seem.","description":"Surface change underground","type":["connected worlds","commons"]},
-        {"segment_id":345,"content":"Fact one hundred and sixty-eight. Even so, some cave systems are so deep, so remote, so sealed from surface influence that they represent the closest thing to a truly pristine environment left on Earth.","description":"Pristine cave environment","type":["pristine cave","commons"]},
-        {"segment_id":346,"content":"In a world increasingly shaped by human activity, the deep cave remains one of the last genuinely wild places.","description":"Wild cave deep remain","type":["wild cave","commons"]},
-        {"segment_id":347,"content":"Fact one hundred and sixty-nine. Scientists are mapping cave microbiomes in the same way they have mapped the human microbiome, attempting to understand the full community of organisms living inside a cave system and how they interact.","description":"Cave microbiome mapping","type":["microbiome mapping","commons"]},
-        {"segment_id":348,"content":"What they are finding is a complexity that rivals anything above ground, intricate ecological relationships in the dark, built over millions of years of quiet refinement.","description":"Complex cave ecology","type":["cave ecology","commons"]},
-        {"segment_id":349,"content":"Fact one hundred and seventy. The cave, in the end, is simply the earth turned inward, a place where the planet has made room for something other than surface and sky.","description":"Cave earth inward","type":["earth inward","commons"]},
-        {"segment_id":350,"content":"And within that room, over millions of years, extraordinary things have found their way.","description":"Cave extraordinary quiet","type":["cave extraordinary","commons"]},
-    ]},
-    {"beat":14,"label":"Gentle Outro","segments":[
-        {"segment_id":351,"content":"And so we surface, slowly, the way light returns after a long night, without announcement, without hurry.","description":"Surfacing cave entrance light","type":["entrance light","commons"]},
-        {"segment_id":352,"content":"We've traveled from the cave entrance through formations older than our species, past creatures that have never seen the sun, into chambers where sound and silence are different things entirely.","description":"Cave journey recap","type":["journey recap","commons"]},
-        {"segment_id":353,"content":"We've passed rivers that run in permanent dark, crystals that took half a million years to grow, and microbes that have not touched the surface air in millions of years.","description":"Cave wonders recap","type":["wonders recap","commons"]},
-        {"segment_id":354,"content":"We've seen the hand stencils of people who lived thirty thousand years ago, pressing their palms to the same rock that the cave has since slowly covered in a thin layer of new stone.","description":"Ancient hand cave covered","type":["ancient hand","commons"]},
-        {"segment_id":355,"content":"We've heard the cave breathe, felt its constant temperature, and understood a little of what it means for a place to exist entirely outside of time.","description":"Cave breathe time","type":["cave time","commons"]},
-        {"segment_id":356,"content":"And through all of it, one thing remained constant. The cave does not rush. It never has. Everything it contains was built slowly, held carefully, and kept far from the noise of the surface.","description":"Cave slow patient deep","type":["cave slow","commons"]},
-        {"segment_id":357,"content":"If you are still awake, thank you for staying with us underground. If you drifted off somewhere in the dark, we hope the stillness was good for you.","description":"Thank listener cave","type":["thank listener","commons"]},
-        {"segment_id":358,"content":"The Restful Library is here whenever you need it. There are always more facts, more quiet places, more wonders waiting to be explored.","description":"Restful library return","type":["library return","commons"]},
-        {"segment_id":359,"content":"If you enjoyed this, a like or a subscription helps others find their way here, and we're grateful for that.","description":"Soft CTA cave calm","type":["cta calm","commons"]},
-        {"segment_id":360,"content":"But for now, wherever you are, let your breath settle.","description":"Breath settle quiet","type":["breath settle","commons"]},
-        {"segment_id":361,"content":"Let your thoughts go the way water goes in a cave, following the path of least resistance, slowly, without effort, finding its own level.","description":"Water path cave thought","type":["water path","commons"]},
-        {"segment_id":362,"content":"Somewhere beneath us, right now, in the dark, a stalactite is building itself one molecule at a time.","description":"Stalactite forming now dark","type":["forming now","commons"]},
-        {"segment_id":363,"content":"A cave creature is moving through absolute darkness using only the feeling of the water against its skin.","description":"Cave creature dark water sense","type":["dark sense","commons"]},
-        {"segment_id":364,"content":"And somewhere, in a chamber no human has ever entered, formations are growing in silence that has lasted longer than we can easily imagine.","description":"Unvisited cave formations","type":["unvisited cave","commons"]},
-        {"segment_id":365,"content":"And you are here, warm and still, floating at the edge of sleep.","description":"Warm still floating sleep","type":["floating sleep","commons"]},
-        {"segment_id":366,"content":"That's a good place to be.","description":"Peaceful close cave","type":["peaceful close","commons"]},
-        {"segment_id":367,"content":"Good night.","description":"Soft fade to dark","type":["fade dark","commons"]},
-        {"segment_id":368,"content":"[Soft ambient music, like distant water on stone, continues]","description":"Ambient cave water music","type":["ambient cave","commons"]},
-        {"segment_id":369,"content":"[Music fades slowly]","description":"Music fades cave","type":["music fades","commons"]},
-    ]},
-]
+DEFAULT_OUTPUT = Path(__file__).resolve().parent / "script.json"
 
-script = {
-    "title": "170 Facts About Caves and the Underground World to Fall Asleep To",
-    "channel": "Restful Library",
-    "script": []
+CH = {
+  "title_font": "Anton, Impact, sans-serif",
+  "body_font": "Barlow Condensed, Arial Narrow, sans-serif",
+  "bg": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+  "text": "#fefaf3",
+  "body": "#c9c2b6",
+  "amber": "#ff6a1a",
+  "red": "#c1121f",
 }
 
-for beat_data in facts:
-    script["script"].append({
-        "beat": beat_data["beat"],
-        "label": beat_data["label"],
-        "segments": beat_data["segments"]
-    })
+sid = 0
+def nid():
+    global sid
+    sid += 1
+    return sid
 
-all_type0, all_ids = [], []
-for beat in script["script"]:
-    for seg in beat["segments"]:
-        all_type0.append(seg["type"][0])
-        all_ids.append(seg["segment_id"])
+def stock(content, desc, query, cat="stock"):
+    return {"segment_id": nid(), "content": content, "description": desc, "type": [query, cat]}
 
-duplicates = [t for t in set(all_type0) if all_type0.count(t) > 1]
-long_types = [t for t in all_type0 if len(t.split()) > 2]
-total_words = sum(len(s["content"].split()) for b in script["script"] for s in b["segments"])
+def overlay_cta(content, desc, query, title, body, position="lower-third", accent=None):
+    accent = accent or CH["amber"]
+    return {
+        "segment_id": nid(), "content": content, "description": desc, "type": "remotion:FactCard",
+        "remotion": {
+            "composition": "FactCard", "layout": "overlay",
+            "overlay": {"position": position},
+            "broll": {"search_query": query, "category": "stock"},
+            "props": {
+                "title": title, "body": body, "factNumber": None, "showFactBadge": False,
+                "accentColor": accent, "textColor": CH["text"], "bodyColor": CH["body"],
+                "backgroundGradient": CH["bg"], "fontFamily": CH["title_font"], "bodyFontFamily": CH["body_font"],
+                "textAlign": "left", "verticalAlign": "center", "padding": 44, "contentMaxWidth": 1700,
+                "titleSize": 100, "bodySize": 56, "titleWeight": 400, "lineHeight": 1.35
+            },
+            "design": {
+                "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+                "layout": {"mode": "overlay", "position": position, "textAlign": "left", "verticalAlign": "center",
+                           "hierarchy": "title dominant, one-line body secondary"},
+                "typography": {"titleFont": "Anton", "bodyFont": "Barlow Condensed", "titleSize": "100px",
+                               "bodySize": "56px", "titleWeight": 400, "lineHeight": 1.35},
+                "color": {"background": CH["bg"], "text": CH["text"], "body": CH["body"], "accent": accent,
+                          "accentUsage": "thin accent bar beneath title"},
+                "motion": {"enter": "fast fade-up 30px, ~0.4s", "exit": "popup fades as narration continues",
+                           "stagger": "title +0 -> body +14 frames", "emphasis": "none", "easing": "spring, fast"},
+                "overlays": {"badge": "none", "decorations": "subtle vignette on popup edges only", "iconography": "none"},
+                "transitions": {"in": "popup rises fast over continuing b-roll", "out": "soft fade, b-roll holds"},
+                "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": f"Full-frame b-roll ({query}) plays underneath. Large {position} Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title '{title}' in hot white (#fefaf3), body line '{body}' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar ({accent}) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+        }
+    }
 
-print(f"Total segments: {len(all_ids)}")
-print(f"ID range: {min(all_ids)}-{max(all_ids)}")
-print(f"Sequential: {list(range(1, len(all_ids)+1)) == sorted(all_ids)}")
-print(f"Duplicate type[0]: {duplicates}")
-print(f"Types >2 words: {long_types}")
-print(f"Total words: {total_words}")
-print(f"Estimated runtime: {total_words/145:.1f} minutes")
-print(f"All types unique: {len(set(all_type0)) == len(all_type0)}")
+def rank_reveal(content, name, num, stat, severity="amber"):
+    accent = CH["red"] if severity == "red" else CH["amber"]
+    return {
+        "segment_id": nid(), "content": content, "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+        "type": "remotion:TitleCard",
+        "remotion": {
+            "composition": "TitleCard", "layout": "full",
+            "props": {
+                "title": name, "factNumber": num, "subtitle": stat, "showAccentBar": True,
+                "accentColor": accent, "textColor": CH["text"], "subtitleColor": CH["body"],
+                "backgroundGradient": CH["bg"], "fontFamily": CH["title_font"], "bodyFontFamily": CH["body_font"],
+                "textAlign": "center", "verticalAlign": "center", "padding": 80, "contentMaxWidth": 1800,
+                "factNumberSize": 240, "titleSize": 150, "subtitleSize": 64, "titleWeight": 400, "lineHeight": 1.05
+            },
+            "design": {
+                "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+                "layout": {"textAlign": "center", "verticalAlign": "center",
+                           "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                           "contentMaxWidth": "1800px centered on full frame"},
+                "typography": {"titleFont": "Anton", "bodyFont": "Barlow Condensed", "titleSize": "150px",
+                               "bodySize": "64px", "factNumberSize": "240px", "titleWeight": 400, "lineHeight": 1.05},
+                "color": {"background": CH["bg"], "text": CH["text"], "body": CH["body"], "accent": accent,
+                          "accentUsage": "thick accent bar beneath rank number"},
+                "motion": {"enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                           "exit": "hard cut to entry b-roll",
+                           "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                           "emphasis": "factNumber scale-punch only", "easing": "spring, hard"},
+                "overlays": {"badge": "none", "decorations": "subtle radial vignette darkening edges", "iconography": "none"},
+                "transitions": {"in": "hard cut from previous b-roll into full-frame graphic", "out": "hard cut to entry's opening b-roll"},
+                "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": f"Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '{num}' at 240px in {accent} dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, '{name}' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '{stat}' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+        }
+    }
 
-with open('caves_script.json', 'w') as f:
-    json.dump(script, f, indent=2)
-print("Saved caves_script.json")
+def titlecard_full(content, title, subtitle):
+    return {
+        "segment_id": nid(), "content": content, "description": "Full-frame Remotion chapter card, no b-roll", "type": "remotion:TitleCard",
+        "remotion": {
+            "composition": "TitleCard", "layout": "full",
+            "props": {
+                "title": title, "subtitle": subtitle, "showAccentBar": True, "accentColor": CH["amber"],
+                "textColor": CH["text"], "subtitleColor": CH["body"], "backgroundGradient": CH["bg"],
+                "fontFamily": CH["title_font"], "bodyFontFamily": CH["body_font"], "textAlign": "center",
+                "verticalAlign": "center", "padding": 80, "contentMaxWidth": 1800, "titleSize": 150,
+                "subtitleSize": 64, "titleWeight": 400, "lineHeight": 1.05
+            },
+            "design": {
+                "intent": "Chapter-break card signalling shift into the methodology/investigation",
+                "layout": {"textAlign": "center", "verticalAlign": "center", "hierarchy": "title dominant, accent bar, subtitle secondary"},
+                "typography": {"titleFont": "Anton", "bodyFont": "Barlow Condensed", "titleSize": "150px", "bodySize": "64px", "titleWeight": 400, "lineHeight": 1.05},
+                "color": {"background": CH["bg"], "text": CH["text"], "body": CH["body"], "accent": CH["amber"], "accentUsage": "thick accent bar beneath title"},
+                "motion": {"enter": "fast fade-up ~0.4s", "exit": "hard cut to b-roll", "stagger": "title -> bar +8 -> subtitle +16", "emphasis": "none", "easing": "spring"},
+                "overlays": {"badge": "none", "decorations": "no grain, subtle vignette", "iconography": "none"},
+                "transitions": {"in": "hard cut into full-frame graphic", "out": "hard cut to b-roll"},
+                "durationHint": "hold 3-4 seconds"
+            },
+            "prompt": f"Full-bleed Remotion frame, warm near-black gradient. Centered Anton title '{title}' at 150px hot white, thick amber accent bar beneath, subtitle '{subtitle}' at 64px Barlow Condensed warm ash grey. Fast fade-up enter. Hold 3-4 seconds. Hard cut to b-roll."
+        }
+    }
+
+script = []
+
+# BEAT 1 - HOOK
+hook_segs = []
+hook_segs.append(stock(
+ "Right now, somewhere on this planet, an animal smaller than your thumbnail is quietly responsible for more human deaths than every war in recorded history combined. It isn't a shark. It isn't a lion. It doesn't roar, it doesn't stalk, and most of the time you never even see it coming. The animals that have shaped human civilization most profoundly did it not through raw physical power, but through something far more efficient: disease.",
+ "Slow-motion mosquito landing on skin at dusk, extreme macro, backlit",
+ "mosquito landing skin macro slow motion", "stock"))
+hook_segs.append(stock(
+ "This isn't a list of predators. This is a list of vectors — animals that don't kill you themselves, they deliver something else that does. Parasites. Bacteria. Viruses. The difference matters, because once you understand how pathogens move from animal to human host, you start seeing how many of history's greatest catastrophes trace back to something most people step over without a second glance.",
+ "Wide aerial shot of a swamp or wetland at golden hour, insects visible in the light",
+ "wetland swamp golden hour aerial insects", "stock"))
+hook_segs.append(stock(
+ "We're counting down ten animals that spread disease, ranked by confirmed historical and modern death toll — using WHO data, peer-reviewed epidemiology, and named research wherever it exists. No movie logic. No inflated numbers. No sharks with lasers. Just the actual math of how disease-carrying animals have outpaced every human conflict in terms of total lives ended, and why most people have never thought to put them in that context.",
+ "Data visualization style shot: world map with disease outbreak hotspots highlighted in red",
+ "world map disease outbreak data visualization", "stock"))
+hook_segs.append(stock(
+ "Some of these entries will surprise you. One of them is an animal most people keep as a pet and allow to sleep in their bed. Another has killed more humans across history than the bubonic plague, the Spanish flu, and both World Wars combined — and it's still killing hundreds of thousands of people every year, right now, in numbers most people have never once heard reported. Understanding why that is, and why we aren't in a constant state of public health emergency about it, is part of what this ranking is actually about.",
+ "Close-up of a dog portrait, then a rat in urban setting, quick cuts, tension building",
+ "domestic dog closeup portrait", "stock"))
+hook_segs.append(overlay_cta(
+ "This channel ranks the real biology behind the world's most dangerous animals — no clickbait, just sourced data and the mechanisms behind it. If that's the kind of content you want more of, subscribe now, because the number one entry on this list is going to fundamentally change how you think about the deadliest animal on Earth.",
+ "Wide tracking shot through dense tropical wetland at dusk, mosquitoes visible in the light beams",
+ "tropical wetland dusk mosquitoes light beams",
+ "Subscribe For The Real Ranking", "Ten animals. Real data. No clickbait."))
+hook_segs.append(stock(
+ "To be clear about the rules of this ranking: we are not counting which animal directly kills the most people with venom or physical force. We are ranking which animals, as biological vectors, are responsible for the highest confirmed and estimated death tolls through the diseases they transmit — both historically and in the present day. That distinction fundamentally changes what dangerous actually means, and it changes which animals end up at the top.",
+ "Researcher in a lab examining a petri dish or specimen under a microscope",
+ "researcher microscope lab specimen closeup", "stock"))
+hook_segs.append(stock(
+ "A shark attack is instant and visible. A disease vector can operate for decades, across entire continents, without most of its victims ever connecting the dots between the bite and the illness that follows weeks or months later. That invisibility — that long, quiet gap between transmission and consequence — is exactly what makes this list so much larger than most people expect. It is also what makes these animals so much harder to fight than anything with teeth or claws.",
+ "Split shot: shark in open water cut to a mosquito swarm at dusk, contrast editorial",
+ "shark open water swimming", "stock"))
+script.append({"beat": 1, "label": "Hook", "segments": hook_segs})
+
+# BEAT 2 - METHODOLOGY
+method_segs = []
+method_segs.append(titlecard_full("How we built this ranking.", "The Method", "Confirmed death tolls, named sources, real epidemiology"))
+method_segs.append(stock(
+ "Every entry on this list is backed by figures from the World Health Organization, the CDC, peer-reviewed epidemiological journals, and named researchers in the field of vector-borne disease. Where historical numbers are estimates — and for pre-modern epidemics, they always are — we say so explicitly rather than presenting a rough guess as settled fact. The goal here is intellectual honesty, not inflated drama. The real numbers are dramatic enough without embellishment.",
+ "Stack of research papers and a laptop showing epidemiological charts on screen",
+ "research papers epidemiology charts desk", "stock"))
+method_segs.append(stock(
+ "We're also separating two different kinds of death toll across each entry: the ongoing annual toll these animals cause today, and the cumulative historical toll across centuries or millennia. Both matter and they rank differently. An animal that killed enormous numbers of people two hundred years ago but barely touches modern populations ranks differently than one still quietly killing tens of thousands of people this year. Where both are significant, we account for both.",
+ "Old historical engraving of a plague scene transitioning to modern hospital ward imagery",
+ "historical plague engraving archive", "commons"))
+method_segs.append(stock(
+ "One more rule we want to be explicit about: we're crediting the animal as the vector, not villainizing the animal itself. Mosquitoes, snails, and rats aren't malicious — they're doing exactly what their biology evolved to do over millions of years, in ecosystems that predate human civilization entirely. The tragedy is a side effect of that biology intersecting with how humans build settlements, manage water, and move across continents. Understanding the mechanism is the point of this list, not assigning blame to organisms that have no concept of the harm they're causing.",
+ "Wide shot of a rice paddy or agricultural wetland where humans and wildlife interact closely",
+ "rice paddy wetland agriculture wildlife", "stock"))
+script.append({"beat": 2, "label": "Methodology", "segments": method_segs})
+
+# ENTRY #10 - TSETSE FLY
+e10 = [
+ rank_reveal("Number ten.", "Tsetse Fly", "#10", "Reshaped a continent's settlement history", "amber"),
+ stock("The tsetse fly lives across thirty-six countries in sub-Saharan Africa, and for over a century it effectively closed off an area roughly the size of the continental United States to cattle farming and large-scale agricultural settlement. It isn't the fly's bite that does the primary damage — it's what the bite delivers into the bloodstream in the moments that follow, because the fly's saliva functions as a delivery mechanism for something far more dangerous than the insect itself.",
+       "Tsetse fly landing on skin close-up, African savanna background with warm golden light",
+       "tsetse fly closeup savanna", "stock"),
+ stock("Inside the fly's saliva are trypanosomes — single-celled parasites that, once injected into a human or animal host, migrate first through the bloodstream and lymphatic system before eventually crossing into the central nervous system. That crossing is what turns a treatable infection into what's historically been called African sleeping sickness, and it's why the disease's timeline is so deceptive: it can be weeks or months from bite to serious neurological involvement, plenty of time for transmission to continue before anyone realizes something is seriously wrong.",
+       "Microscopic footage of trypanosome parasites swimming in a blood sample",
+       "trypanosome parasite microscope blood", "stock"),
+ stock("Early symptoms mimic a normal fever — headaches, joint pain, itching at the bite site. It's only in the second stage, once the parasite reaches the brain and meninges, that the disease earns its name: disrupted sleep cycles that invert normal waking patterns, deepening confusion, personality and behavioral changes that family members notice before the patient does, and without treatment, a slide into coma and death that can take months to complete. In regions without diagnostic infrastructure, that progression was often invisible until it was irreversible.",
+       "Patient in African rural clinic being examined carefully by healthcare worker",
+       "rural clinic africa healthcare worker", "stock"),
+ stock("Between 1896 and 1906, an epidemic of sleeping sickness along the Congo River basin and in Uganda killed an estimated quarter of a million people. British colonial physician David Bruce identified the tsetse fly as the vector in 1903, through systematic field work conducted during the Uganda epidemic — research that remains foundational to how the disease is tracked and controlled today, and that was among the earliest examples of vector identification using rigorous epidemiological investigation rather than folklore or assumption.",
+       "Archival black and white photograph style imagery of colonial-era African river settlements",
+       "colonial africa river settlement archive", "commons"),
+ stock("At its worst in the early twentieth century, entire villages were abandoned as sleeping sickness swept through river communities. Families would simply leave, moving away from the river systems that the tsetse fly depended on for breeding and feeding, which meant abandoning the agricultural land and water access those communities had been built around for generations. Population displacement from the disease reshaped settlement patterns across parts of Central Africa in ways that are still visible in demographic and land-use records studied by historians today.",
+       "Wide aerial shot of African river basin with sparse settlement and dense surrounding vegetation",
+       "african river basin aerial vegetation", "stock"),
+ stock("Modern case numbers have dropped dramatically thanks to coordinated international screening programs — the WHO reported under a thousand new confirmed cases globally in recent years, down from tens of thousands annually in the 1990s. That collapse in case numbers is one of the genuine public health success stories across this entire list, driven by systematic active screening in endemic communities rather than passive case detection, which had been the standard approach for most of the twentieth century and which consistently failed to identify cases before neurological damage was established.",
+       "Health worker conducting blood test screening in mobile clinic setting in rural community",
+       "mobile health clinic blood test screening", "stock"),
+ stock("But the underlying risk hasn't disappeared, and several factors threaten to reverse the progress that has been made. Roughly seventy million people across the tsetse belt still live in areas where transmission is possible during peak fly season. Civil conflict in several endemic countries has repeatedly disrupted active surveillance programs, allowing localized outbreaks to reappear in regions that had gone years without a reported case — because active screening requires political stability and road access that conflict reliably destroys. The disease didn't go away. The infrastructure to detect it did.",
+       "Wide shot of rural African landscape, isolated village visible in the far distance",
+       "rural african landscape village distance", "stock"),
+ stock("There's also an economic dimension to the tsetse fly's impact that rarely appears in disease burden statistics. The related animal disease, nagana, causes the same trypanosome infection in cattle and other livestock, with equivalent neurological consequences. Agricultural economists have estimated the combined annual economic loss from nagana in cattle productivity, draft animal capacity, and milk production in sub-Saharan Africa runs into billions of dollars — a slower, quieter economic toll that compounds across generations and that makes the direct human death count only one part of what this insect has cost the continent.",
+       "Cattle grazing in African grassland at dusk, farmer walking through the herd",
+       "cattle grazing african grassland farmer", "stock"),
+ stock("Compared to the animals ranked ahead of it on this list, the tsetse fly's total confirmed human death toll is smaller and, critically, the trajectory is heading in the right direction — which is exactly why it sits at number ten rather than higher. It's a genuine historical killer with a documented body count in the hundreds of thousands, and an economic footprint that extends across an entire continent, but sustained investment in surveillance and treatment has bent the curve downward in a way that most of the remaining entries on this list have not managed.",
+       "Tsetse fly trap set up in open field, researcher checking monitoring equipment carefully",
+       "tsetse fly trap field research", "stock"),
+ stock("What earns it a place on this countdown at all is the scale of what it once did, and what it continues to threaten: an insect roughly the size of a common housefly, responsible for reshaping the settlement patterns, agricultural history, and economic development of an entire continent across more than a century, using nothing but a parasite it never chose to carry and a bite mechanism it evolved millions of years before humans ever existed in the regions it calls home.",
+       "Slow-motion close-up of tsetse fly wings in flight against blurred golden savanna background",
+       "tsetse fly wings flight slow motion", "stock"),
+]
+script.append({"beat": 3, "label": "Entry #10 - Tsetse Fly", "segments": e10})
+
+# ENTRY #9 - SANDFLY
+e9 = [
+ rank_reveal("Number nine.", "Sandfly", "#9", "Kills up to 95% of untreated cases", "amber"),
+ stock("Number nine looks even less threatening than the last entry. The sandfly is smaller than a mosquito, silent in flight because its wings are too small to make the characteristic high-pitched whine that helps us locate and swat mosquitoes, and most people who have been bitten by one never notice it happening at all. The bite leaves no immediate mark, produces no immediate sensation, and by the time symptoms develop days or weeks later, the parasite it delivered has had substantial time to establish itself in the new host.",
+       "Extreme macro of a sandfly resting on skin, tiny feathered wings and small scale clearly visible",
+       "sandfly macro skin bite", "stock"),
+ stock("The sandfly transmits leishmaniasis, a disease caused by Leishmania parasites that exist in over twenty different species, each producing a slightly different clinical picture in the humans they infect. The mildest form, cutaneous leishmaniasis, causes chronic skin ulcers that can persist for months and leave permanent scarring. A more severe mucocutaneous form attacks the mucous membranes of the nose and throat. The most severe form, visceral leishmaniasis — also called kala-azar — attacks the spleen, liver, and bone marrow, and is fatal in over ninety-five percent of untreated cases.",
+       "Medical illustration or microscope imagery of Leishmania parasites inside macrophage cells",
+       "leishmania parasite microscope illustration", "stock"),
+ stock("The WHO estimates between fifty thousand and ninety thousand new cases of visceral leishmaniasis occur annually, concentrated heavily in Brazil, East Africa, and the Indian subcontinent, with the true number almost certainly far higher. Surveillance in the worst-affected rural regions is notoriously incomplete — many deaths are never diagnosed, attributed instead to generic fever or malnutrition in communities where laboratory testing doesn't exist or isn't affordable for the patients who need it most.",
+       "Rural clinic in Bihar India or similar setting, patients waiting outside in line",
+       "rural clinic patients waiting india", "stock"),
+ stock("What makes visceral leishmaniasis especially dangerous from a public health standpoint is how effectively it hides. Incubation can last anywhere from weeks to months, and the early symptoms — prolonged fever, progressive weight loss, weakness, fatigue — are so generic that misdiagnosis is common even in settings with diagnostic capacity. By the time the classic presentation of enlarged spleen and liver appears, the infection has often progressed to a stage where treatment is substantially more difficult and outcomes significantly worse.",
+       "Wide shot of rural village in India at dusk, families gathered around cooking fires at night",
+       "rural village dusk india east africa", "stock"),
+ stock("The disease has a documented historical footprint stretching back more than a century. Kala-azar caused epidemic waves throughout the nineteenth and twentieth centuries in Bengal and the wider Indian subcontinent that killed hundreds of thousands during peak outbreak years, with reported mortality in some regions exceeding cholera during the same periods. The disease was so widespread and so lethal in parts of Bihar in the early twentieth century that population surveys showed measurable demographic impacts on affected districts — fewer working-age adults, altered household structures, reduced agricultural output.",
+       "Archival photograph style imagery of Bengal region, historical early 20th century setting",
+       "bengal historical archive region", "commons"),
+ stock("The sandfly's role as the vector was first confirmed experimentally in 1921, through work conducted by Edmond and Etienne Sergent along with colleagues operating in Algeria — a discovery that took nearly two full decades of investigation after William Leishman and Charles Donovan independently identified the parasite itself in 1903. That eighteen-year gap between pathogen identification and vector identification illustrates exactly how difficult it is to trace a disease back to an insect this small in field conditions without modern molecular tools.",
+       "Historical laboratory setting with early 20th century equipment and specimen slides visible",
+       "historical laboratory early 20th century", "commons"),
+ stock("Climate change is actively expanding the sandfly's geographic range in ways that researchers are tracking with increasing concern. Warmer winters are allowing sandfly populations to survive further north into parts of southern and central Europe that were previously considered climatically unsuitable for the species. Leishmaniasis is now being monitored as an emerging concern in parts of Spain, Italy, and the Balkans that have no established history of the disease, meaning sandfly-borne disease is no longer exclusively a problem for tropical and subtropical regions.",
+       "Mediterranean coastal hillside landscape in warm afternoon light, olive trees and rural housing",
+       "mediterranean coastline wide shot", "stock"),
+ stock("Treatment exists and works — antimonial compounds have been the standard for decades, and newer drugs like miltefosine represent a significant improvement in tolerability and efficacy. But access is the consistent bottleneck across virtually every endemic region. The populations most affected by visceral leishmaniasis are overwhelmingly rural, low-income, and geographically remote, meaning that even a disease which is technically curable continues killing tens of thousands of people every year almost entirely because the treatment doesn't reach the patients in time.",
+       "Medical supplies and medication vials arranged in rural health clinic setting",
+       "medical supplies clinic vials rural", "stock"),
+ stock("Co-infection with HIV has created an additional complication that severely worsens outcomes. HIV-positive individuals infected with Leishmania have significantly higher rates of treatment failure and relapse, and the two diseases interact in ways that accelerate progression of both. This is a compounding problem concentrated in the same high-burden regions of East Africa and South Asia where both diseases are endemic and where healthcare resources are most stretched — meaning the patients with the most complex medical needs have the least access to the specialized care those needs require.",
+       "Medical worker with patient in tropical disease co-infection clinic setting, rural area",
+       "tropical disease clinic patient healthcare", "stock"),
+ stock("At an estimated toll running into the hundreds of thousands historically and tens of thousands annually today, the sandfly earns its position above the tsetse fly for a simple reason: the annual death toll from visceral leishmaniasis alone, even at conservative WHO estimates, consistently exceeds the current annual toll from sleeping sickness — and unlike sleeping sickness, the downward trajectory in case numbers is far less consistent, particularly in regions where co-infection and conflict have combined to make the surveillance picture genuinely unclear.",
+       "Sandfly resting on leaf, its extremely small scale shown against a coin or ruler for reference",
+       "sandfly scale comparison leaf", "stock"),
+ stock("Every entry so far has one thing in common: none of them look dangerous. None of them announce themselves. That pattern is about to get a lot more uncomfortable, because the next entry on this list lives permanently in the water sources that hundreds of millions of people rely on every single day — and it doesn't even bite.",
+       "Transition shot: river or community water source used daily by local population",
+       "rural community water source river", "stock"),
+]
+script.append({"beat": 4, "label": "Entry #9 - Sandfly", "segments": e9})
+
+# RETENTION TEASE 1
+tease1 = [overlay_cta(
+ "We're only at number nine, and the death tolls are about to climb into the tens of millions. Coming up: the animal responsible for one of history's largest single epidemics — and the domesticated creature that's killed more humans across recorded history than anything else on this list. Don't skip the methodology on number four. It will change how you think about medieval history entirely.",
+ "Fast-paced montage of upcoming animals: rat silhouette, dog closeup, mosquito swarm quick cuts",
+ "montage animals quick cuts nature", "Coming Up", "Bigger death tolls. Stay for #1.",
+ position="center")]
+script.append({"beat": 5, "label": "Retention Tease 1", "segments": tease1})
+
+# ENTRY #8 - BLACKFLY
+e8 = [
+ rank_reveal("Number eight.", "Blackfly", "#8", "Over 1 million people permanently blinded", "amber"),
+ stock("Number eight causes a disease with one of the most literal and accurate names in all of medicine: river blindness. It is transmitted by the blackfly, a small biting insect that breeds exclusively in fast-flowing, highly oxygenated rivers and streams — which is exactly why the communities most severely affected by this disease have historically been the ones who built their lives closest to fresh, moving water. The same water that powered their mills, irrigated their fields, and sustained their livestock was the same water that bred the insect that was slowly taking their sight.",
+       "Blackfly swarm near fast-flowing river rapids, close-up on water surface and insects",
+       "blackfly river rapids swarm", "stock"),
+ stock("The parasite responsible for the disease, Onchocerca volvulus, is a filarial worm — a type of parasitic roundworm — that can live inside the human body for up to fifteen years after a single blackfly bite deposits larvae under the skin. During that time, a single female worm can produce up to a thousand microscopic larvae per day, called microfilariae, that migrate continuously through the skin and body tissue, eventually reaching and concentrating in the eyes.",
+       "Medical illustration of filarial worm life cycle and migration pathway through tissue",
+       "filarial worm illustration medical", "stock"),
+ stock("It is the body's own immune response to dying microfilariae in the eye tissue that causes the blindness, not the worms directly. As microfilariae die in the cornea and other ocular structures, they trigger inflammation and scarring that accumulate with every new generation of larvae. This is a disease that doesn't blind you suddenly. It blinds you slowly, cumulatively, over years and decades of repeated infection — entry by entry, bite by bite, until sight is gone. The progression is so gradual that many patients don't recognize what is happening until their vision loss is already substantial.",
+       "Close-up of eye examination, ophthalmologist conducting a checkup with slit lamp equipment",
+       "eye examination ophthalmologist closeup", "stock"),
+ stock("The WHO estimates over twenty million people are currently infected with onchocerciasis, the medical name for the disease, with approximately 1.15 million living with some degree of permanent vision loss as a result. Ninety-nine percent of cases occur in sub-Saharan Africa, concentrated along the major river systems of West, Central, and East Africa that simultaneously serve as the primary water source and agricultural backbone for the surrounding farming communities — a geographic overlap that is the fundamental driver of the disease's persistence.",
+       "Aerial drone shot of West African river with farmland and village settlements along its banks",
+       "african river farmland aerial banks", "stock"),
+ stock("This created a documented economic catastrophe that reshaped land use across West Africa long before the disease was fully understood medically. In parts of the Volta River basin and river valleys of Côte d'Ivoire, Burkina Faso, and Ghana during the mid-twentieth century, entire communities abandoned highly productive riverside farmland and relocated to less fertile upland territory to escape relentless blackfly exposure. The result was reduced agricultural output, increased food insecurity, and demographic shifts that persisted for decades after the disease was eventually brought under a measure of control.",
+       "Abandoned agricultural land near river, overgrown with vegetation suggesting long disuse",
+       "abandoned farmland village overgrown", "stock"),
+ stock("The international response to river blindness became one of the largest coordinated disease-control efforts in history up to that point. The Onchocerciasis Control Programme, launched in 1974 across eleven West African countries with support from the World Bank, WHO, and multiple bilateral donors, used weekly aerial spraying of larvicide along hundreds of kilometers of river to suppress blackfly breeding. The program ran for over two decades and is credited by the WHO with preventing an estimated 600,000 cases of blindness and enabling the resettlement of approximately 25 million hectares of productive land.",
+       "Aerial spraying aircraft flying low over river or agricultural land, operational shot",
+       "aerial spraying aircraft river agriculture", "stock"),
+ stock("The drug ivermectin, developed by researchers Satoshi Omura and William Campbell in work that earned them the Nobel Prize in Physiology or Medicine in 2015, transformed the treatment landscape entirely. A single annual oral dose of ivermectin suppresses microfilariae to levels low enough to prevent blindness from progressing, and Merck has donated the drug through the Mectizan Donation Program for free to endemic countries since 1987 — one of the longest-running pharmaceutical donation programs in the entire history of global health.",
+       "Laboratory setting with pharmaceutical research equipment, medication tablets in close focus",
+       "pharmaceutical laboratory research vials", "stock"),
+ stock("Despite that progress, transmission continues in areas where mass drug administration hasn't achieved full population coverage, particularly in conflict-affected regions of Central Africa. The Democratic Republic of Congo, which carries a substantial proportion of the global disease burden, has faced persistent challenges in maintaining the annual distribution campaigns that ivermectin's effectiveness depends on — and new blindness cases continue to be documented in these coverage gaps every year, in communities that need only an annual pill to be protected.",
+       "Rural health worker distributing medication tablets to community members gathered in village",
+       "rural health worker distributing medication", "stock"),
+ stock("What makes river blindness distinct from most other diseases on this list is the sheer duration of suffering it inflicts before death or permanent disability arrives. Unlike acute infections that kill quickly, onchocerciasis works on a scale of decades — young adults lose their vision progressively through their most productive years, creating a dependency burden on families and communities that compounds the direct health impact with a social and economic cost that has been extensively documented by researchers studying affected populations.",
+       "Elderly person being guided carefully by a younger family member, warm documentary tone",
+       "elderly person guided family silhouette", "stock"),
+ stock("With millions currently infected, over a million permanently blinded, and a seventeen-country international control program required to even partially contain it, the blackfly earns its position above both the sandfly and the tsetse fly. Not because it kills in the sharpest numbers, but because of the scale of coordinated global response it required to prevent an even larger catastrophe — and because of what the disease does to the people it doesn't kill: it takes their sight, their independence, and their economic viability over the course of a slow, decades-long deterioration that is entirely preventable with a single annual dose of a donated drug.",
+       "Wide contemplative shot of West African river landscape at golden hour, beautiful and loaded",
+       "west african river landscape sunset", "stock"),
+]
+script.append({"beat": 6, "label": "Entry #8 - Blackfly", "segments": e8})
+
+# ENTRY #7 - FRESHWATER SNAIL
+e7_body = [
+ rank_reveal("Number seven.", "Freshwater Snail", "#7", "240 million people currently infected", "amber"),
+ stock("Number seven doesn't bite you at all. The freshwater snail responsible for schistosomiasis — more specifically, the Schistosoma parasites the snail hosts — infects humans purely through skin contact with contaminated water. Swimming, wading, washing clothes, or simply crossing a river in an area where infected snails are present and actively shedding larvae is enough for transmission to occur. No bite. No direct animal-to-human contact. Just water, skin, and a microscopic larva doing exactly what its evolutionary history prepared it to do.",
+       "Freshwater snail resting on a submerged rock in clear shallow river water, close-up",
+       "freshwater snail river closeup", "stock"),
+ stock("The larvae responsible for infection are called cercariae, and they penetrate human skin directly within seconds of contact with contaminated water. Once inside the host, they migrate through the bloodstream to the liver, intestines, or bladder depending on the species, where they mature into adult worms that pair and live together for years, laying eggs continuously. Those eggs trigger the chronic inflammatory response that causes the disease's long-term damage — not the worms themselves, but the body's sustained attempt to wall off eggs it cannot expel.",
+       "Microscope footage or illustration of schistosome cercariae larvae swimming freely in water",
+       "schistosome parasite microscope larvae", "stock"),
+ stock("The WHO estimates schistosomiasis currently affects over 240 million people globally, with more than 700 million living in endemic areas where transmission risk is ongoing. It causes an estimated 200,000 deaths annually, primarily through progressive organ damage — liver fibrosis, portal hypertension, bladder cancer in cases of urogenital infection — rather than acute illness. The death toll accumulates quietly across entire regional populations over years and decades, which is part of why schistosomiasis receives a fraction of the global health attention its burden size would otherwise warrant.",
+       "Wide shot of community members using a river for daily tasks, washing, water collection, bathing",
+       "rural community river daily tasks", "stock"),
+ stock("The connection between large-scale water infrastructure and schistosomiasis transmission is direct, well-documented, and almost entirely predictable in retrospect. The construction of major dams and irrigation canal systems across sub-Saharan Africa in the mid-twentieth century, undertaken with the genuine intention of expanding agricultural output and improving food security, inadvertently created ideal standing-water habitat for the snails that host the Schistosoma parasite. In multiple documented cases, infection rates in communities near newly completed irrigation schemes rose sharply within years of construction — a pattern that public health researchers had in some cases predicted before the infrastructure was built.",
+       "Large dam structure and irrigation canal network seen from aerial or wide-angle shot",
+       "irrigation dam canal aerial africa", "stock"),
+ stock("Egyptologists have identified evidence of schistosomiasis in Egyptian mummies dating back over three thousand years, with calcified Schistosoma eggs recovered from preserved tissue during forensic examinations of multiple ancient specimens. This makes schistosomiasis one of the oldest continuously documented parasitic diseases affecting human populations — traceable from ancient Egyptian civilization directly through to modern WHO disease burden reports. A three-thousand-year thread of infection running through human history and the water systems civilization has always depended on.",
+       "Egyptian archaeological site or museum exhibit showing ancient mummy, scholarly atmosphere",
+       "egyptian mummy archaeological museum", "commons"),
+ stock("In children specifically, chronic schistosomiasis produces consequences that extend well beyond the direct health impact. Multiple field studies conducted across endemic regions of sub-Saharan Africa have documented that chronic infection is associated with anemia, stunted physical growth, and measurable impairment of cognitive development and school performance. Schistosomiasis doesn't just affect the individuals who carry it — it affects entire generations' educational attainment and economic potential, meaning the disease's true cost is compounding across decades in ways that the annual death count alone completely fails to capture.",
+       "Children at desks in a rural African school, classroom shot, warm documentary lighting",
+       "children rural school africa classroom", "stock"),
+ stock("Mass drug administration using praziquantel has become the primary control strategy, and the WHO has organized treatment of hundreds of millions of people through school-based and community programs across endemic regions since the early 2000s. The approach works in the sense that treatment clears existing infection. But reinfection is common — in many cases almost immediate — wherever contaminated water contact continues as part of daily life. Praziquantel doesn't prevent transmission. Treatment without addressing the underlying water exposure is, by design, an indefinitely repeating intervention.",
+       "Health worker standing with schoolchildren forming a line to receive medication tablets",
+       "health worker medication schoolchildren line", "stock"),
+ stock("Some regions have achieved genuine, sustained reduction in disease burden through combined approaches: improved sanitation infrastructure, treated water access, snail population control through molluscicide, and mass drug administration delivered together over multiple years. Prevalence reductions in parts of China, where schistosomiasis was once a major public health burden, and in targeted districts of Brazil, demonstrate that the disease is beatable with adequately funded, integrated, long-term effort — an important proof of concept that the global health community has not yet applied at the scale the disease's burden demands.",
+       "Modern water treatment plant or clean piped water infrastructure in rural community",
+       "water sanitation infrastructure treatment facility", "stock"),
+ stock("The economic argument for investing heavily in schistosomiasis control is compelling and well-documented. Studies in endemic communities that have achieved significant prevalence reduction consistently show improvements in child growth, school attendance, labor productivity, and agricultural output among treated populations. The World Bank has included schistosomiasis control in its analyses of high-return public health investments precisely because the returns — measured in DALYs averted, educational years gained, and economic productivity restored — are among the most favorable of any neglected tropical disease intervention in the portfolio.",
+       "Rural market or agricultural community scene, workers and families engaged in economic activity",
+       "rural market agricultural community workers", "stock"),
+ stock("At over 200,000 annual deaths, nearly a quarter billion people currently infected, and a transmission route as ordinary as crossing a river or fetching water, schistosomiasis surpasses everything ranked below it on pure scale of ongoing burden. The animal responsible doesn't have claws, doesn't bite, doesn't even move toward humans with any intentionality. It simply exists in the water, releasing larvae that will infect any warm-blooded host that enters nearby, and it has been doing so for at least three thousand years of documented human civilization and almost certainly for far longer than that.",
+       "Snail shell in extreme closeup against softly blurred river water background",
+       "snail shell macro river background", "stock"),
+]
+script.append({"beat": 7, "label": "Entry #7 - Freshwater Snail", "segments": e7_body})
+
+# ENTRY #6 - KISSING BUG / CHAGAS
+e6_body = [
+ rank_reveal("Number six.", "Kissing Bug", "#6", "6-7 million infected, heart failure after decades", "amber"),
+ stock("Number six gets its name from where it prefers to bite: near the mouth, or around the eyes, while a person sleeps. The triatomine bug — the kissing bug — is a nocturnal insect that hides in the cracks of walls and thatched roofs during daylight hours and emerges at night to feed on sleeping hosts. It doesn't kill through its bite directly. It kills through what it leaves behind on the skin after feeding, and through a transmission mechanism that depends on the sleeping victim unknowingly completing the infection themselves.",
+       "Kissing bug triatomine insect close-up macro shot, nighttime lighting against wall texture",
+       "kissing bug triatomine closeup night", "stock"),
+ stock("The bug defecates near the bite site while it feeds. Its feces carry Trypanosoma cruzi, the protozoan parasite responsible for Chagas disease. When the sleeping person wakes and scratches the itching bite, they inadvertently push that parasite-laden feces directly into the open wound, or rub it into the mucous membranes of the eyes or nose. The parasite doesn't enter through the bite itself — it enters through the victim's own scratching reflex. It is one of the more unsettling transmission mechanisms on this list, because the vector's role ends with defecation and the host's body completes the rest.",
+       "Microscope imagery of Trypanosoma cruzi parasite forms in stained blood smear",
+       "trypanosoma cruzi parasite microscope", "stock"),
+ stock("Chagas disease has two phases that couldn't be more different in clinical presentation. The acute phase, occurring in the weeks after infection, is often so mild — or entirely asymptomatic — that the majority of infected individuals never seek medical attention and never receive a diagnosis. It's the chronic phase, arriving silently over the following years or decades, that carries the real lethality: Trypanosoma cruzi slowly damages the autonomic nervous system controlling the heart and digestive tract, causing the heart to enlarge and its conduction system to deteriorate. An estimated thirty percent of chronically infected individuals eventually develop life-threatening cardiac complications.",
+       "Medical cardiac imaging on monitor, heart ultrasound or EKG readout displayed",
+       "cardiac ultrasound heart medical imaging", "stock"),
+ stock("The Pan American Health Organization estimates six to seven million people are currently infected with Trypanosoma cruzi, primarily across Latin America from Mexico through Argentina, causing roughly 12,000 deaths annually — most of them sudden cardiac events in patients who had no idea they were carrying the parasite for twenty or thirty years. That combination of extremely long latency, silent progression, and ultimately lethal cardiac failure makes Chagas one of the most underdiagnosed cardiovascular diseases in the world, masquerading as ordinary heart disease until the moment it kills.",
+       "Wide shot of rural Latin American housing, traditional adobe and thatched roof construction",
+       "rural latin american housing adobe construction", "stock"),
+ stock("The epidemiology of Chagas is inseparable from poverty and housing quality. The triatomine bug lives in cracks and crevices in adobe brick walls and dried thatched roofing — the construction materials historically most available and affordable in rural communities across Latin America. Improved concrete and masonry construction, combined with insecticide treatment of existing structures, directly reduces exposure. The disease is, in a very measurable sense, a disease of inadequate housing, meaning its persistence is tied not to lack of biological solutions but to lack of economic and infrastructural investment in the communities most affected.",
+       "Close-up of cracked weathered adobe wall with visible crevices, dim interior lighting",
+       "adobe wall cracks insect crevice", "stock"),
+ stock("Argentine physician Carlos Chagas accomplished something in 1909 that is essentially unmatched in the history of infectious disease: he identified the disease, its causative parasite, its insect vector, and its animal reservoir hosts essentially single-handedly, during fieldwork conducted in the Brazilian state of Minas Gerais while investigating a railroad construction crew. Most diseases require separate researchers, across separate institutions, over years or decades to connect all of those elements. Chagas did it in a single investigation, and the disease was named after him in recognition of an achievement that remains extraordinary by any standard.",
+       "Historical archival imagery of early 20th century Brazilian interior landscape and settlement",
+       "historical brazilian laboratory archive", "commons"),
+ stock("Migration has significantly changed the disease's geographic footprint over the past several decades. Chagas disease is now documented in the United States, Canada, Spain, and other parts of Europe, carried by individuals who moved from endemic regions in Latin America and in some cases unknowingly transmitted the infection through blood transfusion or organ donation before screening protocols were implemented. The FDA approved the first blood supply screening test for T. cruzi in 2007, following evidence that transfusion-associated transmission was occurring in the United States at low but measurable rates.",
+       "Blood donation or blood bank screening facility with modern testing equipment visible",
+       "blood bank screening facility medical", "stock"),
+ stock("Vector control has achieved substantial documented results where applied consistently. The Southern Cone Initiative, a coordinated regional program launched in 1991 across Argentina, Brazil, Chile, Paraguay, Uruguay, and Bolivia, used insecticide spraying of homes, improved housing construction, and blood supply screening to reduce new T. cruzi infections. Transmission was eliminated in Uruguay in 1997 and in Chile in 1999, and Brazil achieved certification of interruption of household transmission from the primary vector species in 2006 — proof that sustained, coordinated effort can break the cycle.",
+       "Health worker applying insecticide spray to interior wall of rural dwelling",
+       "insecticide spraying rural home walls", "stock"),
+ stock("Treatment is most effective and most curative when given early, during or shortly after the acute phase of infection. Once chronic cardiac disease has established itself — once the heart has already been structurally altered by years of immune-mediated inflammation — antiparasitic drugs can halt further progression but cannot reverse the damage already done. This irreversibility of the chronic cardiac phase is what makes early detection so critically important, and it's what makes the disease's decades-long silent period so costly: by the time most patients are diagnosed, the window for curative treatment has already closed.",
+       "Cardiologist consulting with patient in clinical setting, reviewing cardiac imaging results",
+       "doctor patient consultation cardiology clinic", "stock"),
+ stock("At roughly seven million current infections and thousands of cardiac deaths per year — almost all of them in patients who didn't know they were infected until their heart failed — the kissing bug ranks above the three entries before it on this list for a reason that cuts across both biology and public health: it is a disease defined by invisibility, from the nocturnal insect that infects sleeping victims to the decades-long silent cardiac deterioration that follows. The damage is done long before anyone knows to look for it.",
+       "Wide atmospheric shot of rural Latin American landscape at dusk, village lights in the distance",
+       "latin american landscape dusk village silhouette", "stock"),
+]
+script.append({"beat": 8, "label": "Entry #6 - Kissing Bug", "segments": e6_body})
+
+# RETENTION TEASE 2
+tease2 = [overlay_cta(
+ "Halfway through, and we haven't hit the entries responsible for tens of millions of deaths yet. Number one on this list is an animal you've almost certainly never thought of in this context — and the epidemiological case for its total historical death toll is genuinely one of the most staggering facts in all of biology. Stay for it.",
+ "Fast montage teasing top entries: rat silhouette, mosquito swarm, plague imagery quick cuts",
+ "montage rat mosquito plague teaser", "Stay For The Top 3", "The real #1 will surprise you.",
+ position="center")]
+script.append({"beat": 9, "label": "Retention Tease 2", "segments": tease2})
+
+# ENTRY #5 - BODY LOUSE / TYPHUS
+e5_body = [
+ rank_reveal("Number five.", "Body Louse", "#5", "Tens of millions dead across wartime epidemics", "red"),
+ stock("Number five is an animal that doesn't need warm weather, doesn't need standing water, doesn't need any particular ecosystem or geography at all. It needs exactly one thing: the conditions that human conflict reliably creates. Crowded, unwashed bodies. Clothing that can't be laundered. People packed together in confined spaces for extended periods. Those are the conditions where the body louse thrives, and wherever the body louse thrives, epidemic typhus follows — caused by the bacterium Rickettsia prowazekii.",
+       "Historical archival imagery of crowded wartime conditions, generic period photography atmosphere",
+       "historical wartime conditions archive photography", "commons"),
+ stock("Unlike most vectors on this list, the louse requires no particular climate and no natural habitat outside of human clothing and the skin it covers. It lives exclusively in the seams and folds of clothing worn next to the body, emerging to feed on blood, and it moves between people through direct physical contact or shared clothing and bedding. In any environment where conditions of density and poor hygiene persist for more than a few weeks, louse populations can expand with remarkable speed, and with them the risk of Rickettsia transmission through infected feces.",
+       "Close-up extreme macro of body louse on fabric clothing seam, parasitology imagery",
+       "body louse fabric seam macro", "stock"),
+ stock("During the First World War and its immediate aftermath, typhus killed an estimated three million people across Eastern Europe and Russia between 1917 and 1922, spreading explosively through the combination of trench warfare conditions and then the catastrophic social collapse of the Russian Civil War. Lenin himself is reported to have said in 1919 that either socialism defeats the louse, or the louse defeats socialism — a statement that, whatever its political framing, accurately describes the public health reality of the time. The disease was killing people faster than the war itself in several theaters during peak outbreak years.",
+       "Archival black and white documentary photography of Eastern European wartime refugee movement",
+       "archival eastern europe refugee historical", "commons"),
+ stock("Napoleon's catastrophic 1812 Russian campaign is now understood by medical historians to have been substantially worsened by typhus epidemic. Of the roughly half a million soldiers who crossed into Russia, historians estimate that more died from disease — including typhus — than from actual combat with Russian forces. The retreat from Moscow, long depicted in military history primarily as a logistical failure in extreme cold, was substantially a public health collapse. When the Grande Armée fell apart, it fell apart in large part because its soldiers were dying of an insect-borne infection that thrived in exactly the crowded, exhausted, poorly-clothed conditions of a failing winter campaign.",
+       "Historical painting or engraving depicting Napoleonic era military campaign in winter, archival style",
+       "napoleonic era military campaign historical", "commons"),
+ stock("The bacterium doesn't transmit through the louse's bite directly, which is counterintuitive but important. Rickettsia prowazekii is present in louse feces, not in its saliva. Infection occurs when a person scratches the itching bite and rubs contaminated feces into the wound or into a mucous membrane — a transmission mechanism strikingly similar to the kissing bug covered in the previous entry, despite the two insects being entirely unrelated taxonomically. The parallel reveals something important about parasite evolution: multiple unrelated organisms have independently converged on fecal-contamination transmission as an efficient dispersal mechanism.",
+       "Microscope imagery of Rickettsia prowazekii bacteria in laboratory research setting",
+       "rickettsia bacteria microscope laboratory", "stock"),
+ stock("Polish microbiologist Rudolf Weigl developed the first effective typhus vaccine in the 1930s through a painstaking and genuinely dangerous method: infecting live lice with Rickettsia, then harvesting the bacteria from their intestinal tissue after the lice had fed for a specified period. The process required teams of laboratory workers to allow lice to feed on their own skin daily under controlled conditions to maintain the louse colonies. Weigl deliberately hired Jewish academics and intellectuals during the Nazi occupation of Poland to work in his laboratory, providing them with protective documents — using the vaccine program as cover for what amounted to a systematic protection effort during the occupation.",
+       "Historical 1930s-1940s era European laboratory with period scientific equipment and workspace",
+       "historical 1930s laboratory scientific equipment", "commons"),
+ stock("Typhus outbreaks continued throughout the Second World War in concentration camps and besieged cities, where documented epidemics killed tens of thousands under conditions of deliberate overcrowding and intentional deprivation of hygiene resources. The conditions in those facilities were not incidentally hospitable to lice — in many cases they were deliberately maintained in ways that promoted epidemic disease. This makes the body louse's toll in that period not simply a natural disaster but something more morally complex: the weaponization of epidemiological conditions against civilian and imprisoned populations.",
+       "Historical archival imagery of WWII era documentation, somber archival photographic tone",
+       "wwii era european city historical archive", "commons"),
+ stock("Modern outbreaks are rare in industrialized countries where sanitation infrastructure and access to delousing treatments make sustained louse infestations uncommon. But the disease has not disappeared. Documented outbreaks have occurred in recent decades in refugee camps in Burundi, prisons in Russia, and among homeless populations in parts of the United States and France. Every time the conditions of poverty, displacement, and inadequate sanitation converge at sufficient scale, the biological machinery for typhus epidemic is latent in human populations and ready to restart — because the louse never went anywhere.",
+       "Refugee camp with tents and humanitarian aid supplies, documentary aerial view",
+       "refugee camp humanitarian aid scene", "stock"),
+ stock("There is also a dimension to typhus that rarely appears in disease history texts: the disease has an animal reservoir in flying squirrels in North America, meaning it persists in wildlife independent of human louse populations. Human cases from this reservoir are rare but documented, and the existence of a non-human reservoir means that Rickettsia prowazekii cannot be eradicated purely through human public health interventions — it has a biological fallback that allows it to persist in ecosystems regardless of what happens in human communities.",
+       "Flying squirrel on tree branch in North American woodland, wildlife photography",
+       "flying squirrel woodland wildlife north america", "stock"),
+ stock("Cumulative historical estimates for epidemic typhus deaths across the Napoleonic campaigns, the First World War era, the Russian Civil War, and the Second World War run into the tens of millions when totaled — a toll driven almost entirely by human conflict creating the precise crowded, unwashed conditions this insect depends on. The body louse is not, in any meaningful sense, a wilderness animal. It is a parasite of civilization's worst moments, thriving specifically at the intersection of mass violence, displacement, and the breakdown of basic infrastructure.",
+       "Silhouette of solitary person against a dark sombre background, reflective transition imagery",
+       "silhouette dark background somber transition", "stock"),
+]
+script.append({"beat": 10, "label": "Entry #5 - Body Louse", "segments": e5_body})
+
+# ENTRY #4 - BLACK RAT / PLAGUE
+e4_body = [
+ rank_reveal("Number four.", "Black Rat", "#4", "200+ million deaths across three pandemics", "red"),
+ stock("Number four is responsible for what many historians still consider the single most catastrophic epidemic event in recorded human history. The black rat itself is not the direct biological vector — it is the primary host for the rat flea, Xenopsylla cheopis, and those fleas carry Yersinia pestis, the gram-negative bacterium that causes plague. Understanding the distinction matters, because the rat's role in the transmission chain is specific and irreplaceable: when rat populations collapse from infection, their fleas seek new hosts, and in regions where rats and humans share close living quarters, humans are the next warm body available.",
+       "Black rat in urban setting close-up, stone wall or warehouse environment, watchful posture",
+       "black rat urban sewer alley closeup", "stock"),
+ stock("The transmission mechanism that Yersinia pestis uses is one of the more baroque examples of parasite-vector co-evolution in all of biology. The bacterium physically blocks the digestive tract of the infected flea, preventing normal feeding. The flea, perpetually hungry and unable to digest blood normally, bites more frequently and more aggressively than an uninfected flea would. Each bite draws blood into the blocked gut, mixes it with Yersinia-laden material, and regurgitates the mixture back into the wound when the blockage resists digestion. The pathogen has essentially evolved to weaponize its vector's starvation reflex in order to maximize its own transmission.",
+       "Microscope imagery of Yersinia pestis bacteria or infected rat flea under magnification",
+       "yersinia pestis flea microscope bacteria", "stock"),
+ stock("The Black Death, which swept through Europe, Asia, and North Africa between 1347 and 1351, arriving via trading routes from Central Asia through the Crimean port of Caffa, is estimated by historians and epidemiologists to have killed between 75 and 200 million people in roughly four years. The range is wide because record-keeping in the fourteenth century was inconsistent and because the epidemic's severity varied enormously by region — some areas lost thirty percent of their population, others lost sixty. Europe as a whole lost somewhere between a third and a half of its entire population in a single outbreak, the largest proportional demographic collapse in recorded European history.",
+       "Historical oil painting depicting medieval plague scenes and mortality imagery, archival artwork",
+       "medieval plague historical painting archival", "commons"),
+ stock("That single outbreak reshaped European society at a depth that few events in history can match. The sudden, massive reduction in the labor supply shifted economic power dramatically toward the peasant class — surviving agricultural workers could demand higher wages and better land terms from lords whose estates now had far more acres than workers. Historians studying wage records and land tenure documents from the late fourteenth century across England, France, and Italy have documented this shift in striking detail, and many credit the Black Death with accelerating the structural collapse of the feudal system by at least a century.",
+       "Medieval European village illustration, archival style, fields and stone buildings at dusk",
+       "medieval european village illustration archival", "commons"),
+ stock("The Black Death was not even the first major plague pandemic. The Plague of Justinian, which struck the Byzantine Empire beginning in 541 AD and recurred in waves for the following two centuries, is estimated to have killed between 25 and 50 million people across the Mediterranean world. Some historians credit the demographic and economic collapse it caused with weakening the Byzantine Empire sufficiently to accelerate the Arab conquests of the seventh century, altering the religious and political map of the entire Mediterranean and Middle East in ways that have persisted to the present day.",
+       "Historical Byzantine architecture and ancient Mediterranean ruins, scholarly archival tone",
+       "byzantine architecture ancient ruins archival", "commons"),
+ stock("The causative bacterium was finally identified during the Third Plague Pandemic, which began in China in the 1850s, spread to Hong Kong in 1894, and was eventually carried by shipping to ports on every inhabited continent. French-Swiss physician Alexandre Yersin isolated the bacterium from plague patients in Hong Kong in 1894, identifying the causative agent in work conducted in competition with Japanese bacteriologist Kitasato Shibasaburo. The bacterium was subsequently named Yersinia pestis in Yersin's honor. The Third Pandemic killed over twelve million people in India and China alone before gradually declining in the early twentieth century.",
+       "Historical Hong Kong harbor and port city in late 19th century archival style photography",
+       "historical hong kong port city archival", "commons"),
+ stock("Plague has not disappeared from the modern world. The WHO records several hundred to several thousand cases globally per decade, with active transmission foci in Madagascar, the Democratic Republic of Congo, Peru, and parts of the western United States, where wild rodent populations — including prairie dogs, ground squirrels, and chipmunks — maintain persistent Yersinia pestis reservoirs in what epidemiologists call sylvatic or enzootic cycles. Madagascar has experienced particularly significant plague outbreaks in recent years, including a 2017 epidemic that spread unusually via pneumonic transmission in urban areas.",
+       "Madagascar rural highland landscape with traditional housing near endemic rodent habitat",
+       "madagascar rural landscape rodent habitat", "stock"),
+ stock("Modern bubonic plague is treatable with antibiotics — streptomycin, gentamicin, and doxycycline are all effective when treatment begins early. Case fatality rates in treated patients are below fifteen percent compared to the near-universal mortality of the medieval era. Pneumonic plague, however, the form that spreads directly between humans through respiratory droplets, remains close to universally fatal without treatment begun within twenty-four hours of symptom onset — and its rapid progression from initial symptoms to fatal respiratory failure gives clinicians an extremely narrow intervention window.",
+       "Hospital treatment room with clinical equipment, generic modern medical setting",
+       "hospital clinical treatment medical setting", "stock"),
+ stock("The rat's specific role in plague transmission also illustrates a broader principle that applies to several entries on this list: the animal closest to human settlement — the commensal species that has adapted specifically to live alongside humans, eat human food stores, shelter in human buildings, and travel aboard human ships — carries the highest transmission risk precisely because of that proximity. The black rat became one of history's most consequential disease vectors not despite its closeness to human civilization, but because of it.",
+       "Black rat in grain storage building or cargo hold setting, historical context implied",
+       "black rat grain store ship historical", "stock"),
+ stock("At over 200 million cumulative deaths across three major pandemics spanning nearly fifteen centuries, the black rat earns its position at number four on this list — a small rodent that most people today associate with pest control and urban sanitation, but whose interaction with human civilization reshaped economies, altered religious demographics, ended dynasties, and may have done more to change the political map of the world than any comparable single biological event in human history.",
+       "Wide modern city at night, rats visible near urban waste bins, contrast with historical weight",
+       "modern city alley urban rat habitat", "stock"),
+]
+script.append({"beat": 11, "label": "Entry #4 - Black Rat", "segments": e4_body})
+
+# ENTRY #3 - DOMESTIC DOG / RABIES
+e3_body = [
+ rank_reveal("Number three.", "Domestic Dog", "#3", "59,000 preventable rabies deaths every year", "red"),
+ stock("Number three is the animal that shares more intimate physical proximity with more humans than almost any other on this entire list — sitting on furniture, sleeping in beds, playing with children, living inside tens of millions of homes worldwide. The domestic dog is, by the WHO's own accounting, responsible for the overwhelming majority of human rabies deaths on Earth: ninety-nine percent of the annual global toll of approximately 59,000 lives. Not wolves. Not bats. Not raccoons. The animal that humans have co-evolved with for ten thousand years of shared domestication.",
+       "Close-up portrait of domestic dog, warm friendly expression, contrasted with serious narration tone",
+       "domestic dog portrait closeup friendly", "stock"),
+ stock("Rabies is caused by a lyssavirus, a single-stranded RNA virus that has the distinction of being one of the very few pathogens that travels specifically along neurological tissue to reach the brain. The virus enters through a bite wound, replicates locally, then hijacks the peripheral nervous system as a transport route — moving along axons toward the central nervous system at a rate of roughly twelve to twenty-four millimeters per day. A bite on the foot may give weeks before symptoms appear. A bite on the face may give days. The closer to the brain, the shorter the window for post-exposure intervention.",
+       "Medical illustration or animation of virus traveling along peripheral nerve pathway toward brain",
+       "rabies virus illustration nerve pathway", "stock"),
+ stock("Once rabies reaches the brain and clinical symptoms appear, the disease is considered essentially one hundred percent fatal, making it one of the very small number of human infections with that distinction. Symptoms progress through a prodromal phase of generic fever and discomfort, then into either a furious form characterized by agitation, hydrophobia — the spasm and reflex fear triggered by water or air drafts — and encephalitis, or a paralytic form with ascending motor weakness. Either path ends in coma and death within days to two weeks of symptom onset, with extremely rare exceptions documented in the medical literature.",
+       "Hospital clinical ward setting, generic somber medical imagery, dim controlled lighting",
+       "hospital clinical somber medical imagery", "stock"),
+ stock("The WHO estimates rabies kills approximately 59,000 people annually worldwide, with the vast majority of those deaths occurring in Asia and Africa. India alone accounts for an estimated 20,000 deaths per year — roughly a third of the global total — concentrated in rural areas where free-roaming dog populations are large, post-exposure treatment access is limited by distance and cost, and community-level dog vaccination rates remain far below the threshold needed to interrupt transmission. Sub-Saharan Africa accounts for most of the remaining toll in similarly structured settings.",
+       "Street dogs in an Indian or African village setting, mixed-breed dogs in dusty street scene",
+       "street dogs village urban documentary", "stock"),
+ stock("Rabies has a documented human history spanning millennia. Ancient texts from Mesopotamia, Greece, and Rome all describe the clinical syndrome we now recognize as rabies, including the characteristic hydrophobia and the association with dog bites. The Hippocratic Corpus includes what appears to be a description of rabies. Celsus in first-century Rome wrote about the necessity of wound cauterization after animal bites in terms that suggest awareness of the post-exposure window, though without mechanistic understanding of why it might work. Humans have been dying of rabies for at least four thousand years of written history.",
+       "Ancient Roman or Greek archaeological site, historical scholarly atmosphere, stone ruins",
+       "ancient greek roman ruins archaeological", "commons"),
+ stock("Louis Pasteur and his colleagues developed the first rabies vaccine in 1885, testing it on nine-year-old Joseph Meister after the boy had been severely bitten fourteen times by a rabid dog. The treatment — a series of spinal cord preparations from infected rabbits, progressively more virulent, administered over thirteen days — worked, and Meister survived to live a full adult life. The case became one of the defining moments in vaccine development history, and the Pasteur Institute, founded the following year in large part through international donations prompted by the publicity around the Meister case, became one of the most consequential research institutions in the history of medicine.",
+       "Historical 19th century scientific laboratory setting, Pasteur-era glassware and equipment",
+       "historical 19th century laboratory pasteur era", "commons"),
+ stock("What makes the ongoing rabies death toll particularly difficult to accept from a public health perspective is that the disease is not just treatable but almost entirely preventable at the population level. Post-exposure prophylaxis — the sequence of vaccine doses and immunoglobulin given after a bite from a potentially rabid animal — is essentially one hundred percent effective when administered promptly. And mass vaccination of dog populations to seventy percent coverage is sufficient to break the transmission cycle and eliminate dog-mediated rabies from a community or country entirely, according to WHO modeling validated by multiple real-world campaigns.",
+       "Veterinarian or animal health worker vaccinating a dog at community mass vaccination event",
+       "veterinarian vaccinating dog community", "stock"),
+ stock("Countries that have invested consistently in canine vaccination have proven this conclusively. Western Europe, Japan, Australia, and large parts of Latin America have eliminated dog-mediated human rabies through sustained vaccination programs. The United States eliminated domestic dog-to-human transmission decades ago. The countries where people continue dying of rabies are not failing because of a scientific gap — they are failing because of a resource allocation and access gap, a distinction that matters enormously when thinking about what kind of problem rabies actually is in the twenty-first century.",
+       "Modern well-equipped veterinary clinic with professional staff and organized clean setting",
+       "modern veterinary clinic equipment", "stock"),
+ stock("The WHO launched a global initiative called Zero by 30 in 2015, targeting elimination of dog-mediated human rabies deaths by 2030 through coordinated national vaccination programs and improved post-exposure prophylaxis access. As of recent assessments, significant progress has been made in several regions, but the target remains ambitious given current vaccination coverage in the highest-burden countries. The gap between what is scientifically achievable and what is actually being achieved remains substantial, and the roughly 59,000 annual deaths represent that gap expressed in human lives.",
+       "Community vaccination event with dogs and health workers, outdoor village setting with families",
+       "community vaccination drive dogs health workers", "stock"),
+ stock("At nearly 59,000 deaths per year, almost all of them preventable, and almost all of them caused by an animal humans have domesticated as a companion for ten thousand years, rabies via domestic dogs ranks above the plague-carrying rat on the basis of current annual toll. Number four may have killed more people across history. But number three is killing people right now, this year, in countries with the knowledge and in many cases the resources to stop it — and largely isn't. That gap between preventability and prevention is what makes this entry the most uncomfortable one on the list so far.",
+       "Close-up of dog looking directly into camera lens, warm natural light, ambivalent emotional weight",
+       "dog closeup camera warm lighting", "stock"),
+]
+script.append({"beat": 12, "label": "Entry #3 - Domestic Dog", "segments": e3_body})
+
+# FINAL TEASE
+final_tease = [overlay_cta(
+ "Two entries left, and both of them are mosquitoes — different species, different diseases, very different death tolls. Number one alone carries a death toll estimate so large that some epidemiologists believe it may exceed every other cause of human death in history combined. That sounds like an exaggeration. It isn't. Stay for it.",
+ "Extreme macro close-up of mosquito proboscis piercing human skin, slow motion high quality",
+ "mosquito proboscis piercing skin slow motion", "The Final Two", "Numbers you won't believe.",
+ position="center")]
+script.append({"beat": 13, "label": "Final Tease", "segments": final_tease})
+
+# ENTRY #2 - AEDES MOSQUITO
+e2_body = [
+ rank_reveal("Number two.", "Aedes Mosquito", "#2", "390 million dengue infections per year and rising", "red"),
+ stock("Number two is the Aedes mosquito — specifically the species Aedes aegypti and the closely related Aedes albopictus — the vectors responsible for dengue fever, yellow fever, Zika virus, and chikungunya. Understanding what makes Aedes distinct from other mosquito genera matters for understanding why it appears at number two on this list: Aedes species are daytime biters that have specifically adapted to urban environments, making them the only mosquito genus on this list whose transmission range expands directly and predictably as the world urbanizes, which is to say, the only one whose reach is growing faster than our ability to contain it.",
+       "Aedes aegypti mosquito close-up macro, distinctive black and white striped legs and thorax visible",
+       "aedes aegypti mosquito striped legs macro", "stock"),
+ stock("Dengue fever is the primary driver of the Aedes toll today. A landmark study published in Nature in 2013 estimated that dengue infects approximately 390 million people annually, with around 96 million developing clinically apparent symptoms. The spectrum of clinical disease ranges from a severe febrile illness with intense joint and muscle pain — the source of the historical nickname breakbone fever, in use since at least the eighteenth century — through to severe dengue, characterized by plasma leakage, hemorrhage, and organ impairment, which carries a case fatality rate of two to five percent without adequate clinical management.",
+       "Hospital patient with dengue fever symptoms in clinical ward, generic documentary imagery",
+       "dengue patient hospital clinical", "stock"),
+ stock("Yellow fever, caused by a flavivirus transmitted by the same mosquito genus, has a documented history of causing mass casualties in the Americas and West Africa stretching back centuries. The 1793 Philadelphia epidemic killed approximately 5,000 people — roughly ten percent of the city's entire population — in a single summer, forcing the federal government to temporarily relocate and generating a public health crisis that shaped American attitudes toward epidemic disease for a generation. Similar epidemics swept through New Orleans, Havana, Memphis, and other port cities throughout the eighteenth and nineteenth centuries, making yellow fever one of the most feared epidemic diseases in the Americas for over two hundred years.",
+       "Historical 18th century American port city illustration, Philadelphia archival atmosphere",
+       "historical philadelphia 18th century archive", "commons"),
+ stock("Cuban physician Carlos Finlay proposed in 1881 that mosquitoes, not contact with infected individuals or contaminated objects, were responsible for yellow fever transmission — a theory widely dismissed for nearly two decades. American physician Walter Reed conducted definitive experimental proof in Cuba in 1900, conclusively demonstrating mosquito-mediated transmission and vindicating Finlay's hypothesis. That discovery directly enabled construction of the Panama Canal by allowing implementation of mosquito-control programs that reduced yellow fever and malaria mortality among canal workers from historically catastrophic levels to manageable ones.",
+       "Historical Panama Canal construction photography, early 20th century archival engineering imagery",
+       "panama canal construction historical archive", "commons"),
+ stock("Zika virus, which had existed in the scientific literature since its isolation in Uganda in 1947, revealed a dimension of Aedes-borne disease that had no precedent in the prior record of mosquito-borne pathogens. The major 2015-2016 outbreak across Brazil and then the wider Americas confirmed through extensive epidemiological investigation that Zika infection during pregnancy causes microcephaly and other severe congenital brain abnormalities in a significant proportion of affected fetuses. The outbreak resulted in thousands of infants born with severe neurological damage in Brazil alone, and generated one of the most rapid global public health emergency responses in WHO history.",
+       "Maternal health clinic or pediatric neurological setting, caring medical tone, generic imagery",
+       "maternal health clinic ultrasound generic", "stock"),
+ stock("The WHO estimates global dengue incidence has increased approximately eightfold over the past two decades, driven by a combination of factors that all reinforce each other: continued urbanization creating more Aedes breeding habitat; increased international air travel accelerating geographic spread of both the mosquito and the viruses it carries; climate change extending the temperature range within which Aedes aegypti can survive and reproduce; and the absence of durable natural immunity to all four dengue serotypes, meaning a person who recovers from one strain faces increased risk of severe disease if infected by a different strain subsequently.",
+       "Dense tropical urban city at dusk, high-density housing, standing water visible in construction sites",
+       "urban cityscape standing water breeding ground", "stock"),
+ stock("The Aedes mosquito's urban ecology is both the source of its reach and, in principle, its most controllable vulnerability. Unlike malaria-carrying Anopheles mosquitoes, which breed primarily in natural bodies of standing water, Aedes aegypti preferentially breeds in small artificial containers: discarded tires, flower pots, water storage barrels, clogged roof gutters, construction materials that collect rainwater. Mosquito control for Aedes doesn't require draining wetlands or aerial spraying — it requires community-level waste management, covered water storage, and systematic elimination of containers that accumulate stagnant water in residential areas. The biology provides the lever. The challenge is applying it consistently at sufficient scale.",
+       "Collection of discarded tires and artificial containers with standing water in urban setting",
+       "discarded tires standing water urban breeding", "stock"),
+ stock("Vaccine development for dengue has been unusually complicated by the disease's multi-serotype structure. A first dengue vaccine, Dengvaxia, received regulatory approval in multiple countries starting in 2015 but was subsequently found to increase risk of severe disease in individuals with no prior dengue exposure, leading to a serious public health crisis in the Philippines following a school-based vaccination campaign. A second vaccine, Qdenga, approved in 2022, demonstrated more consistently favorable results across broader demographic groups in clinical trials, including seronegative individuals, representing a significant improvement in the landscape for dengue prevention.",
+       "Clinical trials imagery, vaccine vial and syringe in pharmaceutical research laboratory",
+       "vaccine vial syringe pharmaceutical", "stock"),
+ stock("The combined annual death toll from the full suite of Aedes-transmitted diseases — dengue, yellow fever, Zika, chikungunya — runs into the tens of thousands per year, with dengue alone estimated to cause over 20,000 deaths annually in recent years. That annual toll is lower in absolute numbers than the domestic dog entry at number three, but the Aedes mosquito ranks higher for reasons of scale and trajectory: 390 million dengue infections per year is a disease burden of a categorically different order of magnitude, and the geographic range of Aedes aegypti is currently expanding into previously unaffected regions of Europe, North America, and South America as temperatures rise.",
+       "Wide aerial shot of tropical coastal megacity at dusk, dense urban landscape near water",
+       "tropical urban environment city skyline", "stock"),
+ stock("The Aedes mosquito sits at number two because it represents the present and future of vector-borne disease in a way that most of this list's other entries don't. Its trajectory is upward. Its range is expanding. The diseases it carries are multiplying in reported cases annually. And it thrives specifically in the urban environments where the majority of the world's population now lives and where that proportion continues to grow — meaning the conditions for Aedes transmission are not stabilizing but are, on current trends, actively improving from the mosquito's perspective.",
+       "Single Aedes mosquito in flight slow motion, urban street lights softly blurred in background",
+       "aedes mosquito flight urban blurred", "stock"),
+]
+script.append({"beat": 14, "label": "Entry #2 - Aedes Mosquito", "segments": e2_body})
+
+# ENTRY #1 - ANOPHELES MOSQUITO / MALARIA
+e1_body = [
+ rank_reveal("Number one.", "Anopheles Mosquito", "#1", "May have killed half of all humans who ever lived", "red"),
+ stock("Number one. The animal responsible for more human deaths across recorded history than any other creature on Earth isn't a shark, a lion, a snake, or the plague-carrying rat at number four. It is the Anopheles mosquito — and the disease it carries, malaria, has a historical death toll claim that sounds impossible until you actually look at the epidemiological and evolutionary evidence behind it, at which point it starts to look not just plausible but almost conservative given the parasite's known age and geographic range.",
+       "Anopheles mosquito in its distinctive angled resting posture, extreme close-up macro photography",
+       "anopheles mosquito resting posture macro", "stock"),
+ stock("Malariologist J.L. Gill first proposed, and researchers including science journalist Sonia Shah have subsequently explored in depth, the estimate that malaria may have killed roughly half of all human beings who have ever lived, across the entire span of human existence on this planet. That estimate is not a precise figure — it cannot be, given the absence of systematic cause-of-death records across most of human history — but it is grounded in calculations about the longevity of the parasite in human populations, the historical geographic extent of malaria transmission, the mortality rates documented in more recent centuries, and the evolutionary pressure the parasite has exerted on the human genome.",
+       "Wide atmospheric shot of tropical African wetland at dawn, mist over the water, mosquito breeding habitat",
+       "tropical wetland mosquito habitat misty morning", "stock"),
+ stock("Even the most conservative academic estimates place malaria's cumulative historical toll at hundreds of millions of deaths. Historians who work specifically on the ancient and classical periods have identified malaria — caused by Plasmodium vivax in more temperate climates, and by the more lethal Plasmodium falciparum in tropical Africa — as a significant cause of death in ancient Rome, ancient Greece, ancient India, Han dynasty China, and virtually every major civilization that arose in the tropical and subtropical regions of the world. The parasite's presence in ancient Egypt has been confirmed through genetic analysis of mummy tissue.",
+       "Ancient ruins in tropical or subtropical climate, overgrown stone columns near ancient waterway",
+       "ancient civilization ruins water source archive", "commons"),
+ stock("The parasite responsible, Plasmodium, exists in five species that infect humans. Plasmodium falciparum is responsible for the vast majority of severe disease and death, particularly in sub-Saharan Africa. It invades red blood cells, replicating inside them over a forty-eight-hour cycle before bursting the cell and releasing a new generation of merozoites that immediately invade additional cells. This synchronized rupture of infected red blood cells produces the disease's characteristic cyclical fever pattern, and in severe falciparum malaria, the accumulation of infected cells in cerebral blood vessels produces cerebral malaria, which can cause death or permanent neurological damage within hours of onset.",
+       "Microscope imagery of Plasmodium falciparum parasites inside stained human red blood cells",
+       "plasmodium parasite red blood cells microscope", "stock"),
+ stock("British physician Ronald Ross proved in 1897 that Anopheles mosquitoes are the transmission vector for malaria, identifying the parasite in the stomach lining of Anopheles mosquitoes during research conducted in Secunderabad, India, using birds as experimental hosts and then confirming the principle applied to human malaria. The work earned Ross the Nobel Prize in Physiology or Medicine in 1902 — the second Nobel Prize awarded in that category — and finally gave physicians a mechanistic understanding of a disease that had confused and killed humans for at least three thousand years of documented medical history.",
+       "Historical colonial-era India research laboratory setting, late 19th century scientific atmosphere",
+       "historical india colonial research laboratory", "commons"),
+ stock("The WHO's most recent World Malaria Report documents approximately 600,000 malaria deaths annually, with roughly ninety-five percent of cases and deaths concentrated in the WHO African Region. Children under five years of age account for a devastating proportion of those fatalities — around seventy-six percent of all malaria deaths globally in recent reports — meaning that the disease's primary toll falls most heavily on the population least equipped to survive a severe febrile illness. The geographic and demographic concentration of malaria mortality is one of the most consistent and troubling patterns in global health data.",
+       "Pediatric ward in sub-Saharan African clinic treating children with fever and malaria symptoms",
+       "pediatric clinic africa children medical", "stock"),
+ stock("Malaria has shaped human genetics in ways that provide compelling evidence of its long historical presence and the evolutionary pressure it has exerted. The sickle cell trait — a genetic variant that causes hemoglobin to form abnormal shapes under low-oxygen conditions — provides carriers with partial resistance to severe Plasmodium falciparum infection, because the abnormal hemoglobin is less hospitable to parasite reproduction. The geographic distribution of sickle cell trait in human populations maps almost precisely onto historical malaria transmission zones in Africa, the Mediterranean, and South Asia. This is textbook natural selection operating across human generations, driven by a single parasite, over thousands of years, reshaping the genome of entire populations at measurable frequency.",
+       "DNA genetic research visualization, double helix illustration, medical science background",
+       "dna genetic illustration medical research", "stock"),
+ stock("The disease has also shaped colonial history, military campaigns, and geopolitical boundaries in ways that historians are still working to fully document. European colonial forces attempting to penetrate the interior of Africa and Southeast Asia faced catastrophic mortality rates from malaria that effectively set geographic limits on expansion for centuries. The British Army in West Africa in the early nineteenth century had annual death rates among stationed soldiers that historians have calculated at over fifty percent from disease, the majority from malaria — a level of attrition that made sustained inland presence essentially impossible until quinine prophylaxis became standard practice.",
+       "Historical colonial-era military or expedition imagery, archival tone, tropical landscape setting",
+       "historical colonial military archive tone", "commons"),
+ stock("The first malaria vaccine, RTS,S — developed over three decades by GlaxoSmithKline in collaboration with the PATH Malaria Vaccine Initiative — received a landmark WHO recommendation for broad use in children in sub-Saharan Africa in October 2021. A second vaccine, R21, developed by the Jenner Institute at Oxford University in collaboration with the Serum Institute of India, received WHO recommendation in October 2023. Both represent the culmination of over a century of failed vaccine attempts against a parasite that has proven uniquely difficult to vaccinate against, given its complex multi-stage life cycle and its remarkable capacity to vary surface proteins to evade immune recognition.",
+       "Young child receiving vaccine injection in African clinic, healthcare worker attending carefully",
+       "child vaccination african clinic documentary", "stock"),
+ stock("Insecticide-treated bed nets remain the single most cost-effective and widely deployed intervention against malaria at current scale. The WHO credits bed net distribution programs with preventing an estimated 663 million malaria cases between 2000 and 2015 alone — a public health achievement built on a technology that costs a few dollars per net and requires no clinical infrastructure to deploy beyond the logistics of distribution. That combination of low cost, proven efficacy, and deployment simplicity makes bed nets one of the most analyzed cost-effectiveness success stories in all of global health economics.",
+       "Family sleeping under treated mosquito net in rural home, soft documentary night lighting",
+       "family mosquito net rural home", "stock"),
+ stock("Despite the availability of vaccines, bed nets, indoor residual spraying, and effective artemisinin-based combination therapies, malaria kills approximately 600,000 people per year — a figure that has declined significantly from peak levels in the early 2000s but remains deeply embedded in the public health landscape of sub-Saharan Africa. The persistence of that toll, despite tools that demonstrably work, reflects the same gap between scientific capability and delivery infrastructure that appears repeatedly across this list, with the added complication that Plasmodium falciparum has developed partial resistance to artemisinin in parts of Southeast Asia.",
+       "Wide aerial shot of East African landscape at dawn, wetlands and farmland visible, quiet vastness",
+       "african landscape dawn wetland aerial", "stock"),
+ stock("It is worth sitting with the actual shape of the claim that puts this entry at number one. Not a single dramatic epidemic year. Not one catastrophic outbreak with a definable beginning and end. Just a relentless, compounding, quiet accumulation of deaths — across every continent in the tropical and subtropical band, across every millennium of recorded history, bite by bite, child by child, generation by generation — for as long as Homo sapiens and Anopheles mosquitoes have shared the same water sources, which is to say, for our entire existence as a species on this planet.",
+       "Slow-motion macro close-up of single mosquito touching the surface of still water, ripples spreading outward",
+       "mosquito landing water surface ripples slow motion", "stock"),
+ stock("Every entry on this list, from the tsetse fly at number ten to this mosquito at number one, tells the same underlying story from a different angle: the animals that have shaped human history most profoundly were never the ones with claws, fangs, or venom. They were the ones small enough to go unnoticed, efficient enough to work across centuries, and connected to the water sources and living spaces that human civilization has always depended on. Understanding that is not just interesting biology — it is a framework for thinking about where the next entry on a list like this is most likely to come from.",
+       "Final wide montage: wetland at golden hour, mosquito swarm against light, human community near water",
+       "wetland mosquito human community montage final", "stock"),
+]
+script.append({"beat": 15, "label": "Entry #1 - Anopheles Mosquito", "segments": e1_body})
+
+# OUTRO
+outro_segs = []
+outro_segs.append(stock(
+ "So here is the actual ranking one more time, for anyone who wants to hold onto it: tsetse fly at number ten, sandfly at nine, blackfly at eight, freshwater snail at seven, kissing bug at six, body louse at five, black rat at four, domestic dog at three, Aedes mosquito at two, and the Anopheles mosquito — and malaria — at number one. The through-line connecting all ten is the same: none of them are the animals most people fear, and all of them have done more damage to the human species than every predator in natural history combined.",
+ "Rapid but legible recap montage of all ten entries, each animal shown briefly in sequence",
+ "recap montage animals sequence fast cuts", "stock"))
+outro_segs.append(stock(
+ "Here's the question we want to leave you thinking about: knowing what you know now, which of these ten would you actually be most afraid of encountering in the real world — the visible predator you can see coming, or the invisible vector you'd never notice in the moment it infected you? That question cuts to the actual psychology of how humans assess danger versus how biological reality distributes it. Drop your answer in the comments — we read them and they shape what we cover next.",
+ "Wide contemplative split-frame: shark silhouette underwater versus mosquito swarm in evening light",
+ "shark mosquito comparison silhouette swarm", "stock"))
+outro_segs.append(stock(
+ "If you're in one of the regions we covered today — parts of sub-Saharan Africa, South Asia, or Latin America — and any of these diseases have directly affected your community or family, we want to hear that context. The numbers in this video are real and sourced, but lived experience adds something to this subject that no dataset ever fully captures, and we want this comment section to reflect both.",
+ "Wide shot of diverse global community landscapes, people near water sources, everyday life",
+ "global community landscape diverse", "stock"))
+outro_segs.append(stock(
+ "The next video on this channel shifts registers entirely. Instead of disease vectors and death tolls, we're looking at animals whose bodies have evolved solutions to biological problems that human engineering still cannot replicate — mechanisms so extreme that researchers have been trying to reverse-engineer them for decades with limited success. If that sounds like a different kind of remarkable, it's because it is.",
+ "Teaser montage of extreme biological survivors, tardigrade and mantis shrimp style science imagery",
+ "extreme survival animal biology teaser montage", "stock"))
+outro_segs.append(overlay_cta(
+ "If this ranking surprised you at any point — and especially if number one surprised you — hit like and subscribe. New rankings drop every other day, the research always goes deeper than the headline number, and the next one is already in production.",
+ "Wide nature-documentary montage shot of wetland and wildlife at golden hour, cinematic closing tone",
+ "nature documentary montage wetland wildlife", "Like & Subscribe", "New rankings every other day. Always sourced.",
+ position="lower-third"))
+outro_segs.append(stock(
+ "Thanks for watching all the way through — genuinely, most people don't make it to the end of a video this long, and the fact that you did means this kind of deep-dive, properly-sourced research format is worth continuing. We'll see you in the next one.",
+ "Slow fade wide shot of tropical wetland at sunset, birds crossing the frame, peaceful closing image",
+ "wetland sunset birds flying fade", "stock"))
+script.append({"beat": 16, "label": "Outro", "segments": outro_segs})
+
+output = {
+  "title": "These Animals Have Spread Diseases That Killed More Humans Than Every War In History Combined",
+  "channel": "Apex Archives",
+  "script": script
+}
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build script.json from temp.py segment definitions.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+        help=f"Output path (default: {DEFAULT_OUTPUT})",
+    )
+    args = parser.parse_args()
+    output_path = args.output.expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    total_words = 0
+    remotion_count = 0
+    entry_counts = []
+    for beat in script:
+        beat_words = 0
+        for seg in beat["segments"]:
+            beat_words += len(seg["content"].split())
+            if isinstance(seg["type"], str) and seg["type"].startswith("remotion"):
+                remotion_count += 1
+        total_words += beat_words
+        if beat["label"].startswith("Entry"):
+            entry_counts.append((beat["label"], beat_words))
+
+    print("OUTPUT:", output_path)
+    print("TOTAL WORDS:", total_words)
+    print("RUNTIME MIN:", round(total_words / 145, 1))
+    print("REMOTION SEGMENTS:", remotion_count)
+    print("TOTAL SEGMENTS:", sid)
+    print()
+    print("ENTRY WORD COUNTS:")
+    for label, w in entry_counts:
+        flag = " *** UNDER 700" if w < 700 else ""
+        print(f"  {label}: {w}{flag}")
+
+    try:
+        json.loads(output_path.read_text(encoding="utf-8"))
+        print("\nJSON: VALID")
+    except Exception as e:
+        print(f"\nJSON ERROR: {e}")
+        raise SystemExit(1) from e
+
+
+if __name__ == "__main__":
+    main()

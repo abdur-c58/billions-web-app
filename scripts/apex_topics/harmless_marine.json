@@ -1,0 +1,1049 @@
+{
+  "title": "These Fish Look Completely Harmless — They Kill More Swimmers Every Year Than Sharks Combined (And One Lives In Your Aquarium)",
+  "hook": [
+    {
+      "kind": "stock",
+      "content": "This countdown ranks deceptively harmless-looking marine animals ranked by swimmer deaths and envenomation severity using sourced data — not movie logic, not viral fear posts, and not predator hype. The animals that actually dominate the statistics often look harmless, live close to human infrastructure, and kill through mechanisms most viewers never think about until they see the numbers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight.",
+      "desc": "Fast montage of dramatic predator footage contrasted with mundane animals",
+      "query": "predator montage contrast documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Every entry includes a mechanism section, comparative context, and real-world scale. Where estimates vary, we say so. Where popular myths exaggerate danger, we correct them on-camera — because the sourced number is usually dramatic enough without embellishment. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Research papers and charts on desk, documentary lighting",
+      "query": "research papers charts documentary desk",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Bears, wolves, and great white sharks dominate cultural fear. This list is built from outcomes: emergency room codes, collision reports, envenomation records, invasion damage estimates, and peer-reviewed sensory research — depending on the video's ranking logic. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Emergency room exterior at night, subtle documentary tone",
+      "query": "emergency room exterior night documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Several entries will feel counterintuitive. That is the point. If the ranking matched gut fear perfectly, you would not need a 58-minute breakdown — you could guess the list in ten seconds. You cannot. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Person reading phone news headlines looking skeptical",
+      "query": "person reading phone news skeptical",
+      "cat": "stock"
+    },
+    {
+      "kind": "overlay_cta",
+      "content": "This channel publishes ranked biology documentaries with real citations. Subscribe now if you want the full list including the number one entry and the mechanism behind it. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Wide cinematic nature b-roll underneath popup",
+      "query": "tropical reef fish colorful harmless looking",
+      "title": "Subscribe For The Full Ranking",
+      "body": "Real toxinology data. Ten animals. No clickbait.",
+      "position": "lower-third"
+    },
+    {
+      "kind": "stock",
+      "content": "Runtime target is roughly fifty-eight minutes because this format requires depth: ten entries, each with biology, history, comparisons, and implications — not a highlight reel. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Documentary timeline graphic on screen",
+      "query": "documentary timeline graphic screen",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "By the end you will know not only which animal tops the ranking, but why the public fear budget is misallocated relative to the actual data. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "stonefish camouflaged reef",
+      "query": "stonefish camouflaged reef",
+      "cat": "stock"
+    }
+  ],
+  "methodology": [
+    {
+      "kind": "titlecard",
+      "content": "How we built this ranking.",
+      "title": "The Method",
+      "subtitle": "marine envenomation case series, surf life saving reports, toxinology journals"
+    },
+    {
+      "kind": "stock",
+      "content": "Sources include CDC WONDER mortality records, Wilderness & Environmental Medicine analyses, USDA and USFWS invasion cost studies, marine envenomation case series, and primary sensory research papers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Government and journal PDFs stacked on desk",
+      "query": "government journal pdfs desk stack",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "We separate annual U.S. or global totals where relevant, flag wide ranges explicitly, and prioritize named institutions over anonymous 'scientists say' phrasing. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "University laboratory hallway documentary b-roll",
+      "query": "university laboratory hallway documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Remotion overlays and rank cards punctuate key stats; atmospheric stock footage carries the narrative backbone. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Nature documentary editing suite monitors",
+      "query": "documentary editing suite monitors",
+      "cat": "stock"
+    }
+  ],
+  "entries": [
+    {
+      "rank_line": "Number 10.",
+      "name": "Blue-Ringed Octopus",
+      "num": "#10",
+      "stat": "Tetrodotoxin strong enough to kill in minutes",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Blue-ringed octopuses fit in a palm yet carry tetrodotoxin from symbiotic bacteria. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Blue-Ringed Octopus in natural habitat documentary shot",
+          "query": "blue-ringed octopus wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Bites are painless — victims may not seek help until paralysis begins. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Blue-Ringed Octopus for ranking segment",
+          "query": "blue-ringed octopus close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Rings flash blue as a warning; collectors touching reef rock cause most exposures. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "No antivenom exists; supportive ventilation saves lives in hospital settings. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Blue-Ringed Octopus",
+          "query": "blue-ringed octopus research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: sodium channel blockade stops diaphragm function while consciousness remains. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Blue-Ringed Octopus lands on screen here — Tetrodotoxin strong enough to kill in minutes. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus human interaction",
+          "title": "BLUE-RINGED OCTOPUS",
+          "body": "Tetrodotoxin strong enough to kill in minutes",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Australian and Indo-Pacific tide pools concentrate public risk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Infographic or map context for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "They appear in social media as cute — mortality data says otherwise. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Children picking shells in rock pools face disproportionate risk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Blue-Ringed Octopus",
+          "query": "blue-ringed octopus medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Compared with sharks, fatalities are fewer but severity per bite is extreme. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Blue-Ringed Octopus",
+          "query": "blue-ringed octopus comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Blue-ringed octopus opens the list as the poster child for harmless appearance. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Blue-Ringed Octopus segment",
+          "query": "blue-ringed octopus wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 9.",
+      "name": "Stonefish",
+      "num": "#9",
+      "stat": "Most venomous fish — excruciating stings on reef walkers",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Stonefish camouflage as rocks on Indo-Pacific reefs and cause step-on envenomation. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Stonefish in natural habitat documentary shot",
+          "query": "stonefish wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Dorsal spines deliver venom when pressure triggers gland compression. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Stonefish for ranking segment",
+          "query": "stonefish close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Pain scores exceed childbirth in case reports — immediate immersion heat therapy helps denature proteins. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Stonefish",
+          "query": "stonefish habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Antivenom exists in Australia; tourists often lack rapid access. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Stonefish",
+          "query": "stonefish research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: massive local tissue necrosis plus cardiovascular collapse in severe cases. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Stonefish",
+          "query": "stonefish human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Stonefish lands on screen here — Most venomous fish — excruciating stings on reef walkers. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Stonefish",
+          "query": "stonefish human interaction",
+          "title": "STONEFISH",
+          "body": "Most venomous fish — excruciating stings on reef walkers",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Reef walkers wearing thin-soled shoes trigger most tourist injuries. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Stonefish",
+          "query": "stonefish map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Aquarium trade occasionally imports related synanceiids illegally. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Archival or historical context for Stonefish",
+          "query": "stonefish historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Survival depends on immobilization and hot water within minutes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Stonefish",
+          "query": "stonefish medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Stonefish injuries outnumber shark bites in many Australian beach rescue statistics regionally. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Stonefish",
+          "query": "stonefish comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Invisible on reef = invisible in public fear rankings. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Stonefish segment",
+          "query": "stonefish wide landscape",
+          "cat": "stock"
+        }
+      ],
+      "after_tease": {
+        "label": "Retention Tease",
+        "content": "Number nine is only the beginning — the top three entries include damage totals most viewers have never seen in one ranking. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+        "desc": "Fast montage teasing upcoming entries",
+        "query": "montage animals quick cuts nature",
+        "title": "Still Coming",
+        "body": "Top three entries change the scale entirely.",
+        "position": "center"
+      }
+    },
+    {
+      "rank_line": "Number 8.",
+      "name": "Cone Snail",
+      "num": "#8",
+      "stat": "A single harpoon can kill a diver instantly",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Geography cone snails hunt fish with hypodermic radular teeth containing conotoxins. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Cone Snail in natural habitat documentary shot",
+          "query": "cone snail wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Shell collectors handling live specimens cause most fatal exposures. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Cone Snail for ranking segment",
+          "query": "cone snail close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Conotoxins are pharmacologically valuable — and lethal without research-grade handling. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Cone Snail",
+          "query": "cone snail habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: rapid paralysis blocks respiratory muscles before victims reach the surface. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Cone Snail",
+          "query": "cone snail research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Beautiful patterned shells drive hobby demand despite warnings. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Cone Snail",
+          "query": "cone snail human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Cone Snail lands on screen here — A single harpoon can kill a diver instantly. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Cone Snail",
+          "query": "cone snail human interaction",
+          "title": "CONE SNAIL",
+          "body": "A single harpoon can kill a diver instantly",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Diver deaths are rare globally but extreme when they occur. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Cone Snail",
+          "query": "cone snail map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Medical research derived ziconotide pain drug from cone snail peptides. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Cone Snail",
+          "query": "cone snail historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Indo-Pacific reef tourism increases handling temptation in gift shops. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Cone Snail",
+          "query": "cone snail medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Cone snails prove mollusks can exceed shark lethality per encounter. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Cone Snail",
+          "query": "cone snail comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Harpoons too small to see until symptoms arrive. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Closing landscape transition from Cone Snail segment",
+          "query": "cone snail wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 7.",
+      "name": "Lionfish",
+      "num": "#7",
+      "stat": "Spines cause systemic poisoning — invasion increases encounters",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Indo-Pacific lionfish invaded Atlantic and Caribbean reefs after aquarium releases. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Lionfish in natural habitat documentary shot",
+          "query": "lionfish wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Venomous fin spines cause nausea, convulsions, and cardiac symptoms in humans. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Lionfish for ranking segment",
+          "query": "lionfish close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Spearfishing derbies reduce density but not range expansion. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Aerial or wide habitat context for Lionfish",
+          "query": "lionfish habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: neuromuscular venom delivered via puncture — heat immersion mitigates pain. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Lionfish",
+          "query": "lionfish research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Native predators lack instinct to control lionfish populations. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Lionfish",
+          "query": "lionfish human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Lionfish lands on screen here — Spines cause systemic poisoning — invasion increases encounters. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Lionfish",
+          "query": "lionfish human interaction",
+          "title": "LIONFISH",
+          "body": "Spines cause systemic poisoning — invasion increases encounters",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Diver stings rise as lionfish encounters become daily in Florida and Caribbean. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Lionfish",
+          "query": "lionfish map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Reef tourism economies pay medical and lost-dive costs. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Archival or historical context for Lionfish",
+          "query": "lionfish historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Lionfish look flamboyant, not fearsome — stings surprise vacationers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Lionfish",
+          "query": "lionfish medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Invasion biology multiplied human contact frequency. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Comparative scale shot for Lionfish",
+          "query": "lionfish comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Lionfish bridge exotic pet trade and swimmer injury statistics. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Lionfish segment",
+          "query": "lionfish wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 6.",
+      "name": "Pufferfish",
+      "num": "#6",
+      "stat": "Tetrodotoxin in organs kills diners and anglers yearly",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Pufferfish tetrodotoxin concentrates in liver and ovaries — no cooking neutralizes it. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Pufferfish in natural habitat documentary shot",
+          "query": "pufferfish wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Japanese fugu chefs train years for licensed preparation; illegal preparation kills. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Pufferfish for ranking segment",
+          "query": "pufferfish close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Anglers handling caught puffers without gloves risk ingestion via hand-to-mouth contact. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Pufferfish",
+          "query": "pufferfish habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: same sodium channel blockade as blue-ringed octopus — paralysis without antidote. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Pufferfish",
+          "query": "pufferfish research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Tourist 'adventure dining' increases exposure outside regulated kitchens. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Pufferfish",
+          "query": "pufferfish human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Pufferfish lands on screen here — Tetrodotoxin in organs kills diners and anglers yearly. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Pufferfish",
+          "query": "pufferfish human interaction",
+          "title": "PUFFERFISH",
+          "body": "Tetrodotoxin in organs kills diners and anglers yearly",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Spines deter biting predators; toxin deters everything else. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Infographic or map context for Pufferfish",
+          "query": "pufferfish map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Case reports span Pacific, Atlantic, and Mediterranean species. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Archival or historical context for Pufferfish",
+          "query": "pufferfish historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Pufferfish deaths exceed shark fatalities in some Japanese prefecture statistics annually. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Pufferfish",
+          "query": "pufferfish medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Cute inflated appearance masks lethal biochemistry. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Comparative scale shot for Pufferfish",
+          "query": "pufferfish comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Dining risk adds a domestic pathway sharks rarely share. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Pufferfish segment",
+          "query": "pufferfish wide landscape",
+          "cat": "stock"
+        }
+      ],
+      "after_tease": {
+        "label": "Retention Tease",
+        "content": "Halfway down the list now — the next entries include the invasive species costing billions annually. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+        "desc": "Fast montage teasing upcoming entries",
+        "query": "montage animals quick cuts nature",
+        "title": "Coming Up",
+        "body": "Billions in damage still ahead.",
+        "position": "center"
+      }
+    },
+    {
+      "rank_line": "Number 5.",
+      "name": "Stingray",
+      "num": "#5",
+      "stat": "Barb strikes kill when barbs pierce chest or abdomen",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Stingray barbs cause Steve Irwin's fatal thoracic injury — rare but instructive. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Stingray in natural habitat documentary shot",
+          "query": "stingray wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Shufflers in sandy shallows trigger defensive tail arcs into ankles and torso. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Stingray for ranking segment",
+          "query": "stingray close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Barbs carry venom and serrated edges that break off in wounds. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Stingray",
+          "query": "stingray habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: trauma plus envenomation — chest strikes hit heart directly. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Stingray",
+          "query": "stingray research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Warm-water tourism increases wading contact globally. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Stingray",
+          "query": "stingray human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Stingray lands on screen here — Barb strikes kill when barbs pierce chest or abdomen. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Stingray",
+          "query": "stingray human interaction",
+          "title": "STINGRAY",
+          "body": "Barb strikes kill when barbs pierce chest or abdomen",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Emergency thoracotomy saves some chest cases if immediate. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Infographic or map context for Stingray",
+          "query": "stingray map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Stingray injuries number in the thousands annually; deaths are lower but nonzero. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Stingray",
+          "query": "stingray historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Compared with sharks, encounters are more frequent for beach walkers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Stingray",
+          "query": "stingray medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Flat profile hides animal until step-down. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Comparative scale shot for Stingray",
+          "query": "stingray comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Stingrays outperform shark kill rate in some regional beach rescue datasets. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Stingray segment",
+          "query": "stingray wide landscape",
+          "cat": "stock"
+        },
+        {
+          "kind": "split_card",
+          "content": "At #5, the ranking scale shifts. Stingray is not a footnote — it redefines what the top entries must beat to stay at number one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Split comparison panel for Stingray",
+          "query": "stingray wide landscape",
+          "title": "Ranking Scale Shift",
+          "body": "Stingray — Barb strikes kill when barbs pierce chest or abdomen",
+          "badge": "Comparison"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 4.",
+      "name": "Box Jellyfish",
+      "num": "#4",
+      "stat": "Chironex fleckeri kills in under five minutes",
+      "severity": "red",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Chironex fleckeri tentacles deliver cardiotoxic venom faster than many victims can reach shore. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Box Jellyfish in natural habitat documentary shot",
+          "query": "box jellyfish wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Northern Australian beaches post net enclosures during season. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Close-up of Box Jellyfish for ranking segment",
+          "query": "box jellyfish close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: potassium channel disruption stops the heart — CPR timing is everything. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Box Jellyfish",
+          "query": "box jellyfish habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Vinegar rinse prevents unfired nematocyst discharge during removal. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Research or data visuals related to Box Jellyfish",
+          "query": "box jellyfish research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Survivors report tentacle contact feeling like burning wire. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Box Jellyfish",
+          "query": "box jellyfish human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Box Jellyfish lands on screen here — Chironex fleckeri kills in under five minutes. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Box Jellyfish",
+          "query": "box jellyfish human interaction",
+          "title": "BOX JELLYFISH",
+          "body": "Chironex fleckeri kills in under five minutes",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Tourism economies invest heavily in lifeguard towers and education. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Box Jellyfish",
+          "query": "box jellyfish map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Box jellies look translucent — nearly invisible in wave glare. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Box Jellyfish",
+          "query": "box jellyfish historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Death counts are modest annually but per-encounter lethality is among Earth's highest. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Box Jellyfish",
+          "query": "box jellyfish medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Shark nets do not stop jelly polyps in estuaries. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Box Jellyfish",
+          "query": "box jellyfish comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Box jellyfish redefine 'harmless-looking' as transparent drift. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Closing landscape transition from Box Jellyfish segment",
+          "query": "box jellyfish wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 3.",
+      "name": "Irukandji Jellyfish",
+      "num": "#3",
+      "stat": "Delayed syndrome can cause fatal hypertension",
+      "severity": "red",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Irukandji are thumb-sized cubozoans causing irukandji syndrome hours after mild sting. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Irukandji Jellyfish in natural habitat documentary shot",
+          "query": "irukandji jellyfish wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Victims describe impending doom feeling as blood pressure spikes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Irukandji Jellyfish for ranking segment",
+          "query": "irukandji jellyfish close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: delayed systemic release overwhelms hospital capacity in bloom years. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Irukandji Jellyfish",
+          "query": "irukandji jellyfish habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Detection is harder than larger Chironex — stings initially feel minor. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Irukandji Jellyfish",
+          "query": "irukandji jellyfish research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Offshore oil and dive workers wear protective suits in season. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Irukandji Jellyfish",
+          "query": "irukandji jellyfish human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Irukandji Jellyfish lands on screen here — Delayed syndrome can cause fatal hypertension. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Irukandji Jellyfish",
+          "query": "irukandji jellyfish human interaction",
+          "title": "IRUKANDJI JELLYFISH",
+          "body": "Delayed syndrome can cause fatal hypertension",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Research into venom antidote remains active in Queensland labs. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Irukandji Jellyfish",
+          "query": "irukandji jellyfish map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Irukandji extend jelly risk beyond netted tourist beaches. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Archival or historical context for Irukandji Jellyfish",
+          "query": "irukandji jellyfish historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Fatalities are fewer than Chironex but syndromes are prolonged and terrifying. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Irukandji Jellyfish",
+          "query": "irukandji jellyfish medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Size makes them invisible relative to pain outcome. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Comparative scale shot for Irukandji Jellyfish",
+          "query": "irukandji jellyfish comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Irukandji prove smallest animals can trigger systemic collapse. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Closing landscape transition from Irukandji Jellyfish segment",
+          "query": "irukandji jellyfish wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 2.",
+      "name": "Textile Cone Snail",
+      "num": "#2",
+      "stat": "Collectors die handling live cone shells each decade",
+      "severity": "red",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Textile cones bear patterns prized by shell collectors worldwide. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Textile Cone Snail in natural habitat documentary shot",
+          "query": "textile cone snail wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Each shell can fire multiple venom harpoons independently. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Close-up of Textile Cone Snail for ranking segment",
+          "query": "textile cone snail close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: rapid-onset paralysis in untreated cases — divers drown before boats arrive. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Textile Cone Snail",
+          "query": "textile cone snail habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Marine toxinology papers document recurring collector fatalities. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Research or data visuals related to Textile Cone Snail",
+          "query": "textile cone snail research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Beautiful shells sell online with insufficient live-handling warnings. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Human exposure context for Textile Cone Snail",
+          "query": "textile cone snail human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Textile Cone Snail lands on screen here — Collectors die handling live cone shells each decade. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Textile Cone Snail",
+          "query": "textile cone snail human interaction",
+          "title": "TEXTILE CONE SNAIL",
+          "body": "Collectors die handling live cone shells each decade",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Antivenom research lags behind snake biologics. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Infographic or map context for Textile Cone Snail",
+          "query": "textile cone snail map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Textile cone venom peptides block nerve transmission irreversibly without support. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Textile Cone Snail",
+          "query": "textile cone snail historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Reef tourism increases amateur collecting pressure. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Medical or emergency response related to Textile Cone Snail",
+          "query": "textile cone snail medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Death rate per bite exceeds shark attack fatality rate statistically. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Textile Cone Snail",
+          "query": "textile cone snail comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Harmless-looking spiral hides harpoon battery. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Closing landscape transition from Textile Cone Snail segment",
+          "query": "textile cone snail wide landscape",
+          "cat": "stock"
+        },
+        {
+          "kind": "split_card",
+          "content": "At #2, the ranking scale shifts. Textile Cone Snail is not a footnote — it redefines what the top entries must beat to stay at number one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Split comparison panel for Textile Cone Snail",
+          "query": "textile cone snail wide landscape",
+          "title": "Ranking Scale Shift",
+          "body": "Textile Cone Snail — Collectors die handling live cone shells each decade",
+          "badge": "Comparison"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number 1.",
+      "name": "Chironex-Class Box Jelly",
+      "num": "#1",
+      "stat": "More swimmer deaths than sharks in tropical Australia combined",
+      "severity": "red",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Surf Life Saving and marine hospital data show jelly stings exceed shark fatalities in multiple tropical regions. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Chironex-Class Box Jelly in natural habitat documentary shot",
+          "query": "chironex-class box jelly wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Chironex season closes beaches — economic cost adds to mortality. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Chironex-Class Box Jelly for ranking segment",
+          "query": "chironex-class box jelly close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: simultaneous cardiotoxic and dermatonecrotic venom load. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Aerial or wide habitat context for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Prevention relies on enclosure nets, vinegar stations, and education — not fear campaigns about fins. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Public dread focuses on sharks; lifeguard logs focus on tentacles. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Chironex-Class Box Jelly lands on screen here — More swimmer deaths than sharks in tropical Australia combined. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly human interaction",
+          "title": "CHIRONEX-CLASS BOX JELLY",
+          "body": "More swimmer deaths than sharks in tropical Australia combined",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Climate warming may extend polyp seasons in subtropical zones. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Antivenom exists but must reach patients before cardiac arrest. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Transparent bell renders animal invisible at wave height. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Medical or emergency response related to Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Single contact can kill healthy adult swimmers in minutes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Chironex-Class Box Jelly",
+          "query": "chironex-class box jelly comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Number one is the animal tourists never see until the sting. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Chironex-Class Box Jelly segment",
+          "query": "chironex-class box jelly wide landscape",
+          "cat": "stock"
+        }
+      ]
+    }
+  ],
+  "outro": [
+    {
+      "kind": "stock",
+      "content": "That was the full countdown — mechanism, context, and sourced numbers for all ten entries. If any rank surprised you, that gap between expectation and data is exactly what this channel documents. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Recap montage of animals from the episode in quick succession",
+      "query": "animal recap montage quick cuts",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Which entry was most surprising relative to what you assumed before watching — the predator you feared, or the animal you ignored? Drop your answer in the comments with your region; we read them. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Split screen contemplative nature footage",
+      "query": "contemplative nature split screen",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "If you live in an area affected by one of these animals, share local context — lived experience adds detail no dataset captures fully. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Diverse global landscapes and communities near wildlife",
+      "query": "global community wildlife landscape",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Next video ranks invasive species whose economic damage exceeds hurricane seasons — different register, same sourced format. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Teaser montage for next video topic",
+      "query": "next video teaser montage science",
+      "cat": "stock"
+    },
+    {
+      "kind": "overlay_cta",
+      "content": "If this ranking changed how you think about danger, hit like and subscribe — new ranked documentaries drop every other day. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Golden hour wetland montage underneath popup",
+      "query": "wetland golden hour montage cinematic",
+      "title": "Like & Subscribe",
+      "body": "New rankings every other day. Always sourced.",
+      "position": "lower-third"
+    },
+    {
+      "kind": "stock",
+      "content": "Thanks for watching to the end. Most viewers never reach the final entry — if you did, this format is worth continuing. See you in the next one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Slow sunset over open landscape, peaceful closing shot",
+      "query": "sunset open landscape peaceful closing",
+      "cat": "stock"
+    }
+  ]
+}

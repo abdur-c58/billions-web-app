@@ -31,11 +31,9 @@ export type SegmentSelection = PexelsVideo & {
   query_used?: string;
   custom_query?: string;
   confidence?: number;
-  confidence_source?: "openai" | "heuristic" | "manual";
+  confidence_source?: "heuristic" | "manual";
   needs_review?: boolean;
-  ai_model?: string | null;
-  ai_reason?: string | null;
-  ai_skipped?: string | null;
+  match_reason?: string | null;
   quality_tier?: "none" | "good" | "mid" | "review" | "unknown";
   quality_label?: string;
 };
@@ -46,13 +44,6 @@ export type JudgmentSummary = {
   mid: number;
   review: number;
   unknown: number;
-};
-
-export type AiJudgeStatus = {
-  enabled: boolean;
-  calls_today?: number;
-  max_calls?: number;
-  remaining?: number;
 };
 
 export type ViewerSegment = {
@@ -119,7 +110,10 @@ export type RemotionSegmentInfo = {
   props?: Record<string, unknown>;
   design?: Record<string, unknown>;
   prompt?: string;
-  layout?: "split-right" | "full";
+  layout?: "split-right" | "full" | "overlay";
+  overlay?: {
+    position?: "lower-third" | "center" | "top-banner";
+  };
   broll?: {
     search_query?: string;
     category?: string;
@@ -156,7 +150,6 @@ export type RemotionSuggestResponse = {
   updates: Record<string, unknown>;
   summary: string;
   ai_used: boolean;
-  ai_judge?: AiJudgeStatus;
 };
 
 export type SegmentRenderMode = "broll" | "remotion";
@@ -230,7 +223,6 @@ export type SegmentsPayload = {
   timestamp_alignment?: TimestampAlignment | null;
   segments: ViewerSegment[];
   judgment_summary?: JudgmentSummary;
-  ai_judge?: AiJudgeStatus;
   export_inputs_hash?: string;
 };
 
@@ -257,8 +249,7 @@ export type FetchPayload = {
     confidence?: number;
     confidence_source?: string;
     needs_review?: boolean;
-    ai_skipped?: string | null;
-    ai_reason?: string | null;
+    match_reason?: string | null;
   } | null;
 };
 

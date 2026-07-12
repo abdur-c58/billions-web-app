@@ -1,13 +1,9 @@
-"""Heuristic + OpenAI vision judging for b-roll candidate selection."""
+"""Heuristic scoring for b-roll candidate selection."""
 
 from __future__ import annotations
 
 import json
-import os
 import re
-import urllib.error
-import urllib.request
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -18,12 +14,8 @@ from broll_clip_filters import (
     video_duration_seconds,
 )
 
-OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
-AI_MODEL = "gpt-4o-mini"
-MAX_CANDIDATES_FOR_AI = 5
 HEURISTIC_AUTO_PICK = 7.5
 NEEDS_REVIEW_THRESHOLD = 0.55
-DEFAULT_AI_MAX_CALLS_PER_DAY = 100
 
 QUALITY_LABELS: dict[str, str] = {
     "none": "Missing",
@@ -33,7 +25,7 @@ QUALITY_LABELS: dict[str, str] = {
     "unknown": "Unknown",
 }
 
-# test comment
+
 def compute_quality_tier(selection: dict[str, Any] | None) -> str:
     if not selection or not selection.get("url"):
         return "none"
@@ -137,69 +129,12 @@ def score_candidate_heuristic(
     return round(score, 2)
 
 
-class AiBudget:
-    def __init__(self, cache_dir: Path, max_calls: int = DEFAULT_AI_MAX_CALLS_PER_DAY) -> None:
-        self.cache_dir = cache_dir
-        self.max_calls = max_calls
-        self.path = cache_dir / "ai_usage.json"
-        self._calls = 0
-        self._load()
-
-    def _load(self) -> None:
-        today = date.today().isoformat()
-        if not self.path.exists():
-            self._calls = 0
-            return
-        try:
-            data = json.loads(self.path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            self._calls = 0
-            return
-        if data.get("date") != today:
-            self._calls = 0
-        else:
-            self._calls = int(data.get("calls") or 0)
-            saved_max = int(data.get("max_calls") or 0)
-            if saved_max > 0:
-                self.max_calls = saved_max
-
-    def _save(self) -> None:
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(
-            json.dumps(
-                {
-                    "date": date.today().isoformat(),
-                    "calls": self._calls,
-                    "max_calls": self.max_calls,
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-    @property
-    def remaining(self) -> int:
-        return max(0, self.max_calls - self._calls)
-
-    def can_use(self) -> bool:
-        return bool(os.environ.get("OPENAI_API_KEY")) and self.remaining > 0
-
-    def consume(self) -> None:
-        self._calls += 1
-        self._save()
-
-    def snapshot(self) -> dict[str, Any]:
-        return {
-            "calls_today": self._calls,
-            "max_calls": self.max_calls,
-            "remaining": self.remaining,
-        }
-
-
 class JudgmentCache:
     def __init__(self, cache_dir: Path) -> None:
-        self.path = cache_dir / "ai_judgments.json"
+        self.path = cache_dir / "heuristic_judgments.json"
+        legacy_path = cache_dir / "ai_judgments.json"
+        if not self.path.exists() and legacy_path.exists():
+            self.path = legacy_path
         self._data: dict[str, Any] = {}
         self._load()
 
@@ -242,98 +177,10 @@ class JudgmentCache:
         self._save()
 
 
-def _openai_judge_once(
-    segment: dict[str, Any],
-    candidates: list[dict[str, Any]],
-    query: str,
-) -> dict[str, Any]:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing")
-
-    labels = []
-    for index, video in enumerate(candidates):
-        labels.append(
-            f"Option {index}: video_id={video.get('video_id')} "
-            f"duration={video.get('duration')}s size={video.get('width')}x{video.get('height')}"
-        )
-
-    prompt = (
-        "Pick the best stock b-roll thumbnail for a documentary segment.\n"
-        f"Search query: {query}\n"
-        f"Needed visual: {segment.get('description', '')}\n"
-        f"Narration excerpt: {segment.get('content', '')[:220]}\n\n"
-        + "\n".join(labels)
-        + "\n\nReturn JSON only with keys: "
-        "best_index (0-based int), match_score (0-1 float), "
-        "subject_match (bool), tone_match (bool), reason (max 15 words)."
-    )
-
-    content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
-    for video in candidates:
-        thumbnail = video.get("thumbnail")
-        if thumbnail:
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": thumbnail, "detail": "low"},
-                }
-            )
-
-    body = json.dumps(
-        {
-            "model": AI_MODEL,
-            "temperature": 0.1,
-            "max_tokens": 180,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "user", "content": content}],
-        }
-    ).encode("utf-8")
-
-    request = urllib.request.Request(
-        OPENAI_CHAT_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "Billions-BrollViewer/1.0",
-        },
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenAI API error {exc.code}: {raw}") from exc
-
-    message = payload["choices"][0]["message"]["content"]
-    parsed = json.loads(message)
-    best_index = int(parsed.get("best_index", 0))
-    best_index = max(0, min(best_index, len(candidates) - 1))
-    match_score = float(parsed.get("match_score", 0))
-    match_score = max(0.0, min(1.0, match_score))
-
-    return {
-        "best_index": best_index,
-        "confidence": round(match_score, 3),
-        "confidence_source": "openai",
-        "needs_review": match_score < NEEDS_REVIEW_THRESHOLD,
-        "ai_model": AI_MODEL,
-        "ai_reason": str(parsed.get("reason", ""))[:120],
-        "subject_match": bool(parsed.get("subject_match")),
-        "tone_match": bool(parsed.get("tone_match")),
-        "ai_skipped": None,
-    }
-
-
 def _heuristic_pick(
     segment: dict[str, Any],
     candidates: list[dict[str, Any]],
     query: str,
-    *,
-    ai_skipped: str | None,
 ) -> dict[str, Any]:
     scores = [
         score_candidate_heuristic(video, segment, query) for video in candidates
@@ -346,11 +193,7 @@ def _heuristic_pick(
         "confidence": confidence,
         "confidence_source": "heuristic",
         "needs_review": top < HEURISTIC_AUTO_PICK - 1.0,
-        "ai_model": None,
-        "ai_reason": None,
-        "subject_match": None,
-        "tone_match": None,
-        "ai_skipped": ai_skipped,
+        "match_reason": None,
         "heuristic_scores": scores,
     }
 
@@ -362,8 +205,6 @@ def pick_best_candidate(
     *,
     segment_id: int,
     cache_dir: Path,
-    use_ai: bool,
-    budget: AiBudget | None,
     judgment_cache: JudgmentCache | None = None,
 ) -> dict[str, Any]:
     if not candidates:
@@ -372,7 +213,6 @@ def pick_best_candidate(
             "confidence": 0.0,
             "confidence_source": "heuristic",
             "needs_review": True,
-            "ai_skipped": "no_candidates",
         }
 
     segment_duration = segment_duration_seconds(segment)
@@ -427,55 +267,10 @@ def pick_best_candidate(
                 "confidence": round(min(0.95, top_score / 10.0), 3),
                 "confidence_source": "heuristic",
                 "needs_review": False,
-                "ai_model": None,
-                "ai_reason": "Strong technical/heuristic match",
-                "subject_match": None,
-                "tone_match": None,
-                "ai_skipped": "heuristic_confident",
+                "match_reason": "Strong technical/heuristic match",
                 "heuristic_scores": scores,
             },
         )
 
-    ai_pool = [pool[i] for i in ranked[:MAX_CANDIDATES_FOR_AI]]
-    ai_index_map = ranked[:MAX_CANDIDATES_FOR_AI]
-
-    if use_ai and budget and budget.can_use():
-        try:
-            ai_result = _openai_judge_once(segment, ai_pool, query)
-            budget.consume()
-            mapped_pool_index = ai_index_map[ai_result["best_index"]]
-            return finalize(
-                mapped_pool_index,
-                {
-                    "confidence": ai_result["confidence"],
-                    "confidence_source": "openai",
-                    "needs_review": ai_result["needs_review"],
-                    "ai_model": ai_result["ai_model"],
-                    "ai_reason": ai_result["ai_reason"],
-                    "subject_match": ai_result["subject_match"],
-                    "tone_match": ai_result["tone_match"],
-                    "ai_skipped": None,
-                    "heuristic_scores": scores,
-                },
-            )
-        except Exception as exc:
-            message = str(exc).lower()
-            if "insufficient_quota" in message or "billing" in message:
-                skipped = "quota_exceeded"
-            elif "429" in message:
-                skipped = "rate_limited"
-            else:
-                skipped = "api_error"
-            heuristic = _heuristic_pick(segment, pool, query, ai_skipped=skipped)
-            return finalize(int(heuristic["best_index"]), heuristic)
-
-    skipped = "disabled"
-    if not use_ai:
-        skipped = "disabled"
-    elif budget and not os.environ.get("OPENAI_API_KEY"):
-        skipped = "missing_api_key"
-    elif budget and budget.remaining <= 0:
-        skipped = "budget_exhausted"
-
-    heuristic = _heuristic_pick(segment, pool, query, ai_skipped=skipped)
+    heuristic = _heuristic_pick(segment, pool, query)
     return finalize(int(heuristic["best_index"]), heuristic)

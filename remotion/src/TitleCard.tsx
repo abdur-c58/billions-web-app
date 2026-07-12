@@ -6,10 +6,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { loadFont as loadSpecialEliteFont } from "@remotion/google-fonts/SpecialElite";
 import { layoutStyles, type LayoutProps } from "./layout";
 
 const DEFAULT_TITLE_BACKGROUND =
   "radial-gradient(circle at 20% 20%, rgba(125,183,255,0.18), transparent 35%), linear-gradient(160deg, #05070d 0%, #10182a 100%)";
+const { fontFamily: specialEliteFontFamily } = loadSpecialEliteFont();
 
 export type TitleCardProps = LayoutProps & {
   title?: string;
@@ -35,7 +37,7 @@ export const TitleCard: React.FC<TitleCardProps> = ({
   textColor = "#f8fbff",
   subtitleColor = "rgba(248,251,255,0.78)",
   backgroundGradient = DEFAULT_TITLE_BACKGROUND,
-  fontFamily = "Segoe UI, system-ui, sans-serif",
+  fontFamily = `${specialEliteFontFamily}, Georgia, serif`,
   showAccentBar = true,
   textAlign = "center",
   verticalAlign = "center",

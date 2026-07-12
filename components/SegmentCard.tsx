@@ -12,7 +12,7 @@ import {
   qualityTierClass,
   QUALITY_LABELS,
 } from "@/lib/judgment";
-import { isSplitScreenRemotion } from "@/lib/remotion";
+import { isOverlayRemotion, isSplitScreenRemotion, remotionNeedsBroll } from "@/lib/remotion";
 
 type SegmentCardProps = {
   segment: ViewerSegment;
@@ -71,6 +71,8 @@ function SegmentCardInner({
   const folderStatus = segment.folder_status;
   const isRemotion = segment.render_mode === "remotion" && Boolean(segment.remotion?.composition);
   const isSplitRemotion = isRemotion && isSplitScreenRemotion(segment);
+  const isOverlayRemotionCard = isRemotion && isOverlayRemotion(segment);
+  const needsBrollRemotion = isRemotion && remotionNeedsBroll(segment);
   const isFolderFormat = scriptFormat === "folder";
   const isStock = segment.category.trim().toLowerCase() === "stock";
   const showNoFolderWarning =
@@ -319,11 +321,12 @@ function SegmentCardInner({
                 onPreview={onPreviewRemotion}
                 onSuggestPrompt={onSuggestRemotionPrompt}
               />
-              {isSplitRemotion ? (
+              {needsBrollRemotion ? (
                 <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-500/8 p-2.5">
                   <p className="mb-2 text-[0.72rem] leading-snug text-amber-100/90">
-                    Split-screen card: fetch b-roll for the left panel. Query defaults from
-                    script description:{" "}
+                    {isOverlayRemotionCard
+                      ? "Overlay popup: fetch full-frame b-roll underneath the card. Query defaults from script description:"
+                      : "Split-screen card: fetch b-roll for the left panel. Query defaults from script description:"}{" "}
                     <span className="text-amber-50">{segment.search_query || "—"}</span>
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -333,7 +336,13 @@ function SegmentCardInner({
                       onClick={() => onFetch(false)}
                       className="glow-btn-primary rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
                     >
-                      {hasSelection ? "Reload left b-roll" : "Fetch left b-roll"}
+                      {hasSelection
+                        ? isOverlayRemotionCard
+                          ? "Reload background b-roll"
+                          : "Reload left b-roll"
+                        : isOverlayRemotionCard
+                          ? "Fetch background b-roll"
+                          : "Fetch left b-roll"}
                     </button>
                     <button
                       type="button"

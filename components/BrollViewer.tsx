@@ -517,11 +517,6 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
               {viewer.selectedCount}/{viewer.segments.length} selected ·{" "}
               {viewer.visibleSegments.length} shown
             </span>
-            {viewer.aiJudge.enabled ? (
-              <span className="glow-chip px-2 py-0.5" title="OpenAI judge calls remaining today">
-                AI {viewer.aiJudge.remaining ?? 0}/{viewer.aiJudge.max_calls ?? 0}
-              </span>
-            ) : null}
           </div>
         </div>
 

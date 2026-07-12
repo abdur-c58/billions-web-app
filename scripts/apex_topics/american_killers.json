@@ -1,0 +1,1049 @@
+{
+  "title": "Ranking Every Animal That Kills More Americans Each Year Than Bears, Wolves, and Cougars Combined (The #1 Entry Is In Your Yard)",
+  "hook": [
+    {
+      "kind": "stock",
+      "content": "This countdown ranks U.S. animal-related human fatalities using sourced data — not movie logic, not viral fear posts, and not predator hype. The animals that actually dominate the statistics often look harmless, live close to human infrastructure, and kill through mechanisms most viewers never think about until they see the numbers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+      "desc": "Fast montage of dramatic predator footage contrasted with mundane animals",
+      "query": "predator montage contrast documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Every entry includes a mechanism section, comparative context, and real-world scale. Where estimates vary, we say so. Where popular myths exaggerate danger, we correct them on-camera — because the sourced number is usually dramatic enough without embellishment. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Research papers and charts on desk, documentary lighting",
+      "query": "research papers charts documentary desk",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Bears, wolves, and great white sharks dominate cultural fear. This list is built from outcomes: emergency room codes, collision reports, envenomation records, invasion damage estimates, and peer-reviewed sensory research — depending on the video's ranking logic. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Emergency room exterior at night, subtle documentary tone",
+      "query": "emergency room exterior night documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Several entries will feel counterintuitive. That is the point. If the ranking matched gut fear perfectly, you would not need a 58-minute breakdown — you could guess the list in ten seconds. You cannot. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Person reading phone news headlines looking skeptical",
+      "query": "person reading phone news skeptical",
+      "cat": "stock"
+    },
+    {
+      "kind": "overlay_cta",
+      "content": "This channel publishes ranked biology documentaries with real citations. Subscribe now if you want the full list including the number one entry and the mechanism behind it. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Wide cinematic nature b-roll underneath popup",
+      "query": "deer crossing road dusk american suburb",
+      "title": "Subscribe For The Full Ranking",
+      "body": "Real CDC data. Ten animals. No clickbait.",
+      "position": "lower-third"
+    },
+    {
+      "kind": "stock",
+      "content": "Runtime target is roughly fifty-eight minutes because this format requires depth: ten entries, each with biology, history, comparisons, and implications — not a highlight reel. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Documentary timeline graphic on screen",
+      "query": "documentary timeline graphic screen",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "By the end you will know not only which animal tops the ranking, but why the public fear budget is misallocated relative to the actual data. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "suburban deer silhouette dusk road",
+      "query": "suburban deer silhouette dusk road",
+      "cat": "stock"
+    }
+  ],
+  "methodology": [
+    {
+      "kind": "titlecard",
+      "content": "How we built this ranking.",
+      "title": "The Method",
+      "subtitle": "CDC WONDER, Forrester et al., state collision records"
+    },
+    {
+      "kind": "stock",
+      "content": "Sources include CDC WONDER mortality records, Wilderness & Environmental Medicine analyses, USDA and USFWS invasion cost studies, marine envenomation case series, and primary sensory research papers. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Government and journal PDFs stacked on desk",
+      "query": "government journal pdfs desk stack",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "We separate annual U.S. or global totals where relevant, flag wide ranges explicitly, and prioritize named institutions over anonymous 'scientists say' phrasing. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "University laboratory hallway documentary b-roll",
+      "query": "university laboratory hallway documentary",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Remotion overlays and rank cards punctuate key stats; atmospheric stock footage carries the narrative backbone. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Nature documentary editing suite monitors",
+      "query": "documentary editing suite monitors",
+      "cat": "stock"
+    }
+  ],
+  "entries": [
+    {
+      "rank_line": "Number ten.",
+      "name": "Spiders",
+      "num": "#10",
+      "stat": "About six U.S. deaths per year from venomous spiders",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Venomous spider fatalities in U.S. CDC analyses average about six deaths annually — more than most bear years, yet culturally invisible. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Spiders in natural habitat documentary shot",
+          "query": "spiders wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Black widow neurotoxic bites and brown recluse necrotic injuries dominate severe cases; most patients recover with timely care. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Spiders for ranking segment",
+          "query": "spiders close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Occupational exposure in basements, warehouses, and stored gear drives bite rates higher than random outdoor encounters. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Spiders",
+          "query": "spiders habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Poison centers record tens of thousands of spider calls yearly; mortality fraction remains tiny but nonzero. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Spiders",
+          "query": "spiders research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Children and immunocompromised adults face disproportionate risk when diagnosis is delayed. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Spiders",
+          "query": "spiders human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Spiders lands on screen here — About six U.S. deaths per year from venomous spiders. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Spiders",
+          "query": "spiders human interaction",
+          "title": "SPIDERS",
+          "body": "About six U.S. deaths per year from venomous spiders",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Antivenom exists for widow bites; recluse management focuses on wound care and infection control. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Spiders",
+          "query": "spiders map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Spiders exceed combined bear-wolf-cougar totals in many years despite arachnophobia amplifying perceived risk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Spiders",
+          "query": "spiders historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: venom disrupts neuromuscular signaling or local tissue; death is preventable with early intervention. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Spiders",
+          "query": "spiders medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Geographic clustering follows human-spider habitat overlap more than wilderness drama. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Spiders",
+          "query": "spiders comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Spiders open the list because they beat iconic predators statistically while remaining far below higher entries. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Spiders segment",
+          "query": "spiders wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number nine.",
+      "name": "Sharks",
+      "num": "#9",
+      "stat": "About one U.S. fatality per year on average",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "International Shark Attack File data typically report about one U.S. fatal shark bite per year — rare but hyper-visible. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Sharks in natural habitat documentary shot",
+          "query": "sharks wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Most bites are investigatory or defensive, not sustained predation; survival improves with beach trauma systems. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Sharks for ranking segment",
+          "query": "sharks close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Florida, Hawaii, and California lead non-fatal bite counts; fatalities cluster where tourism and habitat overlap. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Sharks",
+          "query": "sharks habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Media coverage inflates perceived risk by orders of magnitude relative to CDC animal mortality tables. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Sharks",
+          "query": "sharks research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Lightning, drowning, and driving to the beach exceed shark risk for the average coastal visitor. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Sharks",
+          "query": "sharks human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Sharks lands on screen here — About one U.S. fatality per year on average. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Sharks",
+          "query": "sharks human interaction",
+          "title": "SHARKS",
+          "body": "About one U.S. fatality per year on average",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Tiger, bull, and white sharks account for most serious cases; species ID affects trauma protocols. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Sharks",
+          "query": "sharks map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Shark nets and monitoring programs reduce encounters but cannot eliminate probabilistic risk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Sharks",
+          "query": "sharks historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: massive tissue trauma and hemorrhage; time to surgical care determines outcome. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Sharks",
+          "query": "sharks medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Sharks rank low because frequency is tiny even if each event feels cinematic. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Sharks",
+          "query": "sharks comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "The next entries climb as human-animal contact scales nationally. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Sharks segment",
+          "query": "sharks wide landscape",
+          "cat": "stock"
+        }
+      ],
+      "after_tease": {
+        "label": "Retention Tease",
+        "content": "We are only at number nine, and the annual death tolls are about to climb — including the backyard animal at number one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+        "desc": "Fast montage teasing upcoming entries",
+        "query": "montage animals quick cuts nature",
+        "title": "Still Coming",
+        "body": "The #1 killer is closer than you think.",
+        "position": "center"
+      }
+    },
+    {
+      "rank_line": "Number eight.",
+      "name": "Snakes",
+      "num": "#8",
+      "stat": "Roughly five to six U.S. deaths per year from venomous snakes",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Forrester et al. found venomous snake and lizard encounters caused a median of six U.S. deaths annually (2008–2015). Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Snakes in natural habitat documentary shot",
+          "query": "snakes wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Pit vipers — rattlesnakes, copperheads, cottonmouths — dominate envenomation cases east of the Rockies. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Snakes for ranking segment",
+          "query": "snakes close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Coral snake bites are rare but neurotoxic; antivenom access varies by hospital region. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Snakes",
+          "query": "snakes habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Male hikers and agricultural workers face elevated exposure during warm months. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Snakes",
+          "query": "snakes research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Delayed presentation increases compartment syndrome, renal injury, and coagulopathy complications. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Snakes",
+          "query": "snakes human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Snakes lands on screen here — Roughly five to six U.S. deaths per year from venomous snakes. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Snakes",
+          "query": "snakes human interaction",
+          "title": "SNAKES",
+          "body": "Roughly five to six U.S. deaths per year from venomous snakes",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Antivenom costs and hospital stays can exceed tens of thousands of dollars per case. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Snakes",
+          "query": "snakes map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Snake fatalities exceed shark totals consistently yet receive less coastal headline attention. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Snakes",
+          "query": "snakes historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: hemotoxic or neurotoxic venom disrupts coagulation, tissue, or nerve signaling. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Snakes",
+          "query": "snakes medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Education on boot checks and reach tools reduces bites without eliminating habitat overlap. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Snakes",
+          "query": "snakes comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Snakes sit above sharks because encounter rates scale across rural America, not just coastlines. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Snakes segment",
+          "query": "snakes wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number seven.",
+      "name": "Alligators",
+      "num": "#7",
+      "stat": "Rare but recurring Florida and Gulf Coast fatalities",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Alligator attacks kill roughly a handful of Americans in bad years, zero in others — concentrated in Florida and Louisiana. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Alligators in natural habitat documentary shot",
+          "query": "alligators wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Feeding alligators illegally increases habituation and attack probability near subdivisions. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Alligators for ranking segment",
+          "query": "alligators close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Most victims are swimmers, waders, or dog walkers near freshwater edges at dusk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Alligators",
+          "query": "alligators habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Trauma is immediate: drowning plus massive soft-tissue injury in ambush scenarios. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Alligators",
+          "query": "alligators research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Wildlife managers cull problem animals, but population recovery keeps pressure on waterfront housing. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Alligators",
+          "query": "alligators human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Alligators lands on screen here — Rare but recurring Florida and Gulf Coast fatalities. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Alligators",
+          "query": "alligators human interaction",
+          "title": "ALLIGATORS",
+          "body": "Rare but recurring Florida and Gulf Coast fatalities",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Climate expansion and suburban sprawl increase interface zones faster than signage updates. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Alligators",
+          "query": "alligators map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Alligators kill fewer than snakes annually but exceed cougar totals almost every year. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Alligators",
+          "query": "alligators historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: bite force plus death roll causing catastrophic tissue and blood loss. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Alligators",
+          "query": "alligators medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Golf course encounters symbolize how urban Florida shares lakes with apex reptiles. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Alligators",
+          "query": "alligators comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Predator fear focuses on sharks; southern freshwater tells a different story. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Alligators segment",
+          "query": "alligators wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number six.",
+      "name": "Bees Wasps and Hornets",
+      "num": "#6",
+      "stat": "About sixty U.S. deaths per year — leading venom category",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Hymenoptera stings caused a median of sixty U.S. deaths annually in Forrester's 2008–2015 CDC analysis. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Bees Wasps and Hornets in natural habitat documentary shot",
+          "query": "bees wasps and hornets wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Allergic anaphylaxis — not venom toxicity alone — drives most fatalities without epinephrine in time. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Bees Wasps and Hornets for ranking segment",
+          "query": "bees wasps and hornets close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Outdoor workers, landscapers, and beekeepers face repeated exposure and sensitization risk. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Africanized honeybee aggression increased southern encounter rates since the 1990s. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Bees Wasps and Hornets",
+          "query": "bees wasps and hornets research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Yellowjacket ground nests cause surprise yard and park emergencies in late summer. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Bees Wasps and Hornets lands on screen here — About sixty U.S. deaths per year — leading venom category. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets human interaction",
+          "title": "BEES WASPS AND HORNETS",
+          "body": "About sixty U.S. deaths per year — leading venom category",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Epinephrine auto-injectors and allergy desensitization programs save lives but require access. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Hymenoptera exceed all reptile and large predator categories combined in most years. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: massive histamine release collapses airway and cardiovascular stability within minutes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Bees Wasps and Hornets",
+          "query": "bees wasps and hornets medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Public fear underweights stinging insects relative to cinematic predators. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Bees Wasps and Hornets",
+          "query": "bees wasps and hornets comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "From here the ranking jumps into mammals Americans interact with daily. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Bees Wasps and Hornets segment",
+          "query": "bees wasps and hornets wide landscape",
+          "cat": "stock"
+        }
+      ],
+      "after_tease": {
+        "label": "Retention Tease",
+        "content": "Coming up: farm mammals, pet fatalities, and the deer collision total that beats every predator combined. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+        "desc": "Fast montage teasing upcoming entries",
+        "query": "montage animals quick cuts nature",
+        "title": "Coming Up",
+        "body": "Number one is in your yard.",
+        "position": "center"
+      }
+    },
+    {
+      "rank_line": "Number five.",
+      "name": "Horses",
+      "num": "#5",
+      "stat": "Part of ~72 annual 'other mammal' farm fatalities",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "CDC groups horses with cattle in 'other mammal' fatalities — roughly seventy-two deaths per year (2008–2015 median). Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Horses in natural habitat documentary shot",
+          "query": "horses wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Kick injuries to chest and head kill experienced riders and handlers, not only novices. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Horses for ranking segment",
+          "query": "horses close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mounting accidents, trailer loading, and startle responses drive trauma in private barns. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Horses",
+          "query": "horses habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Rural EMS distances increase mortality when internal bleeding goes unrecognized. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Horses",
+          "query": "horses research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Equestrian sports normalize risk; helmet adoption reduces head injury but not thoracic trauma. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Horses",
+          "query": "horses human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Horses lands on screen here — Part of ~72 annual 'other mammal' farm fatalities. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Horses",
+          "query": "horses human interaction",
+          "title": "HORSES",
+          "body": "Part of ~72 annual 'other mammal' farm fatalities",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Children and teenagers appear often in case reports when supervision lapses. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Horses",
+          "query": "horses map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Horses kill more Americans than bears annually with near-zero media footprint. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Horses",
+          "query": "horses historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: blunt force from hooves — cardiac contusion and skull fracture dominate. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Horses",
+          "query": "horses medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Insurance and liability law treat horses as predictable property; biology treats them as powerful prey animals. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Horses",
+          "query": "horses comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Livestock entries reveal how farm familiarity hides lethal force. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Horses segment",
+          "query": "horses wide landscape",
+          "cat": "stock"
+        },
+        {
+          "kind": "split_card",
+          "content": "At #5, the ranking scale shifts. Horses is not a footnote — it redefines what the top entries must beat to stay at number one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Split comparison panel for Horses",
+          "query": "horses wide landscape",
+          "title": "Ranking Scale Shift",
+          "body": "Horses — Part of ~72 annual 'other mammal' farm fatalities",
+          "badge": "Comparison"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number four.",
+      "name": "Cattle",
+      "num": "#4",
+      "stat": "Farm mammal encounters kill dozens of Americans yearly",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Cattle contribute heavily to the seventy-two annual U.S. 'other mammal' deaths in CDC animal mortality studies. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Cattle in natural habitat documentary shot",
+          "query": "cattle wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Bulls in breeding season and cows protecting calves charge with mass that outclasses human stability. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Cattle for ranking segment",
+          "query": "cattle close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Working alone in pens is a repeated factor in fatal trampling case series. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Cattle",
+          "query": "cattle habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Agricultural economics prioritize throughput; safety training varies by operation size. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Cattle",
+          "query": "cattle research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Veterinarians and farm workers suffer crush injuries when animals panic in chutes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Cattle",
+          "query": "cattle human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Cattle lands on screen here — Farm mammal encounters kill dozens of Americans yearly. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Stat overlay for Cattle",
+          "query": "cattle human interaction",
+          "title": "CATTLE",
+          "body": "Farm mammal encounters kill dozens of Americans yearly",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Urban consumers rarely connect steak supply chains with on-farm mortality statistics. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Cattle",
+          "query": "cattle map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Cattle exceed horse fatalities in many state reports due to herd size and industry exposure hours. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Cattle",
+          "query": "cattle historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: blunt force trampling — rib fractures, internal bleeding, head strikes against fencing. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Cattle",
+          "query": "cattle medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "OSHA and extension programs push low-stress handling; adoption remains uneven. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Cattle",
+          "query": "cattle comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "The next entries move from farm country into suburban living rooms. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Cattle segment",
+          "query": "cattle wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number three.",
+      "name": "Dogs",
+      "num": "#3",
+      "stat": "About thirty-four U.S. deaths per year — children at highest risk",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "Dog-related fatalities averaged thirty-four U.S. deaths annually in Forrester's analysis — highest among pet species. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Dogs in natural habitat documentary shot",
+          "query": "dogs wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Children under four face nearly fourfold higher frequency than other age groups. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Dogs for ranking segment",
+          "query": "dogs close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Pit bull-type dogs appear often in case series, but breed politics complicate policy responses. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for Dogs",
+          "query": "dogs habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Pack behavior, territoriality, and resource guarding trigger many home attacks. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Dogs",
+          "query": "dogs research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mail carriers and delivery workers represent occupational exposure categories. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Dogs",
+          "query": "dogs human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Dogs lands on screen here — About thirty-four U.S. deaths per year — children at highest risk. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Dogs",
+          "query": "dogs human interaction",
+          "title": "DOGS",
+          "body": "About thirty-four U.S. deaths per year — children at highest risk",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Fatal mauling involves cervical injury, exsanguination, and delayed intervention in rural areas. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Dogs",
+          "query": "dogs map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Millions of bites occur yearly; fatality is the extreme tail of a massive injury distribution. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Dogs",
+          "query": "dogs historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: crushing bite plus shaking — airway compromise kills faster than blood loss alone. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Dogs",
+          "query": "dogs medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Ownership culture resists ranking dogs as danger; epidemiology does not. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Dogs",
+          "query": "dogs comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Only two entries exceed dogs in annual U.S. human deaths on this list. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Dogs segment",
+          "query": "dogs wide landscape",
+          "cat": "stock"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number two.",
+      "name": "Mosquitoes",
+      "num": "#2",
+      "stat": "West Nile and other U.S. mosquito-borne deaths — small but recurring",
+      "severity": "amber",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "U.S. mosquito-borne deaths are smaller than global malaria totals but nonzero — West Nile virus kills hundreds in bad U.S. years historically. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Mosquitoes in natural habitat documentary shot",
+          "query": "mosquitoes wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Culex mosquitoes bridge birds and humans in suburban West Nile cycles across the Sun Belt. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of Mosquitoes for ranking segment",
+          "query": "mosquitoes close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Elderly and immunocompromised patients dominate severe neuroinvasive outcomes. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome. Map overlays and timeline graphics anchor scale without breaking the documentary tone.",
+          "desc": "Aerial or wide habitat context for Mosquitoes",
+          "query": "mosquitoes habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Local vector control districts monitor traps; funding swings with outbreak news cycles. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to Mosquitoes",
+          "query": "mosquitoes research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Climate lengthens seasons in northern states, expanding transmission windows. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for Mosquitoes",
+          "query": "mosquitoes human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for Mosquitoes lands on screen here — West Nile and other U.S. mosquito-borne deaths — small but recurring. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for Mosquitoes",
+          "query": "mosquitoes human interaction",
+          "title": "MOSQUITOES",
+          "body": "West Nile and other U.S. mosquito-borne deaths — small but recurring",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Compared with deer collisions, mosquito U.S. deaths are modest — but exceed all predators combined easily. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for Mosquitoes",
+          "query": "mosquitoes map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism: virus replication — not the bite itself — kills via encephalitis and organ failure. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for Mosquitoes",
+          "query": "mosquitoes historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "DEET, screens, and source reduction remain primary defenses; no universal vaccine exists for West Nile. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to Mosquitoes",
+          "query": "mosquitoes medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Americans fear sharks while Culex breeds in storm drains nationwide. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for Mosquitoes",
+          "query": "mosquitoes comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Number one is not an insect — it is a hoofed animal on every suburban edge. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from Mosquitoes segment",
+          "query": "mosquitoes wide landscape",
+          "cat": "stock"
+        },
+        {
+          "kind": "split_card",
+          "content": "At #2, the ranking scale shifts. Mosquitoes is not a footnote — it redefines what the top entries must beat to stay at number one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+          "desc": "Split comparison panel for Mosquitoes",
+          "query": "mosquitoes wide landscape",
+          "title": "Ranking Scale Shift",
+          "body": "Mosquitoes — West Nile and other U.S. mosquito-borne deaths — small but recurring",
+          "badge": "Comparison"
+        }
+      ]
+    },
+    {
+      "rank_line": "Number one.",
+      "name": "White-Tailed Deer",
+      "num": "#1",
+      "stat": "An estimated two hundred or more U.S. deaths per year from deer-vehicle collisions",
+      "severity": "red",
+      "segments": [
+        {
+          "kind": "stock",
+          "content": "CDC estimates roughly two hundred human deaths annually from motor-vehicle crashes involving animals — predominantly deer. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "White-Tailed Deer in natural habitat documentary shot",
+          "query": "white-tailed deer wildlife documentary",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Insurance Institute for Highway Safety data link hundreds of thousands of deer strikes yearly. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Close-up of White-Tailed Deer for ranking segment",
+          "query": "white-tailed deer close up macro",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Rut season and dusk commuting windows concentrate fatalities in Midwest and Northeast states. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Aerial or wide habitat context for White-Tailed Deer",
+          "query": "white-tailed deer habitat aerial",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Vehicle size does not guarantee survival — swerving causes rollovers and secondary impacts. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Research or data visuals related to White-Tailed Deer",
+          "query": "white-tailed deer research laboratory",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "West Virginia and Pennsylvania lead per-capita deer collision rates nationally. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Human exposure context for White-Tailed Deer",
+          "query": "white-tailed deer human interaction",
+          "cat": "stock"
+        },
+        {
+          "kind": "overlay_stat",
+          "content": "The key figure for White-Tailed Deer lands on screen here — An estimated two hundred or more U.S. deaths per year from deer-vehicle collisions. Viewers remember names; this popup makes sure they also leave with the number. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years.",
+          "desc": "Stat overlay for White-Tailed Deer",
+          "query": "white-tailed deer human interaction",
+          "title": "WHITE-TAILED DEER",
+          "body": "An estimated two hundred or more U.S. deaths per year from deer-vehicle collisions",
+          "position": "center"
+        },
+        {
+          "kind": "stock",
+          "content": "Mechanism is physics: 150-pound animal through windshield at highway speed equals fatal trauma. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Infographic or map context for White-Tailed Deer",
+          "query": "white-tailed deer map infographic",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Deer exceed bears, wolves, cougars, sharks, and snakes combined by an order of magnitude. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Archival or historical context for White-Tailed Deer",
+          "query": "white-tailed deer historical archive",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Wildlife crossings and fencing work but require political will and funding. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Medical or emergency response related to White-Tailed Deer",
+          "query": "white-tailed deer medical treatment",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "Suburban sprawl increased edge habitat — deer eat landscaping and cross roads nightly. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Comparative scale shot for White-Tailed Deer",
+          "query": "white-tailed deer comparison chart",
+          "cat": "stock"
+        },
+        {
+          "kind": "stock",
+          "content": "The deadliest American animal is in your yard, not on a nature documentary poster. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+          "desc": "Closing landscape transition from White-Tailed Deer segment",
+          "query": "white-tailed deer wide landscape",
+          "cat": "stock"
+        }
+      ]
+    }
+  ],
+  "outro": [
+    {
+      "kind": "stock",
+      "content": "That was the full countdown — mechanism, context, and sourced numbers for all ten entries. If any rank surprised you, that gap between expectation and data is exactly what this channel documents. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Recap montage of animals from the episode in quick succession",
+      "query": "animal recap montage quick cuts",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Which entry was most surprising relative to what you assumed before watching — the predator you feared, or the animal you ignored? Drop your answer in the comments with your region; we read them. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Split screen contemplative nature footage",
+      "query": "contemplative nature split screen",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "If you live in an area affected by one of these animals, share local context — lived experience adds detail no dataset captures fully. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Diverse global landscapes and communities near wildlife",
+      "query": "global community wildlife landscape",
+      "cat": "stock"
+    },
+    {
+      "kind": "stock",
+      "content": "Next video shifts registers to invasive species that have cost America more than hurricane seasons — same ranking format, different scale of damage. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Teaser montage for next video topic",
+      "query": "next video teaser montage science",
+      "cat": "stock"
+    },
+    {
+      "kind": "overlay_cta",
+      "content": "If this ranking changed how you think about danger, hit like and subscribe — new ranked documentaries drop every other day. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens. The mechanism matters as much as the headline number: exposure, biology, and context combine into outcome.",
+      "desc": "Golden hour wetland montage underneath popup",
+      "query": "wetland golden hour montage cinematic",
+      "title": "Like & Subscribe",
+      "body": "New rankings every other day. Always sourced.",
+      "position": "lower-third"
+    },
+    {
+      "kind": "stock",
+      "content": "Thanks for watching to the end. Most viewers never reach the final entry — if you did, this format is worth continuing. See you in the next one. Documentary pacing keeps habitat footage on screen while narration carries the statistical weight. Where studies disagree, this ranking uses conservative medians rather than outlier years. Emergency medicine and ecology papers sometimes diverge on edge cases — we cite the range when that happens.",
+      "desc": "Slow sunset over open landscape, peaceful closing shot",
+      "query": "sunset open landscape peaceful closing",
+      "cat": "stock"
+    }
+  ]
+}

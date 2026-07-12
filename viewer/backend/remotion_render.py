@@ -78,7 +78,11 @@ def render_remotion_clip(
         cached = cache_dir / f"remotion_{composition}_{cache_key}_{width}x{height}.mp4"
         if not force and cached.exists() and cached.stat().st_size > 0:
             if cached.resolve() != output_path.resolve():
-                shutil.copy2(cached, output_path)
+                from export_video import safe_replace
+
+                temp_copy = output_path.with_suffix(f".copy-{cache_key}.mp4")
+                shutil.copy2(cached, temp_copy)
+                safe_replace(temp_copy, output_path)
             return output_path
 
     duration_frames = max(30, int(round(duration_seconds * FPS)))
@@ -138,14 +142,22 @@ def render_remotion_clip(
         alt_output = Path(output_arg)
         if alt_output.exists() and alt_output.stat().st_size > 0 and alt_output != output_path:
             if output_path.parent.exists():
-                shutil.copy2(alt_output, output_path)
+                from export_video import safe_replace
+
+                temp_copy = output_path.with_suffix(".remotion-alt.mp4")
+                shutil.copy2(alt_output, temp_copy)
+                safe_replace(temp_copy, output_path)
         elif not output_path.exists() or output_path.stat().st_size == 0:
             raise RuntimeError(f"Remotion did not produce output: {output_path}")
 
     if cache_dir is not None:
         cache_dir.mkdir(parents=True, exist_ok=True)
         cache_path = cache_dir / f"remotion_{composition}_{cache_key}_{width}x{height}.mp4"
-        shutil.copy2(output_path, cache_path)
+        from export_video import safe_replace
+
+        temp_cache = cache_path.with_suffix(f".staging-{cache_key}.mp4")
+        shutil.copy2(output_path, temp_cache)
+        safe_replace(temp_cache, cache_path)
 
     return output_path
 

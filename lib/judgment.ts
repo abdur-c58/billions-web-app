@@ -68,8 +68,7 @@ export function judgmentDetail(selection?: SegmentSelection | null): string {
       ? `${Math.round(selection.confidence * 100)}% confidence`
       : null,
     selection.confidence_source ? `via ${selection.confidence_source}` : null,
-    selection.ai_reason,
-    selection.ai_skipped ? `AI skipped: ${selection.ai_skipped}` : null,
+    selection.match_reason,
   ]
     .filter(Boolean)
     .join(" · ");

@@ -1,0 +1,2374 @@
+{
+  "title": "These Animals Have Spread Diseases That Killed More Humans Than Every War In History Combined",
+  "channel": "Apex Archives",
+  "script": [
+    {
+      "beat": 1,
+      "label": "Hook",
+      "segments": [
+        {
+          "segment_id": 1,
+          "content": "Right now, somewhere on this planet, an animal smaller than your thumbnail is quietly responsible for more human deaths than every war in recorded history combined. It isn't a shark. It isn't a lion. It doesn't roar, it doesn't stalk, and most of the time you never even see it coming. The animals that have shaped human civilization most profoundly did it not through raw physical power, but through something far more efficient: disease.",
+          "description": "Slow-motion mosquito landing on skin at dusk, extreme macro, backlit",
+          "type": [
+            "mosquito landing skin macro slow motion",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 2,
+          "content": "This isn't a list of predators. This is a list of vectors — animals that don't kill you themselves, they deliver something else that does. Parasites. Bacteria. Viruses. The difference matters, because once you understand how pathogens move from animal to human host, you start seeing how many of history's greatest catastrophes trace back to something most people step over without a second glance.",
+          "description": "Wide aerial shot of a swamp or wetland at golden hour, insects visible in the light",
+          "type": [
+            "wetland swamp golden hour aerial insects",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 3,
+          "content": "We're counting down ten animals that spread disease, ranked by confirmed historical and modern death toll — using WHO data, peer-reviewed epidemiology, and named research wherever it exists. No movie logic. No inflated numbers. No sharks with lasers. Just the actual math of how disease-carrying animals have outpaced every human conflict in terms of total lives ended, and why most people have never thought to put them in that context.",
+          "description": "Data visualization style shot: world map with disease outbreak hotspots highlighted in red",
+          "type": [
+            "world map disease outbreak data visualization",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 4,
+          "content": "Some of these entries will surprise you. One of them is an animal most people keep as a pet and allow to sleep in their bed. Another has killed more humans across history than the bubonic plague, the Spanish flu, and both World Wars combined — and it's still killing hundreds of thousands of people every year, right now, in numbers most people have never once heard reported. Understanding why that is, and why we aren't in a constant state of public health emergency about it, is part of what this ranking is actually about.",
+          "description": "Close-up of a dog portrait, then a rat in urban setting, quick cuts, tension building",
+          "type": [
+            "domestic dog closeup portrait",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 5,
+          "content": "This channel ranks the real biology behind the world's most dangerous animals — no clickbait, just sourced data and the mechanisms behind it. If that's the kind of content you want more of, subscribe now, because the number one entry on this list is going to fundamentally change how you think about the deadliest animal on Earth.",
+          "description": "Wide tracking shot through dense tropical wetland at dusk, mosquitoes visible in the light beams",
+          "type": "remotion:FactCard",
+          "remotion": {
+            "composition": "FactCard",
+            "layout": "overlay",
+            "overlay": {
+              "position": "lower-third"
+            },
+            "broll": {
+              "search_query": "tropical wetland dusk mosquitoes light beams",
+              "category": "stock"
+            },
+            "props": {
+              "title": "Subscribe For The Real Ranking",
+              "body": "Ten animals. Real data. No clickbait.",
+              "factNumber": null,
+              "showFactBadge": false,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "bodyColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "left",
+              "verticalAlign": "center",
+              "padding": 44,
+              "contentMaxWidth": 1700,
+              "titleSize": 100,
+              "bodySize": 56,
+              "titleWeight": 400,
+              "lineHeight": 1.35
+            },
+            "design": {
+              "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+              "layout": {
+                "mode": "overlay",
+                "position": "lower-third",
+                "textAlign": "left",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, one-line body secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "100px",
+                "bodySize": "56px",
+                "titleWeight": 400,
+                "lineHeight": 1.35
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thin accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up 30px, ~0.4s",
+                "exit": "popup fades as narration continues",
+                "stagger": "title +0 -> body +14 frames",
+                "emphasis": "none",
+                "easing": "spring, fast"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle vignette on popup edges only",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "popup rises fast over continuing b-roll",
+                "out": "soft fade, b-roll holds"
+              },
+              "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": "Full-frame b-roll (tropical wetland dusk mosquitoes light beams) plays underneath. Large lower-third Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title 'Subscribe For The Real Ranking' in hot white (#fefaf3), body line 'Ten animals. Real data. No clickbait.' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar (#ff6a1a) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+          }
+        },
+        {
+          "segment_id": 6,
+          "content": "To be clear about the rules of this ranking: we are not counting which animal directly kills the most people with venom or physical force. We are ranking which animals, as biological vectors, are responsible for the highest confirmed and estimated death tolls through the diseases they transmit — both historically and in the present day. That distinction fundamentally changes what dangerous actually means, and it changes which animals end up at the top.",
+          "description": "Researcher in a lab examining a petri dish or specimen under a microscope",
+          "type": [
+            "researcher microscope lab specimen closeup",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 7,
+          "content": "A shark attack is instant and visible. A disease vector can operate for decades, across entire continents, without most of its victims ever connecting the dots between the bite and the illness that follows weeks or months later. That invisibility — that long, quiet gap between transmission and consequence — is exactly what makes this list so much larger than most people expect. It is also what makes these animals so much harder to fight than anything with teeth or claws.",
+          "description": "Split shot: shark in open water cut to a mosquito swarm at dusk, contrast editorial",
+          "type": [
+            "shark open water swimming",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 2,
+      "label": "Methodology",
+      "segments": [
+        {
+          "segment_id": 8,
+          "content": "How we built this ranking.",
+          "description": "Full-frame Remotion chapter card, no b-roll",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "The Method",
+              "subtitle": "Confirmed death tolls, named sources, real epidemiology",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Chapter-break card signalling shift into the methodology/investigation",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, accent bar, subtitle secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up ~0.4s",
+                "exit": "hard cut to b-roll",
+                "stagger": "title -> bar +8 -> subtitle +16",
+                "emphasis": "none",
+                "easing": "spring"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "no grain, subtle vignette",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut into full-frame graphic",
+                "out": "hard cut to b-roll"
+              },
+              "durationHint": "hold 3-4 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, warm near-black gradient. Centered Anton title 'The Method' at 150px hot white, thick amber accent bar beneath, subtitle 'Confirmed death tolls, named sources, real epidemiology' at 64px Barlow Condensed warm ash grey. Fast fade-up enter. Hold 3-4 seconds. Hard cut to b-roll."
+          }
+        },
+        {
+          "segment_id": 9,
+          "content": "Every entry on this list is backed by figures from the World Health Organization, the CDC, peer-reviewed epidemiological journals, and named researchers in the field of vector-borne disease. Where historical numbers are estimates — and for pre-modern epidemics, they always are — we say so explicitly rather than presenting a rough guess as settled fact. The goal here is intellectual honesty, not inflated drama. The real numbers are dramatic enough without embellishment.",
+          "description": "Stack of research papers and a laptop showing epidemiological charts on screen",
+          "type": [
+            "research papers epidemiology charts desk",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 10,
+          "content": "We're also separating two different kinds of death toll across each entry: the ongoing annual toll these animals cause today, and the cumulative historical toll across centuries or millennia. Both matter and they rank differently. An animal that killed enormous numbers of people two hundred years ago but barely touches modern populations ranks differently than one still quietly killing tens of thousands of people this year. Where both are significant, we account for both.",
+          "description": "Old historical engraving of a plague scene transitioning to modern hospital ward imagery",
+          "type": [
+            "historical plague engraving archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 11,
+          "content": "One more rule we want to be explicit about: we're crediting the animal as the vector, not villainizing the animal itself. Mosquitoes, snails, and rats aren't malicious — they're doing exactly what their biology evolved to do over millions of years, in ecosystems that predate human civilization entirely. The tragedy is a side effect of that biology intersecting with how humans build settlements, manage water, and move across continents. Understanding the mechanism is the point of this list, not assigning blame to organisms that have no concept of the harm they're causing.",
+          "description": "Wide shot of a rice paddy or agricultural wetland where humans and wildlife interact closely",
+          "type": [
+            "rice paddy wetland agriculture wildlife",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 3,
+      "label": "Entry #10 - Tsetse Fly",
+      "segments": [
+        {
+          "segment_id": 12,
+          "content": "Number ten.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Tsetse Fly",
+              "factNumber": "#10",
+              "subtitle": "Reshaped a continent's settlement history",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#10' at 240px in #ff6a1a dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Tsetse Fly' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line 'Reshaped a continent's settlement history' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 13,
+          "content": "The tsetse fly lives across thirty-six countries in sub-Saharan Africa, and for over a century it effectively closed off an area roughly the size of the continental United States to cattle farming and large-scale agricultural settlement. It isn't the fly's bite that does the primary damage — it's what the bite delivers into the bloodstream in the moments that follow, because the fly's saliva functions as a delivery mechanism for something far more dangerous than the insect itself.",
+          "description": "Tsetse fly landing on skin close-up, African savanna background with warm golden light",
+          "type": [
+            "tsetse fly closeup savanna",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 14,
+          "content": "Inside the fly's saliva are trypanosomes — single-celled parasites that, once injected into a human or animal host, migrate first through the bloodstream and lymphatic system before eventually crossing into the central nervous system. That crossing is what turns a treatable infection into what's historically been called African sleeping sickness, and it's why the disease's timeline is so deceptive: it can be weeks or months from bite to serious neurological involvement, plenty of time for transmission to continue before anyone realizes something is seriously wrong.",
+          "description": "Microscopic footage of trypanosome parasites swimming in a blood sample",
+          "type": [
+            "trypanosome parasite microscope blood",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 15,
+          "content": "Early symptoms mimic a normal fever — headaches, joint pain, itching at the bite site. It's only in the second stage, once the parasite reaches the brain and meninges, that the disease earns its name: disrupted sleep cycles that invert normal waking patterns, deepening confusion, personality and behavioral changes that family members notice before the patient does, and without treatment, a slide into coma and death that can take months to complete. In regions without diagnostic infrastructure, that progression was often invisible until it was irreversible.",
+          "description": "Patient in African rural clinic being examined carefully by healthcare worker",
+          "type": [
+            "rural clinic africa healthcare worker",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 16,
+          "content": "Between 1896 and 1906, an epidemic of sleeping sickness along the Congo River basin and in Uganda killed an estimated quarter of a million people. British colonial physician David Bruce identified the tsetse fly as the vector in 1903, through systematic field work conducted during the Uganda epidemic — research that remains foundational to how the disease is tracked and controlled today, and that was among the earliest examples of vector identification using rigorous epidemiological investigation rather than folklore or assumption.",
+          "description": "Archival black and white photograph style imagery of colonial-era African river settlements",
+          "type": [
+            "colonial africa river settlement archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 17,
+          "content": "At its worst in the early twentieth century, entire villages were abandoned as sleeping sickness swept through river communities. Families would simply leave, moving away from the river systems that the tsetse fly depended on for breeding and feeding, which meant abandoning the agricultural land and water access those communities had been built around for generations. Population displacement from the disease reshaped settlement patterns across parts of Central Africa in ways that are still visible in demographic and land-use records studied by historians today.",
+          "description": "Wide aerial shot of African river basin with sparse settlement and dense surrounding vegetation",
+          "type": [
+            "african river basin aerial vegetation",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 18,
+          "content": "Modern case numbers have dropped dramatically thanks to coordinated international screening programs — the WHO reported under a thousand new confirmed cases globally in recent years, down from tens of thousands annually in the 1990s. That collapse in case numbers is one of the genuine public health success stories across this entire list, driven by systematic active screening in endemic communities rather than passive case detection, which had been the standard approach for most of the twentieth century and which consistently failed to identify cases before neurological damage was established.",
+          "description": "Health worker conducting blood test screening in mobile clinic setting in rural community",
+          "type": [
+            "mobile health clinic blood test screening",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 19,
+          "content": "But the underlying risk hasn't disappeared, and several factors threaten to reverse the progress that has been made. Roughly seventy million people across the tsetse belt still live in areas where transmission is possible during peak fly season. Civil conflict in several endemic countries has repeatedly disrupted active surveillance programs, allowing localized outbreaks to reappear in regions that had gone years without a reported case — because active screening requires political stability and road access that conflict reliably destroys. The disease didn't go away. The infrastructure to detect it did.",
+          "description": "Wide shot of rural African landscape, isolated village visible in the far distance",
+          "type": [
+            "rural african landscape village distance",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 20,
+          "content": "There's also an economic dimension to the tsetse fly's impact that rarely appears in disease burden statistics. The related animal disease, nagana, causes the same trypanosome infection in cattle and other livestock, with equivalent neurological consequences. Agricultural economists have estimated the combined annual economic loss from nagana in cattle productivity, draft animal capacity, and milk production in sub-Saharan Africa runs into billions of dollars — a slower, quieter economic toll that compounds across generations and that makes the direct human death count only one part of what this insect has cost the continent.",
+          "description": "Cattle grazing in African grassland at dusk, farmer walking through the herd",
+          "type": [
+            "cattle grazing african grassland farmer",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 21,
+          "content": "Compared to the animals ranked ahead of it on this list, the tsetse fly's total confirmed human death toll is smaller and, critically, the trajectory is heading in the right direction — which is exactly why it sits at number ten rather than higher. It's a genuine historical killer with a documented body count in the hundreds of thousands, and an economic footprint that extends across an entire continent, but sustained investment in surveillance and treatment has bent the curve downward in a way that most of the remaining entries on this list have not managed.",
+          "description": "Tsetse fly trap set up in open field, researcher checking monitoring equipment carefully",
+          "type": [
+            "tsetse fly trap field research",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 22,
+          "content": "What earns it a place on this countdown at all is the scale of what it once did, and what it continues to threaten: an insect roughly the size of a common housefly, responsible for reshaping the settlement patterns, agricultural history, and economic development of an entire continent across more than a century, using nothing but a parasite it never chose to carry and a bite mechanism it evolved millions of years before humans ever existed in the regions it calls home.",
+          "description": "Slow-motion close-up of tsetse fly wings in flight against blurred golden savanna background",
+          "type": [
+            "tsetse fly wings flight slow motion",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 4,
+      "label": "Entry #9 - Sandfly",
+      "segments": [
+        {
+          "segment_id": 23,
+          "content": "Number nine.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Sandfly",
+              "factNumber": "#9",
+              "subtitle": "Kills up to 95% of untreated cases",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#9' at 240px in #ff6a1a dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Sandfly' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line 'Kills up to 95% of untreated cases' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 24,
+          "content": "Number nine looks even less threatening than the last entry. The sandfly is smaller than a mosquito, silent in flight because its wings are too small to make the characteristic high-pitched whine that helps us locate and swat mosquitoes, and most people who have been bitten by one never notice it happening at all. The bite leaves no immediate mark, produces no immediate sensation, and by the time symptoms develop days or weeks later, the parasite it delivered has had substantial time to establish itself in the new host.",
+          "description": "Extreme macro of a sandfly resting on skin, tiny feathered wings and small scale clearly visible",
+          "type": [
+            "sandfly macro skin bite",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 25,
+          "content": "The sandfly transmits leishmaniasis, a disease caused by Leishmania parasites that exist in over twenty different species, each producing a slightly different clinical picture in the humans they infect. The mildest form, cutaneous leishmaniasis, causes chronic skin ulcers that can persist for months and leave permanent scarring. A more severe mucocutaneous form attacks the mucous membranes of the nose and throat. The most severe form, visceral leishmaniasis — also called kala-azar — attacks the spleen, liver, and bone marrow, and is fatal in over ninety-five percent of untreated cases.",
+          "description": "Medical illustration or microscope imagery of Leishmania parasites inside macrophage cells",
+          "type": [
+            "leishmania parasite microscope illustration",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 26,
+          "content": "The WHO estimates between fifty thousand and ninety thousand new cases of visceral leishmaniasis occur annually, concentrated heavily in Brazil, East Africa, and the Indian subcontinent, with the true number almost certainly far higher. Surveillance in the worst-affected rural regions is notoriously incomplete — many deaths are never diagnosed, attributed instead to generic fever or malnutrition in communities where laboratory testing doesn't exist or isn't affordable for the patients who need it most.",
+          "description": "Rural clinic in Bihar India or similar setting, patients waiting outside in line",
+          "type": [
+            "rural clinic patients waiting india",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 27,
+          "content": "What makes visceral leishmaniasis especially dangerous from a public health standpoint is how effectively it hides. Incubation can last anywhere from weeks to months, and the early symptoms — prolonged fever, progressive weight loss, weakness, fatigue — are so generic that misdiagnosis is common even in settings with diagnostic capacity. By the time the classic presentation of enlarged spleen and liver appears, the infection has often progressed to a stage where treatment is substantially more difficult and outcomes significantly worse.",
+          "description": "Wide shot of rural village in India at dusk, families gathered around cooking fires at night",
+          "type": [
+            "rural village dusk india east africa",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 28,
+          "content": "The disease has a documented historical footprint stretching back more than a century. Kala-azar caused epidemic waves throughout the nineteenth and twentieth centuries in Bengal and the wider Indian subcontinent that killed hundreds of thousands during peak outbreak years, with reported mortality in some regions exceeding cholera during the same periods. The disease was so widespread and so lethal in parts of Bihar in the early twentieth century that population surveys showed measurable demographic impacts on affected districts — fewer working-age adults, altered household structures, reduced agricultural output.",
+          "description": "Archival photograph style imagery of Bengal region, historical early 20th century setting",
+          "type": [
+            "bengal historical archive region",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 29,
+          "content": "The sandfly's role as the vector was first confirmed experimentally in 1921, through work conducted by Edmond and Etienne Sergent along with colleagues operating in Algeria — a discovery that took nearly two full decades of investigation after William Leishman and Charles Donovan independently identified the parasite itself in 1903. That eighteen-year gap between pathogen identification and vector identification illustrates exactly how difficult it is to trace a disease back to an insect this small in field conditions without modern molecular tools.",
+          "description": "Historical laboratory setting with early 20th century equipment and specimen slides visible",
+          "type": [
+            "historical laboratory early 20th century",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 30,
+          "content": "Climate change is actively expanding the sandfly's geographic range in ways that researchers are tracking with increasing concern. Warmer winters are allowing sandfly populations to survive further north into parts of southern and central Europe that were previously considered climatically unsuitable for the species. Leishmaniasis is now being monitored as an emerging concern in parts of Spain, Italy, and the Balkans that have no established history of the disease, meaning sandfly-borne disease is no longer exclusively a problem for tropical and subtropical regions.",
+          "description": "Mediterranean coastal hillside landscape in warm afternoon light, olive trees and rural housing",
+          "type": [
+            "mediterranean coastline wide shot",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 31,
+          "content": "Treatment exists and works — antimonial compounds have been the standard for decades, and newer drugs like miltefosine represent a significant improvement in tolerability and efficacy. But access is the consistent bottleneck across virtually every endemic region. The populations most affected by visceral leishmaniasis are overwhelmingly rural, low-income, and geographically remote, meaning that even a disease which is technically curable continues killing tens of thousands of people every year almost entirely because the treatment doesn't reach the patients in time.",
+          "description": "Medical supplies and medication vials arranged in rural health clinic setting",
+          "type": [
+            "medical supplies clinic vials rural",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 32,
+          "content": "Co-infection with HIV has created an additional complication that severely worsens outcomes. HIV-positive individuals infected with Leishmania have significantly higher rates of treatment failure and relapse, and the two diseases interact in ways that accelerate progression of both. This is a compounding problem concentrated in the same high-burden regions of East Africa and South Asia where both diseases are endemic and where healthcare resources are most stretched — meaning the patients with the most complex medical needs have the least access to the specialized care those needs require.",
+          "description": "Medical worker with patient in tropical disease co-infection clinic setting, rural area",
+          "type": [
+            "tropical disease clinic patient healthcare",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 33,
+          "content": "At an estimated toll running into the hundreds of thousands historically and tens of thousands annually today, the sandfly earns its position above the tsetse fly for a simple reason: the annual death toll from visceral leishmaniasis alone, even at conservative WHO estimates, consistently exceeds the current annual toll from sleeping sickness — and unlike sleeping sickness, the downward trajectory in case numbers is far less consistent, particularly in regions where co-infection and conflict have combined to make the surveillance picture genuinely unclear.",
+          "description": "Sandfly resting on leaf, its extremely small scale shown against a coin or ruler for reference",
+          "type": [
+            "sandfly scale comparison leaf",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 34,
+          "content": "Every entry so far has one thing in common: none of them look dangerous. None of them announce themselves. That pattern is about to get a lot more uncomfortable, because the next entry on this list lives permanently in the water sources that hundreds of millions of people rely on every single day — and it doesn't even bite.",
+          "description": "Transition shot: river or community water source used daily by local population",
+          "type": [
+            "rural community water source river",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 5,
+      "label": "Retention Tease 1",
+      "segments": [
+        {
+          "segment_id": 35,
+          "content": "We're only at number nine, and the death tolls are about to climb into the tens of millions. Coming up: the animal responsible for one of history's largest single epidemics — and the domesticated creature that's killed more humans across recorded history than anything else on this list. Don't skip the methodology on number four. It will change how you think about medieval history entirely.",
+          "description": "Fast-paced montage of upcoming animals: rat silhouette, dog closeup, mosquito swarm quick cuts",
+          "type": "remotion:FactCard",
+          "remotion": {
+            "composition": "FactCard",
+            "layout": "overlay",
+            "overlay": {
+              "position": "center"
+            },
+            "broll": {
+              "search_query": "montage animals quick cuts nature",
+              "category": "stock"
+            },
+            "props": {
+              "title": "Coming Up",
+              "body": "Bigger death tolls. Stay for #1.",
+              "factNumber": null,
+              "showFactBadge": false,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "bodyColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "left",
+              "verticalAlign": "center",
+              "padding": 44,
+              "contentMaxWidth": 1700,
+              "titleSize": 100,
+              "bodySize": 56,
+              "titleWeight": 400,
+              "lineHeight": 1.35
+            },
+            "design": {
+              "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+              "layout": {
+                "mode": "overlay",
+                "position": "center",
+                "textAlign": "left",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, one-line body secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "100px",
+                "bodySize": "56px",
+                "titleWeight": 400,
+                "lineHeight": 1.35
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thin accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up 30px, ~0.4s",
+                "exit": "popup fades as narration continues",
+                "stagger": "title +0 -> body +14 frames",
+                "emphasis": "none",
+                "easing": "spring, fast"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle vignette on popup edges only",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "popup rises fast over continuing b-roll",
+                "out": "soft fade, b-roll holds"
+              },
+              "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": "Full-frame b-roll (montage animals quick cuts nature) plays underneath. Large center Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title 'Coming Up' in hot white (#fefaf3), body line 'Bigger death tolls. Stay for #1.' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar (#ff6a1a) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+          }
+        }
+      ]
+    },
+    {
+      "beat": 6,
+      "label": "Entry #8 - Blackfly",
+      "segments": [
+        {
+          "segment_id": 36,
+          "content": "Number eight.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Blackfly",
+              "factNumber": "#8",
+              "subtitle": "Over 1 million people permanently blinded",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#8' at 240px in #ff6a1a dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Blackfly' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line 'Over 1 million people permanently blinded' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 37,
+          "content": "Number eight causes a disease with one of the most literal and accurate names in all of medicine: river blindness. It is transmitted by the blackfly, a small biting insect that breeds exclusively in fast-flowing, highly oxygenated rivers and streams — which is exactly why the communities most severely affected by this disease have historically been the ones who built their lives closest to fresh, moving water. The same water that powered their mills, irrigated their fields, and sustained their livestock was the same water that bred the insect that was slowly taking their sight.",
+          "description": "Blackfly swarm near fast-flowing river rapids, close-up on water surface and insects",
+          "type": [
+            "blackfly river rapids swarm",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 38,
+          "content": "The parasite responsible for the disease, Onchocerca volvulus, is a filarial worm — a type of parasitic roundworm — that can live inside the human body for up to fifteen years after a single blackfly bite deposits larvae under the skin. During that time, a single female worm can produce up to a thousand microscopic larvae per day, called microfilariae, that migrate continuously through the skin and body tissue, eventually reaching and concentrating in the eyes.",
+          "description": "Medical illustration of filarial worm life cycle and migration pathway through tissue",
+          "type": [
+            "filarial worm illustration medical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 39,
+          "content": "It is the body's own immune response to dying microfilariae in the eye tissue that causes the blindness, not the worms directly. As microfilariae die in the cornea and other ocular structures, they trigger inflammation and scarring that accumulate with every new generation of larvae. This is a disease that doesn't blind you suddenly. It blinds you slowly, cumulatively, over years and decades of repeated infection — entry by entry, bite by bite, until sight is gone. The progression is so gradual that many patients don't recognize what is happening until their vision loss is already substantial.",
+          "description": "Close-up of eye examination, ophthalmologist conducting a checkup with slit lamp equipment",
+          "type": [
+            "eye examination ophthalmologist closeup",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 40,
+          "content": "The WHO estimates over twenty million people are currently infected with onchocerciasis, the medical name for the disease, with approximately 1.15 million living with some degree of permanent vision loss as a result. Ninety-nine percent of cases occur in sub-Saharan Africa, concentrated along the major river systems of West, Central, and East Africa that simultaneously serve as the primary water source and agricultural backbone for the surrounding farming communities — a geographic overlap that is the fundamental driver of the disease's persistence.",
+          "description": "Aerial drone shot of West African river with farmland and village settlements along its banks",
+          "type": [
+            "african river farmland aerial banks",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 41,
+          "content": "This created a documented economic catastrophe that reshaped land use across West Africa long before the disease was fully understood medically. In parts of the Volta River basin and river valleys of Côte d'Ivoire, Burkina Faso, and Ghana during the mid-twentieth century, entire communities abandoned highly productive riverside farmland and relocated to less fertile upland territory to escape relentless blackfly exposure. The result was reduced agricultural output, increased food insecurity, and demographic shifts that persisted for decades after the disease was eventually brought under a measure of control.",
+          "description": "Abandoned agricultural land near river, overgrown with vegetation suggesting long disuse",
+          "type": [
+            "abandoned farmland village overgrown",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 42,
+          "content": "The international response to river blindness became one of the largest coordinated disease-control efforts in history up to that point. The Onchocerciasis Control Programme, launched in 1974 across eleven West African countries with support from the World Bank, WHO, and multiple bilateral donors, used weekly aerial spraying of larvicide along hundreds of kilometers of river to suppress blackfly breeding. The program ran for over two decades and is credited by the WHO with preventing an estimated 600,000 cases of blindness and enabling the resettlement of approximately 25 million hectares of productive land.",
+          "description": "Aerial spraying aircraft flying low over river or agricultural land, operational shot",
+          "type": [
+            "aerial spraying aircraft river agriculture",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 43,
+          "content": "The drug ivermectin, developed by researchers Satoshi Omura and William Campbell in work that earned them the Nobel Prize in Physiology or Medicine in 2015, transformed the treatment landscape entirely. A single annual oral dose of ivermectin suppresses microfilariae to levels low enough to prevent blindness from progressing, and Merck has donated the drug through the Mectizan Donation Program for free to endemic countries since 1987 — one of the longest-running pharmaceutical donation programs in the entire history of global health.",
+          "description": "Laboratory setting with pharmaceutical research equipment, medication tablets in close focus",
+          "type": [
+            "pharmaceutical laboratory research vials",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 44,
+          "content": "Despite that progress, transmission continues in areas where mass drug administration hasn't achieved full population coverage, particularly in conflict-affected regions of Central Africa. The Democratic Republic of Congo, which carries a substantial proportion of the global disease burden, has faced persistent challenges in maintaining the annual distribution campaigns that ivermectin's effectiveness depends on — and new blindness cases continue to be documented in these coverage gaps every year, in communities that need only an annual pill to be protected.",
+          "description": "Rural health worker distributing medication tablets to community members gathered in village",
+          "type": [
+            "rural health worker distributing medication",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 45,
+          "content": "What makes river blindness distinct from most other diseases on this list is the sheer duration of suffering it inflicts before death or permanent disability arrives. Unlike acute infections that kill quickly, onchocerciasis works on a scale of decades — young adults lose their vision progressively through their most productive years, creating a dependency burden on families and communities that compounds the direct health impact with a social and economic cost that has been extensively documented by researchers studying affected populations.",
+          "description": "Elderly person being guided carefully by a younger family member, warm documentary tone",
+          "type": [
+            "elderly person guided family silhouette",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 46,
+          "content": "With millions currently infected, over a million permanently blinded, and a seventeen-country international control program required to even partially contain it, the blackfly earns its position above both the sandfly and the tsetse fly. Not because it kills in the sharpest numbers, but because of the scale of coordinated global response it required to prevent an even larger catastrophe — and because of what the disease does to the people it doesn't kill: it takes their sight, their independence, and their economic viability over the course of a slow, decades-long deterioration that is entirely preventable with a single annual dose of a donated drug.",
+          "description": "Wide contemplative shot of West African river landscape at golden hour, beautiful and loaded",
+          "type": [
+            "west african river landscape sunset",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 7,
+      "label": "Entry #7 - Freshwater Snail",
+      "segments": [
+        {
+          "segment_id": 47,
+          "content": "Number seven.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Freshwater Snail",
+              "factNumber": "#7",
+              "subtitle": "240 million people currently infected",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#7' at 240px in #ff6a1a dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Freshwater Snail' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '240 million people currently infected' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 48,
+          "content": "Number seven doesn't bite you at all. The freshwater snail responsible for schistosomiasis — more specifically, the Schistosoma parasites the snail hosts — infects humans purely through skin contact with contaminated water. Swimming, wading, washing clothes, or simply crossing a river in an area where infected snails are present and actively shedding larvae is enough for transmission to occur. No bite. No direct animal-to-human contact. Just water, skin, and a microscopic larva doing exactly what its evolutionary history prepared it to do.",
+          "description": "Freshwater snail resting on a submerged rock in clear shallow river water, close-up",
+          "type": [
+            "freshwater snail river closeup",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 49,
+          "content": "The larvae responsible for infection are called cercariae, and they penetrate human skin directly within seconds of contact with contaminated water. Once inside the host, they migrate through the bloodstream to the liver, intestines, or bladder depending on the species, where they mature into adult worms that pair and live together for years, laying eggs continuously. Those eggs trigger the chronic inflammatory response that causes the disease's long-term damage — not the worms themselves, but the body's sustained attempt to wall off eggs it cannot expel.",
+          "description": "Microscope footage or illustration of schistosome cercariae larvae swimming freely in water",
+          "type": [
+            "schistosome parasite microscope larvae",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 50,
+          "content": "The WHO estimates schistosomiasis currently affects over 240 million people globally, with more than 700 million living in endemic areas where transmission risk is ongoing. It causes an estimated 200,000 deaths annually, primarily through progressive organ damage — liver fibrosis, portal hypertension, bladder cancer in cases of urogenital infection — rather than acute illness. The death toll accumulates quietly across entire regional populations over years and decades, which is part of why schistosomiasis receives a fraction of the global health attention its burden size would otherwise warrant.",
+          "description": "Wide shot of community members using a river for daily tasks, washing, water collection, bathing",
+          "type": [
+            "rural community river daily tasks",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 51,
+          "content": "The connection between large-scale water infrastructure and schistosomiasis transmission is direct, well-documented, and almost entirely predictable in retrospect. The construction of major dams and irrigation canal systems across sub-Saharan Africa in the mid-twentieth century, undertaken with the genuine intention of expanding agricultural output and improving food security, inadvertently created ideal standing-water habitat for the snails that host the Schistosoma parasite. In multiple documented cases, infection rates in communities near newly completed irrigation schemes rose sharply within years of construction — a pattern that public health researchers had in some cases predicted before the infrastructure was built.",
+          "description": "Large dam structure and irrigation canal network seen from aerial or wide-angle shot",
+          "type": [
+            "irrigation dam canal aerial africa",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 52,
+          "content": "Egyptologists have identified evidence of schistosomiasis in Egyptian mummies dating back over three thousand years, with calcified Schistosoma eggs recovered from preserved tissue during forensic examinations of multiple ancient specimens. This makes schistosomiasis one of the oldest continuously documented parasitic diseases affecting human populations — traceable from ancient Egyptian civilization directly through to modern WHO disease burden reports. A three-thousand-year thread of infection running through human history and the water systems civilization has always depended on.",
+          "description": "Egyptian archaeological site or museum exhibit showing ancient mummy, scholarly atmosphere",
+          "type": [
+            "egyptian mummy archaeological museum",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 53,
+          "content": "In children specifically, chronic schistosomiasis produces consequences that extend well beyond the direct health impact. Multiple field studies conducted across endemic regions of sub-Saharan Africa have documented that chronic infection is associated with anemia, stunted physical growth, and measurable impairment of cognitive development and school performance. Schistosomiasis doesn't just affect the individuals who carry it — it affects entire generations' educational attainment and economic potential, meaning the disease's true cost is compounding across decades in ways that the annual death count alone completely fails to capture.",
+          "description": "Children at desks in a rural African school, classroom shot, warm documentary lighting",
+          "type": [
+            "children rural school africa classroom",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 54,
+          "content": "Mass drug administration using praziquantel has become the primary control strategy, and the WHO has organized treatment of hundreds of millions of people through school-based and community programs across endemic regions since the early 2000s. The approach works in the sense that treatment clears existing infection. But reinfection is common — in many cases almost immediate — wherever contaminated water contact continues as part of daily life. Praziquantel doesn't prevent transmission. Treatment without addressing the underlying water exposure is, by design, an indefinitely repeating intervention.",
+          "description": "Health worker standing with schoolchildren forming a line to receive medication tablets",
+          "type": [
+            "health worker medication schoolchildren line",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 55,
+          "content": "Some regions have achieved genuine, sustained reduction in disease burden through combined approaches: improved sanitation infrastructure, treated water access, snail population control through molluscicide, and mass drug administration delivered together over multiple years. Prevalence reductions in parts of China, where schistosomiasis was once a major public health burden, and in targeted districts of Brazil, demonstrate that the disease is beatable with adequately funded, integrated, long-term effort — an important proof of concept that the global health community has not yet applied at the scale the disease's burden demands.",
+          "description": "Modern water treatment plant or clean piped water infrastructure in rural community",
+          "type": [
+            "water sanitation infrastructure treatment facility",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 56,
+          "content": "The economic argument for investing heavily in schistosomiasis control is compelling and well-documented. Studies in endemic communities that have achieved significant prevalence reduction consistently show improvements in child growth, school attendance, labor productivity, and agricultural output among treated populations. The World Bank has included schistosomiasis control in its analyses of high-return public health investments precisely because the returns — measured in DALYs averted, educational years gained, and economic productivity restored — are among the most favorable of any neglected tropical disease intervention in the portfolio.",
+          "description": "Rural market or agricultural community scene, workers and families engaged in economic activity",
+          "type": [
+            "rural market agricultural community workers",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 57,
+          "content": "At over 200,000 annual deaths, nearly a quarter billion people currently infected, and a transmission route as ordinary as crossing a river or fetching water, schistosomiasis surpasses everything ranked below it on pure scale of ongoing burden. The animal responsible doesn't have claws, doesn't bite, doesn't even move toward humans with any intentionality. It simply exists in the water, releasing larvae that will infect any warm-blooded host that enters nearby, and it has been doing so for at least three thousand years of documented human civilization and almost certainly for far longer than that.",
+          "description": "Snail shell in extreme closeup against softly blurred river water background",
+          "type": [
+            "snail shell macro river background",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 8,
+      "label": "Entry #6 - Kissing Bug",
+      "segments": [
+        {
+          "segment_id": 58,
+          "content": "Number six.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Kissing Bug",
+              "factNumber": "#6",
+              "subtitle": "6-7 million infected, heart failure after decades",
+              "showAccentBar": true,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#6' at 240px in #ff6a1a dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Kissing Bug' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '6-7 million infected, heart failure after decades' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 59,
+          "content": "Number six gets its name from where it prefers to bite: near the mouth, or around the eyes, while a person sleeps. The triatomine bug — the kissing bug — is a nocturnal insect that hides in the cracks of walls and thatched roofs during daylight hours and emerges at night to feed on sleeping hosts. It doesn't kill through its bite directly. It kills through what it leaves behind on the skin after feeding, and through a transmission mechanism that depends on the sleeping victim unknowingly completing the infection themselves.",
+          "description": "Kissing bug triatomine insect close-up macro shot, nighttime lighting against wall texture",
+          "type": [
+            "kissing bug triatomine closeup night",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 60,
+          "content": "The bug defecates near the bite site while it feeds. Its feces carry Trypanosoma cruzi, the protozoan parasite responsible for Chagas disease. When the sleeping person wakes and scratches the itching bite, they inadvertently push that parasite-laden feces directly into the open wound, or rub it into the mucous membranes of the eyes or nose. The parasite doesn't enter through the bite itself — it enters through the victim's own scratching reflex. It is one of the more unsettling transmission mechanisms on this list, because the vector's role ends with defecation and the host's body completes the rest.",
+          "description": "Microscope imagery of Trypanosoma cruzi parasite forms in stained blood smear",
+          "type": [
+            "trypanosoma cruzi parasite microscope",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 61,
+          "content": "Chagas disease has two phases that couldn't be more different in clinical presentation. The acute phase, occurring in the weeks after infection, is often so mild — or entirely asymptomatic — that the majority of infected individuals never seek medical attention and never receive a diagnosis. It's the chronic phase, arriving silently over the following years or decades, that carries the real lethality: Trypanosoma cruzi slowly damages the autonomic nervous system controlling the heart and digestive tract, causing the heart to enlarge and its conduction system to deteriorate. An estimated thirty percent of chronically infected individuals eventually develop life-threatening cardiac complications.",
+          "description": "Medical cardiac imaging on monitor, heart ultrasound or EKG readout displayed",
+          "type": [
+            "cardiac ultrasound heart medical imaging",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 62,
+          "content": "The Pan American Health Organization estimates six to seven million people are currently infected with Trypanosoma cruzi, primarily across Latin America from Mexico through Argentina, causing roughly 12,000 deaths annually — most of them sudden cardiac events in patients who had no idea they were carrying the parasite for twenty or thirty years. That combination of extremely long latency, silent progression, and ultimately lethal cardiac failure makes Chagas one of the most underdiagnosed cardiovascular diseases in the world, masquerading as ordinary heart disease until the moment it kills.",
+          "description": "Wide shot of rural Latin American housing, traditional adobe and thatched roof construction",
+          "type": [
+            "rural latin american housing adobe construction",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 63,
+          "content": "The epidemiology of Chagas is inseparable from poverty and housing quality. The triatomine bug lives in cracks and crevices in adobe brick walls and dried thatched roofing — the construction materials historically most available and affordable in rural communities across Latin America. Improved concrete and masonry construction, combined with insecticide treatment of existing structures, directly reduces exposure. The disease is, in a very measurable sense, a disease of inadequate housing, meaning its persistence is tied not to lack of biological solutions but to lack of economic and infrastructural investment in the communities most affected.",
+          "description": "Close-up of cracked weathered adobe wall with visible crevices, dim interior lighting",
+          "type": [
+            "adobe wall cracks insect crevice",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 64,
+          "content": "Argentine physician Carlos Chagas accomplished something in 1909 that is essentially unmatched in the history of infectious disease: he identified the disease, its causative parasite, its insect vector, and its animal reservoir hosts essentially single-handedly, during fieldwork conducted in the Brazilian state of Minas Gerais while investigating a railroad construction crew. Most diseases require separate researchers, across separate institutions, over years or decades to connect all of those elements. Chagas did it in a single investigation, and the disease was named after him in recognition of an achievement that remains extraordinary by any standard.",
+          "description": "Historical archival imagery of early 20th century Brazilian interior landscape and settlement",
+          "type": [
+            "historical brazilian laboratory archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 65,
+          "content": "Migration has significantly changed the disease's geographic footprint over the past several decades. Chagas disease is now documented in the United States, Canada, Spain, and other parts of Europe, carried by individuals who moved from endemic regions in Latin America and in some cases unknowingly transmitted the infection through blood transfusion or organ donation before screening protocols were implemented. The FDA approved the first blood supply screening test for T. cruzi in 2007, following evidence that transfusion-associated transmission was occurring in the United States at low but measurable rates.",
+          "description": "Blood donation or blood bank screening facility with modern testing equipment visible",
+          "type": [
+            "blood bank screening facility medical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 66,
+          "content": "Vector control has achieved substantial documented results where applied consistently. The Southern Cone Initiative, a coordinated regional program launched in 1991 across Argentina, Brazil, Chile, Paraguay, Uruguay, and Bolivia, used insecticide spraying of homes, improved housing construction, and blood supply screening to reduce new T. cruzi infections. Transmission was eliminated in Uruguay in 1997 and in Chile in 1999, and Brazil achieved certification of interruption of household transmission from the primary vector species in 2006 — proof that sustained, coordinated effort can break the cycle.",
+          "description": "Health worker applying insecticide spray to interior wall of rural dwelling",
+          "type": [
+            "insecticide spraying rural home walls",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 67,
+          "content": "Treatment is most effective and most curative when given early, during or shortly after the acute phase of infection. Once chronic cardiac disease has established itself — once the heart has already been structurally altered by years of immune-mediated inflammation — antiparasitic drugs can halt further progression but cannot reverse the damage already done. This irreversibility of the chronic cardiac phase is what makes early detection so critically important, and it's what makes the disease's decades-long silent period so costly: by the time most patients are diagnosed, the window for curative treatment has already closed.",
+          "description": "Cardiologist consulting with patient in clinical setting, reviewing cardiac imaging results",
+          "type": [
+            "doctor patient consultation cardiology clinic",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 68,
+          "content": "At roughly seven million current infections and thousands of cardiac deaths per year — almost all of them in patients who didn't know they were infected until their heart failed — the kissing bug ranks above the three entries before it on this list for a reason that cuts across both biology and public health: it is a disease defined by invisibility, from the nocturnal insect that infects sleeping victims to the decades-long silent cardiac deterioration that follows. The damage is done long before anyone knows to look for it.",
+          "description": "Wide atmospheric shot of rural Latin American landscape at dusk, village lights in the distance",
+          "type": [
+            "latin american landscape dusk village silhouette",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 9,
+      "label": "Retention Tease 2",
+      "segments": [
+        {
+          "segment_id": 69,
+          "content": "Halfway through, and we haven't hit the entries responsible for tens of millions of deaths yet. Number one on this list is an animal you've almost certainly never thought of in this context — and the epidemiological case for its total historical death toll is genuinely one of the most staggering facts in all of biology. Stay for it.",
+          "description": "Fast montage teasing top entries: rat silhouette, mosquito swarm, plague imagery quick cuts",
+          "type": "remotion:FactCard",
+          "remotion": {
+            "composition": "FactCard",
+            "layout": "overlay",
+            "overlay": {
+              "position": "center"
+            },
+            "broll": {
+              "search_query": "montage rat mosquito plague teaser",
+              "category": "stock"
+            },
+            "props": {
+              "title": "Stay For The Top 3",
+              "body": "The real #1 will surprise you.",
+              "factNumber": null,
+              "showFactBadge": false,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "bodyColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "left",
+              "verticalAlign": "center",
+              "padding": 44,
+              "contentMaxWidth": 1700,
+              "titleSize": 100,
+              "bodySize": 56,
+              "titleWeight": 400,
+              "lineHeight": 1.35
+            },
+            "design": {
+              "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+              "layout": {
+                "mode": "overlay",
+                "position": "center",
+                "textAlign": "left",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, one-line body secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "100px",
+                "bodySize": "56px",
+                "titleWeight": 400,
+                "lineHeight": 1.35
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thin accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up 30px, ~0.4s",
+                "exit": "popup fades as narration continues",
+                "stagger": "title +0 -> body +14 frames",
+                "emphasis": "none",
+                "easing": "spring, fast"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle vignette on popup edges only",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "popup rises fast over continuing b-roll",
+                "out": "soft fade, b-roll holds"
+              },
+              "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": "Full-frame b-roll (montage rat mosquito plague teaser) plays underneath. Large center Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title 'Stay For The Top 3' in hot white (#fefaf3), body line 'The real #1 will surprise you.' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar (#ff6a1a) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+          }
+        }
+      ]
+    },
+    {
+      "beat": 10,
+      "label": "Entry #5 - Body Louse",
+      "segments": [
+        {
+          "segment_id": 70,
+          "content": "Number five.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Body Louse",
+              "factNumber": "#5",
+              "subtitle": "Tens of millions dead across wartime epidemics",
+              "showAccentBar": true,
+              "accentColor": "#c1121f",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#c1121f",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#5' at 240px in #c1121f dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Body Louse' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line 'Tens of millions dead across wartime epidemics' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 71,
+          "content": "Number five is an animal that doesn't need warm weather, doesn't need standing water, doesn't need any particular ecosystem or geography at all. It needs exactly one thing: the conditions that human conflict reliably creates. Crowded, unwashed bodies. Clothing that can't be laundered. People packed together in confined spaces for extended periods. Those are the conditions where the body louse thrives, and wherever the body louse thrives, epidemic typhus follows — caused by the bacterium Rickettsia prowazekii.",
+          "description": "Historical archival imagery of crowded wartime conditions, generic period photography atmosphere",
+          "type": [
+            "historical wartime conditions archive photography",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 72,
+          "content": "Unlike most vectors on this list, the louse requires no particular climate and no natural habitat outside of human clothing and the skin it covers. It lives exclusively in the seams and folds of clothing worn next to the body, emerging to feed on blood, and it moves between people through direct physical contact or shared clothing and bedding. In any environment where conditions of density and poor hygiene persist for more than a few weeks, louse populations can expand with remarkable speed, and with them the risk of Rickettsia transmission through infected feces.",
+          "description": "Close-up extreme macro of body louse on fabric clothing seam, parasitology imagery",
+          "type": [
+            "body louse fabric seam macro",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 73,
+          "content": "During the First World War and its immediate aftermath, typhus killed an estimated three million people across Eastern Europe and Russia between 1917 and 1922, spreading explosively through the combination of trench warfare conditions and then the catastrophic social collapse of the Russian Civil War. Lenin himself is reported to have said in 1919 that either socialism defeats the louse, or the louse defeats socialism — a statement that, whatever its political framing, accurately describes the public health reality of the time. The disease was killing people faster than the war itself in several theaters during peak outbreak years.",
+          "description": "Archival black and white documentary photography of Eastern European wartime refugee movement",
+          "type": [
+            "archival eastern europe refugee historical",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 74,
+          "content": "Napoleon's catastrophic 1812 Russian campaign is now understood by medical historians to have been substantially worsened by typhus epidemic. Of the roughly half a million soldiers who crossed into Russia, historians estimate that more died from disease — including typhus — than from actual combat with Russian forces. The retreat from Moscow, long depicted in military history primarily as a logistical failure in extreme cold, was substantially a public health collapse. When the Grande Armée fell apart, it fell apart in large part because its soldiers were dying of an insect-borne infection that thrived in exactly the crowded, exhausted, poorly-clothed conditions of a failing winter campaign.",
+          "description": "Historical painting or engraving depicting Napoleonic era military campaign in winter, archival style",
+          "type": [
+            "napoleonic era military campaign historical",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 75,
+          "content": "The bacterium doesn't transmit through the louse's bite directly, which is counterintuitive but important. Rickettsia prowazekii is present in louse feces, not in its saliva. Infection occurs when a person scratches the itching bite and rubs contaminated feces into the wound or into a mucous membrane — a transmission mechanism strikingly similar to the kissing bug covered in the previous entry, despite the two insects being entirely unrelated taxonomically. The parallel reveals something important about parasite evolution: multiple unrelated organisms have independently converged on fecal-contamination transmission as an efficient dispersal mechanism.",
+          "description": "Microscope imagery of Rickettsia prowazekii bacteria in laboratory research setting",
+          "type": [
+            "rickettsia bacteria microscope laboratory",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 76,
+          "content": "Polish microbiologist Rudolf Weigl developed the first effective typhus vaccine in the 1930s through a painstaking and genuinely dangerous method: infecting live lice with Rickettsia, then harvesting the bacteria from their intestinal tissue after the lice had fed for a specified period. The process required teams of laboratory workers to allow lice to feed on their own skin daily under controlled conditions to maintain the louse colonies. Weigl deliberately hired Jewish academics and intellectuals during the Nazi occupation of Poland to work in his laboratory, providing them with protective documents — using the vaccine program as cover for what amounted to a systematic protection effort during the occupation.",
+          "description": "Historical 1930s-1940s era European laboratory with period scientific equipment and workspace",
+          "type": [
+            "historical 1930s laboratory scientific equipment",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 77,
+          "content": "Typhus outbreaks continued throughout the Second World War in concentration camps and besieged cities, where documented epidemics killed tens of thousands under conditions of deliberate overcrowding and intentional deprivation of hygiene resources. The conditions in those facilities were not incidentally hospitable to lice — in many cases they were deliberately maintained in ways that promoted epidemic disease. This makes the body louse's toll in that period not simply a natural disaster but something more morally complex: the weaponization of epidemiological conditions against civilian and imprisoned populations.",
+          "description": "Historical archival imagery of WWII era documentation, somber archival photographic tone",
+          "type": [
+            "wwii era european city historical archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 78,
+          "content": "Modern outbreaks are rare in industrialized countries where sanitation infrastructure and access to delousing treatments make sustained louse infestations uncommon. But the disease has not disappeared. Documented outbreaks have occurred in recent decades in refugee camps in Burundi, prisons in Russia, and among homeless populations in parts of the United States and France. Every time the conditions of poverty, displacement, and inadequate sanitation converge at sufficient scale, the biological machinery for typhus epidemic is latent in human populations and ready to restart — because the louse never went anywhere.",
+          "description": "Refugee camp with tents and humanitarian aid supplies, documentary aerial view",
+          "type": [
+            "refugee camp humanitarian aid scene",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 79,
+          "content": "There is also a dimension to typhus that rarely appears in disease history texts: the disease has an animal reservoir in flying squirrels in North America, meaning it persists in wildlife independent of human louse populations. Human cases from this reservoir are rare but documented, and the existence of a non-human reservoir means that Rickettsia prowazekii cannot be eradicated purely through human public health interventions — it has a biological fallback that allows it to persist in ecosystems regardless of what happens in human communities.",
+          "description": "Flying squirrel on tree branch in North American woodland, wildlife photography",
+          "type": [
+            "flying squirrel woodland wildlife north america",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 80,
+          "content": "Cumulative historical estimates for epidemic typhus deaths across the Napoleonic campaigns, the First World War era, the Russian Civil War, and the Second World War run into the tens of millions when totaled — a toll driven almost entirely by human conflict creating the precise crowded, unwashed conditions this insect depends on. The body louse is not, in any meaningful sense, a wilderness animal. It is a parasite of civilization's worst moments, thriving specifically at the intersection of mass violence, displacement, and the breakdown of basic infrastructure.",
+          "description": "Silhouette of solitary person against a dark sombre background, reflective transition imagery",
+          "type": [
+            "silhouette dark background somber transition",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 11,
+      "label": "Entry #4 - Black Rat",
+      "segments": [
+        {
+          "segment_id": 81,
+          "content": "Number four.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Black Rat",
+              "factNumber": "#4",
+              "subtitle": "200+ million deaths across three pandemics",
+              "showAccentBar": true,
+              "accentColor": "#c1121f",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#c1121f",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#4' at 240px in #c1121f dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Black Rat' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '200+ million deaths across three pandemics' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 82,
+          "content": "Number four is responsible for what many historians still consider the single most catastrophic epidemic event in recorded human history. The black rat itself is not the direct biological vector — it is the primary host for the rat flea, Xenopsylla cheopis, and those fleas carry Yersinia pestis, the gram-negative bacterium that causes plague. Understanding the distinction matters, because the rat's role in the transmission chain is specific and irreplaceable: when rat populations collapse from infection, their fleas seek new hosts, and in regions where rats and humans share close living quarters, humans are the next warm body available.",
+          "description": "Black rat in urban setting close-up, stone wall or warehouse environment, watchful posture",
+          "type": [
+            "black rat urban sewer alley closeup",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 83,
+          "content": "The transmission mechanism that Yersinia pestis uses is one of the more baroque examples of parasite-vector co-evolution in all of biology. The bacterium physically blocks the digestive tract of the infected flea, preventing normal feeding. The flea, perpetually hungry and unable to digest blood normally, bites more frequently and more aggressively than an uninfected flea would. Each bite draws blood into the blocked gut, mixes it with Yersinia-laden material, and regurgitates the mixture back into the wound when the blockage resists digestion. The pathogen has essentially evolved to weaponize its vector's starvation reflex in order to maximize its own transmission.",
+          "description": "Microscope imagery of Yersinia pestis bacteria or infected rat flea under magnification",
+          "type": [
+            "yersinia pestis flea microscope bacteria",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 84,
+          "content": "The Black Death, which swept through Europe, Asia, and North Africa between 1347 and 1351, arriving via trading routes from Central Asia through the Crimean port of Caffa, is estimated by historians and epidemiologists to have killed between 75 and 200 million people in roughly four years. The range is wide because record-keeping in the fourteenth century was inconsistent and because the epidemic's severity varied enormously by region — some areas lost thirty percent of their population, others lost sixty. Europe as a whole lost somewhere between a third and a half of its entire population in a single outbreak, the largest proportional demographic collapse in recorded European history.",
+          "description": "Historical oil painting depicting medieval plague scenes and mortality imagery, archival artwork",
+          "type": [
+            "medieval plague historical painting archival",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 85,
+          "content": "That single outbreak reshaped European society at a depth that few events in history can match. The sudden, massive reduction in the labor supply shifted economic power dramatically toward the peasant class — surviving agricultural workers could demand higher wages and better land terms from lords whose estates now had far more acres than workers. Historians studying wage records and land tenure documents from the late fourteenth century across England, France, and Italy have documented this shift in striking detail, and many credit the Black Death with accelerating the structural collapse of the feudal system by at least a century.",
+          "description": "Medieval European village illustration, archival style, fields and stone buildings at dusk",
+          "type": [
+            "medieval european village illustration archival",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 86,
+          "content": "The Black Death was not even the first major plague pandemic. The Plague of Justinian, which struck the Byzantine Empire beginning in 541 AD and recurred in waves for the following two centuries, is estimated to have killed between 25 and 50 million people across the Mediterranean world. Some historians credit the demographic and economic collapse it caused with weakening the Byzantine Empire sufficiently to accelerate the Arab conquests of the seventh century, altering the religious and political map of the entire Mediterranean and Middle East in ways that have persisted to the present day.",
+          "description": "Historical Byzantine architecture and ancient Mediterranean ruins, scholarly archival tone",
+          "type": [
+            "byzantine architecture ancient ruins archival",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 87,
+          "content": "The causative bacterium was finally identified during the Third Plague Pandemic, which began in China in the 1850s, spread to Hong Kong in 1894, and was eventually carried by shipping to ports on every inhabited continent. French-Swiss physician Alexandre Yersin isolated the bacterium from plague patients in Hong Kong in 1894, identifying the causative agent in work conducted in competition with Japanese bacteriologist Kitasato Shibasaburo. The bacterium was subsequently named Yersinia pestis in Yersin's honor. The Third Pandemic killed over twelve million people in India and China alone before gradually declining in the early twentieth century.",
+          "description": "Historical Hong Kong harbor and port city in late 19th century archival style photography",
+          "type": [
+            "historical hong kong port city archival",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 88,
+          "content": "Plague has not disappeared from the modern world. The WHO records several hundred to several thousand cases globally per decade, with active transmission foci in Madagascar, the Democratic Republic of Congo, Peru, and parts of the western United States, where wild rodent populations — including prairie dogs, ground squirrels, and chipmunks — maintain persistent Yersinia pestis reservoirs in what epidemiologists call sylvatic or enzootic cycles. Madagascar has experienced particularly significant plague outbreaks in recent years, including a 2017 epidemic that spread unusually via pneumonic transmission in urban areas.",
+          "description": "Madagascar rural highland landscape with traditional housing near endemic rodent habitat",
+          "type": [
+            "madagascar rural landscape rodent habitat",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 89,
+          "content": "Modern bubonic plague is treatable with antibiotics — streptomycin, gentamicin, and doxycycline are all effective when treatment begins early. Case fatality rates in treated patients are below fifteen percent compared to the near-universal mortality of the medieval era. Pneumonic plague, however, the form that spreads directly between humans through respiratory droplets, remains close to universally fatal without treatment begun within twenty-four hours of symptom onset — and its rapid progression from initial symptoms to fatal respiratory failure gives clinicians an extremely narrow intervention window.",
+          "description": "Hospital treatment room with clinical equipment, generic modern medical setting",
+          "type": [
+            "hospital clinical treatment medical setting",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 90,
+          "content": "The rat's specific role in plague transmission also illustrates a broader principle that applies to several entries on this list: the animal closest to human settlement — the commensal species that has adapted specifically to live alongside humans, eat human food stores, shelter in human buildings, and travel aboard human ships — carries the highest transmission risk precisely because of that proximity. The black rat became one of history's most consequential disease vectors not despite its closeness to human civilization, but because of it.",
+          "description": "Black rat in grain storage building or cargo hold setting, historical context implied",
+          "type": [
+            "black rat grain store ship historical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 91,
+          "content": "At over 200 million cumulative deaths across three major pandemics spanning nearly fifteen centuries, the black rat earns its position at number four on this list — a small rodent that most people today associate with pest control and urban sanitation, but whose interaction with human civilization reshaped economies, altered religious demographics, ended dynasties, and may have done more to change the political map of the world than any comparable single biological event in human history.",
+          "description": "Wide modern city at night, rats visible near urban waste bins, contrast with historical weight",
+          "type": [
+            "modern city alley urban rat habitat",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 12,
+      "label": "Entry #3 - Domestic Dog",
+      "segments": [
+        {
+          "segment_id": 92,
+          "content": "Number three.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Domestic Dog",
+              "factNumber": "#3",
+              "subtitle": "59,000 preventable rabies deaths every year",
+              "showAccentBar": true,
+              "accentColor": "#c1121f",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#c1121f",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#3' at 240px in #c1121f dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Domestic Dog' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '59,000 preventable rabies deaths every year' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 93,
+          "content": "Number three is the animal that shares more intimate physical proximity with more humans than almost any other on this entire list — sitting on furniture, sleeping in beds, playing with children, living inside tens of millions of homes worldwide. The domestic dog is, by the WHO's own accounting, responsible for the overwhelming majority of human rabies deaths on Earth: ninety-nine percent of the annual global toll of approximately 59,000 lives. Not wolves. Not bats. Not raccoons. The animal that humans have co-evolved with for ten thousand years of shared domestication.",
+          "description": "Close-up portrait of domestic dog, warm friendly expression, contrasted with serious narration tone",
+          "type": [
+            "domestic dog portrait closeup friendly",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 94,
+          "content": "Rabies is caused by a lyssavirus, a single-stranded RNA virus that has the distinction of being one of the very few pathogens that travels specifically along neurological tissue to reach the brain. The virus enters through a bite wound, replicates locally, then hijacks the peripheral nervous system as a transport route — moving along axons toward the central nervous system at a rate of roughly twelve to twenty-four millimeters per day. A bite on the foot may give weeks before symptoms appear. A bite on the face may give days. The closer to the brain, the shorter the window for post-exposure intervention.",
+          "description": "Medical illustration or animation of virus traveling along peripheral nerve pathway toward brain",
+          "type": [
+            "rabies virus illustration nerve pathway",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 95,
+          "content": "Once rabies reaches the brain and clinical symptoms appear, the disease is considered essentially one hundred percent fatal, making it one of the very small number of human infections with that distinction. Symptoms progress through a prodromal phase of generic fever and discomfort, then into either a furious form characterized by agitation, hydrophobia — the spasm and reflex fear triggered by water or air drafts — and encephalitis, or a paralytic form with ascending motor weakness. Either path ends in coma and death within days to two weeks of symptom onset, with extremely rare exceptions documented in the medical literature.",
+          "description": "Hospital clinical ward setting, generic somber medical imagery, dim controlled lighting",
+          "type": [
+            "hospital clinical somber medical imagery",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 96,
+          "content": "The WHO estimates rabies kills approximately 59,000 people annually worldwide, with the vast majority of those deaths occurring in Asia and Africa. India alone accounts for an estimated 20,000 deaths per year — roughly a third of the global total — concentrated in rural areas where free-roaming dog populations are large, post-exposure treatment access is limited by distance and cost, and community-level dog vaccination rates remain far below the threshold needed to interrupt transmission. Sub-Saharan Africa accounts for most of the remaining toll in similarly structured settings.",
+          "description": "Street dogs in an Indian or African village setting, mixed-breed dogs in dusty street scene",
+          "type": [
+            "street dogs village urban documentary",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 97,
+          "content": "Rabies has a documented human history spanning millennia. Ancient texts from Mesopotamia, Greece, and Rome all describe the clinical syndrome we now recognize as rabies, including the characteristic hydrophobia and the association with dog bites. The Hippocratic Corpus includes what appears to be a description of rabies. Celsus in first-century Rome wrote about the necessity of wound cauterization after animal bites in terms that suggest awareness of the post-exposure window, though without mechanistic understanding of why it might work. Humans have been dying of rabies for at least four thousand years of written history.",
+          "description": "Ancient Roman or Greek archaeological site, historical scholarly atmosphere, stone ruins",
+          "type": [
+            "ancient greek roman ruins archaeological",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 98,
+          "content": "Louis Pasteur and his colleagues developed the first rabies vaccine in 1885, testing it on nine-year-old Joseph Meister after the boy had been severely bitten fourteen times by a rabid dog. The treatment — a series of spinal cord preparations from infected rabbits, progressively more virulent, administered over thirteen days — worked, and Meister survived to live a full adult life. The case became one of the defining moments in vaccine development history, and the Pasteur Institute, founded the following year in large part through international donations prompted by the publicity around the Meister case, became one of the most consequential research institutions in the history of medicine.",
+          "description": "Historical 19th century scientific laboratory setting, Pasteur-era glassware and equipment",
+          "type": [
+            "historical 19th century laboratory pasteur era",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 99,
+          "content": "What makes the ongoing rabies death toll particularly difficult to accept from a public health perspective is that the disease is not just treatable but almost entirely preventable at the population level. Post-exposure prophylaxis — the sequence of vaccine doses and immunoglobulin given after a bite from a potentially rabid animal — is essentially one hundred percent effective when administered promptly. And mass vaccination of dog populations to seventy percent coverage is sufficient to break the transmission cycle and eliminate dog-mediated rabies from a community or country entirely, according to WHO modeling validated by multiple real-world campaigns.",
+          "description": "Veterinarian or animal health worker vaccinating a dog at community mass vaccination event",
+          "type": [
+            "veterinarian vaccinating dog community",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 100,
+          "content": "Countries that have invested consistently in canine vaccination have proven this conclusively. Western Europe, Japan, Australia, and large parts of Latin America have eliminated dog-mediated human rabies through sustained vaccination programs. The United States eliminated domestic dog-to-human transmission decades ago. The countries where people continue dying of rabies are not failing because of a scientific gap — they are failing because of a resource allocation and access gap, a distinction that matters enormously when thinking about what kind of problem rabies actually is in the twenty-first century.",
+          "description": "Modern well-equipped veterinary clinic with professional staff and organized clean setting",
+          "type": [
+            "modern veterinary clinic equipment",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 101,
+          "content": "The WHO launched a global initiative called Zero by 30 in 2015, targeting elimination of dog-mediated human rabies deaths by 2030 through coordinated national vaccination programs and improved post-exposure prophylaxis access. As of recent assessments, significant progress has been made in several regions, but the target remains ambitious given current vaccination coverage in the highest-burden countries. The gap between what is scientifically achievable and what is actually being achieved remains substantial, and the roughly 59,000 annual deaths represent that gap expressed in human lives.",
+          "description": "Community vaccination event with dogs and health workers, outdoor village setting with families",
+          "type": [
+            "community vaccination drive dogs health workers",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 102,
+          "content": "At nearly 59,000 deaths per year, almost all of them preventable, and almost all of them caused by an animal humans have domesticated as a companion for ten thousand years, rabies via domestic dogs ranks above the plague-carrying rat on the basis of current annual toll. Number four may have killed more people across history. But number three is killing people right now, this year, in countries with the knowledge and in many cases the resources to stop it — and largely isn't. That gap between preventability and prevention is what makes this entry the most uncomfortable one on the list so far.",
+          "description": "Close-up of dog looking directly into camera lens, warm natural light, ambivalent emotional weight",
+          "type": [
+            "dog closeup camera warm lighting",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 13,
+      "label": "Final Tease",
+      "segments": [
+        {
+          "segment_id": 103,
+          "content": "Two entries left, and both of them are mosquitoes — different species, different diseases, very different death tolls. Number one alone carries a death toll estimate so large that some epidemiologists believe it may exceed every other cause of human death in history combined. That sounds like an exaggeration. It isn't. Stay for it.",
+          "description": "Extreme macro close-up of mosquito proboscis piercing human skin, slow motion high quality",
+          "type": "remotion:FactCard",
+          "remotion": {
+            "composition": "FactCard",
+            "layout": "overlay",
+            "overlay": {
+              "position": "center"
+            },
+            "broll": {
+              "search_query": "mosquito proboscis piercing skin slow motion",
+              "category": "stock"
+            },
+            "props": {
+              "title": "The Final Two",
+              "body": "Numbers you won't believe.",
+              "factNumber": null,
+              "showFactBadge": false,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "bodyColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "left",
+              "verticalAlign": "center",
+              "padding": 44,
+              "contentMaxWidth": 1700,
+              "titleSize": 100,
+              "bodySize": 56,
+              "titleWeight": 400,
+              "lineHeight": 1.35
+            },
+            "design": {
+              "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+              "layout": {
+                "mode": "overlay",
+                "position": "center",
+                "textAlign": "left",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, one-line body secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "100px",
+                "bodySize": "56px",
+                "titleWeight": 400,
+                "lineHeight": 1.35
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thin accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up 30px, ~0.4s",
+                "exit": "popup fades as narration continues",
+                "stagger": "title +0 -> body +14 frames",
+                "emphasis": "none",
+                "easing": "spring, fast"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle vignette on popup edges only",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "popup rises fast over continuing b-roll",
+                "out": "soft fade, b-roll holds"
+              },
+              "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": "Full-frame b-roll (mosquito proboscis piercing skin slow motion) plays underneath. Large center Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title 'The Final Two' in hot white (#fefaf3), body line 'Numbers you won't believe.' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar (#ff6a1a) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+          }
+        }
+      ]
+    },
+    {
+      "beat": 14,
+      "label": "Entry #2 - Aedes Mosquito",
+      "segments": [
+        {
+          "segment_id": 104,
+          "content": "Number two.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Aedes Mosquito",
+              "factNumber": "#2",
+              "subtitle": "390 million dengue infections per year and rising",
+              "showAccentBar": true,
+              "accentColor": "#c1121f",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#c1121f",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#2' at 240px in #c1121f dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Aedes Mosquito' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line '390 million dengue infections per year and rising' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 105,
+          "content": "Number two is the Aedes mosquito — specifically the species Aedes aegypti and the closely related Aedes albopictus — the vectors responsible for dengue fever, yellow fever, Zika virus, and chikungunya. Understanding what makes Aedes distinct from other mosquito genera matters for understanding why it appears at number two on this list: Aedes species are daytime biters that have specifically adapted to urban environments, making them the only mosquito genus on this list whose transmission range expands directly and predictably as the world urbanizes, which is to say, the only one whose reach is growing faster than our ability to contain it.",
+          "description": "Aedes aegypti mosquito close-up macro, distinctive black and white striped legs and thorax visible",
+          "type": [
+            "aedes aegypti mosquito striped legs macro",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 106,
+          "content": "Dengue fever is the primary driver of the Aedes toll today. A landmark study published in Nature in 2013 estimated that dengue infects approximately 390 million people annually, with around 96 million developing clinically apparent symptoms. The spectrum of clinical disease ranges from a severe febrile illness with intense joint and muscle pain — the source of the historical nickname breakbone fever, in use since at least the eighteenth century — through to severe dengue, characterized by plasma leakage, hemorrhage, and organ impairment, which carries a case fatality rate of two to five percent without adequate clinical management.",
+          "description": "Hospital patient with dengue fever symptoms in clinical ward, generic documentary imagery",
+          "type": [
+            "dengue patient hospital clinical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 107,
+          "content": "Yellow fever, caused by a flavivirus transmitted by the same mosquito genus, has a documented history of causing mass casualties in the Americas and West Africa stretching back centuries. The 1793 Philadelphia epidemic killed approximately 5,000 people — roughly ten percent of the city's entire population — in a single summer, forcing the federal government to temporarily relocate and generating a public health crisis that shaped American attitudes toward epidemic disease for a generation. Similar epidemics swept through New Orleans, Havana, Memphis, and other port cities throughout the eighteenth and nineteenth centuries, making yellow fever one of the most feared epidemic diseases in the Americas for over two hundred years.",
+          "description": "Historical 18th century American port city illustration, Philadelphia archival atmosphere",
+          "type": [
+            "historical philadelphia 18th century archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 108,
+          "content": "Cuban physician Carlos Finlay proposed in 1881 that mosquitoes, not contact with infected individuals or contaminated objects, were responsible for yellow fever transmission — a theory widely dismissed for nearly two decades. American physician Walter Reed conducted definitive experimental proof in Cuba in 1900, conclusively demonstrating mosquito-mediated transmission and vindicating Finlay's hypothesis. That discovery directly enabled construction of the Panama Canal by allowing implementation of mosquito-control programs that reduced yellow fever and malaria mortality among canal workers from historically catastrophic levels to manageable ones.",
+          "description": "Historical Panama Canal construction photography, early 20th century archival engineering imagery",
+          "type": [
+            "panama canal construction historical archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 109,
+          "content": "Zika virus, which had existed in the scientific literature since its isolation in Uganda in 1947, revealed a dimension of Aedes-borne disease that had no precedent in the prior record of mosquito-borne pathogens. The major 2015-2016 outbreak across Brazil and then the wider Americas confirmed through extensive epidemiological investigation that Zika infection during pregnancy causes microcephaly and other severe congenital brain abnormalities in a significant proportion of affected fetuses. The outbreak resulted in thousands of infants born with severe neurological damage in Brazil alone, and generated one of the most rapid global public health emergency responses in WHO history.",
+          "description": "Maternal health clinic or pediatric neurological setting, caring medical tone, generic imagery",
+          "type": [
+            "maternal health clinic ultrasound generic",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 110,
+          "content": "The WHO estimates global dengue incidence has increased approximately eightfold over the past two decades, driven by a combination of factors that all reinforce each other: continued urbanization creating more Aedes breeding habitat; increased international air travel accelerating geographic spread of both the mosquito and the viruses it carries; climate change extending the temperature range within which Aedes aegypti can survive and reproduce; and the absence of durable natural immunity to all four dengue serotypes, meaning a person who recovers from one strain faces increased risk of severe disease if infected by a different strain subsequently.",
+          "description": "Dense tropical urban city at dusk, high-density housing, standing water visible in construction sites",
+          "type": [
+            "urban cityscape standing water breeding ground",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 111,
+          "content": "The Aedes mosquito's urban ecology is both the source of its reach and, in principle, its most controllable vulnerability. Unlike malaria-carrying Anopheles mosquitoes, which breed primarily in natural bodies of standing water, Aedes aegypti preferentially breeds in small artificial containers: discarded tires, flower pots, water storage barrels, clogged roof gutters, construction materials that collect rainwater. Mosquito control for Aedes doesn't require draining wetlands or aerial spraying — it requires community-level waste management, covered water storage, and systematic elimination of containers that accumulate stagnant water in residential areas. The biology provides the lever. The challenge is applying it consistently at sufficient scale.",
+          "description": "Collection of discarded tires and artificial containers with standing water in urban setting",
+          "type": [
+            "discarded tires standing water urban breeding",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 112,
+          "content": "Vaccine development for dengue has been unusually complicated by the disease's multi-serotype structure. A first dengue vaccine, Dengvaxia, received regulatory approval in multiple countries starting in 2015 but was subsequently found to increase risk of severe disease in individuals with no prior dengue exposure, leading to a serious public health crisis in the Philippines following a school-based vaccination campaign. A second vaccine, Qdenga, approved in 2022, demonstrated more consistently favorable results across broader demographic groups in clinical trials, including seronegative individuals, representing a significant improvement in the landscape for dengue prevention.",
+          "description": "Clinical trials imagery, vaccine vial and syringe in pharmaceutical research laboratory",
+          "type": [
+            "vaccine vial syringe pharmaceutical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 113,
+          "content": "The combined annual death toll from the full suite of Aedes-transmitted diseases — dengue, yellow fever, Zika, chikungunya — runs into the tens of thousands per year, with dengue alone estimated to cause over 20,000 deaths annually in recent years. That annual toll is lower in absolute numbers than the domestic dog entry at number three, but the Aedes mosquito ranks higher for reasons of scale and trajectory: 390 million dengue infections per year is a disease burden of a categorically different order of magnitude, and the geographic range of Aedes aegypti is currently expanding into previously unaffected regions of Europe, North America, and South America as temperatures rise.",
+          "description": "Wide aerial shot of tropical coastal megacity at dusk, dense urban landscape near water",
+          "type": [
+            "tropical urban environment city skyline",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 114,
+          "content": "The Aedes mosquito sits at number two because it represents the present and future of vector-borne disease in a way that most of this list's other entries don't. Its trajectory is upward. Its range is expanding. The diseases it carries are multiplying in reported cases annually. And it thrives specifically in the urban environments where the majority of the world's population now lives and where that proportion continues to grow — meaning the conditions for Aedes transmission are not stabilizing but are, on current trends, actively improving from the mosquito's perspective.",
+          "description": "Single Aedes mosquito in flight slow motion, urban street lights softly blurred in background",
+          "type": [
+            "aedes mosquito flight urban blurred",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 15,
+      "label": "Entry #1 - Anopheles Mosquito",
+      "segments": [
+        {
+          "segment_id": 115,
+          "content": "Number one.",
+          "description": "Full-frame Remotion rank reveal - no b-roll, pure graphic",
+          "type": "remotion:TitleCard",
+          "remotion": {
+            "composition": "TitleCard",
+            "layout": "full",
+            "props": {
+              "title": "Anopheles Mosquito",
+              "factNumber": "#1",
+              "subtitle": "May have killed half of all humans who ever lived",
+              "showAccentBar": true,
+              "accentColor": "#c1121f",
+              "textColor": "#fefaf3",
+              "subtitleColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "center",
+              "verticalAlign": "center",
+              "padding": 80,
+              "contentMaxWidth": 1800,
+              "factNumberSize": 240,
+              "titleSize": 150,
+              "subtitleSize": 64,
+              "titleWeight": 400,
+              "lineHeight": 1.05
+            },
+            "design": {
+              "intent": "Punch-in rank reveal - the number dominates, name confirms it, one stat line seals the stakes",
+              "layout": {
+                "textAlign": "center",
+                "verticalAlign": "center",
+                "hierarchy": "factNumber most dominant, title second, subtitle tertiary",
+                "contentMaxWidth": "1800px centered on full frame"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "150px",
+                "bodySize": "64px",
+                "factNumberSize": "240px",
+                "titleWeight": 400,
+                "lineHeight": 1.05
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#c1121f",
+                "accentUsage": "thick accent bar beneath rank number"
+              },
+              "motion": {
+                "enter": "hard spring punch-in on factNumber (92% to 100%), ~0.35s",
+                "exit": "hard cut to entry b-roll",
+                "stagger": "factNumber first -> title +6 frames -> subtitle +14 frames",
+                "emphasis": "factNumber scale-punch only",
+                "easing": "spring, hard"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle radial vignette darkening edges",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "hard cut from previous b-roll into full-frame graphic",
+                "out": "hard cut to entry's opening b-roll"
+              },
+              "durationHint": "hold 2-3 seconds"
+            },
+            "prompt": "Full-bleed Remotion frame, no b-roll. Warm near-black radial gradient (#1a1410 to #0c0c0c). Centered, content max-width 1800px. Enormous Anton rank number '#1' at 240px in #c1121f dominates the frame, punching in with a hard spring scale 92% to 100% over 0.35s. Below it, 'Anopheles Mosquito' in Anton 150px, hot white (#fefaf3), enters 6 frames later. Thick accent bar (6px) beneath the number. Stat line 'May have killed half of all humans who ever lived' in Barlow Condensed 64px, warm ash grey (#c9c2b6), enters 14 frames after title. Subtle radial vignette. No badge, no iconography. Hold 2-3 seconds. Hard cut to entry b-roll."
+          }
+        },
+        {
+          "segment_id": 116,
+          "content": "Number one. The animal responsible for more human deaths across recorded history than any other creature on Earth isn't a shark, a lion, a snake, or the plague-carrying rat at number four. It is the Anopheles mosquito — and the disease it carries, malaria, has a historical death toll claim that sounds impossible until you actually look at the epidemiological and evolutionary evidence behind it, at which point it starts to look not just plausible but almost conservative given the parasite's known age and geographic range.",
+          "description": "Anopheles mosquito in its distinctive angled resting posture, extreme close-up macro photography",
+          "type": [
+            "anopheles mosquito resting posture macro",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 117,
+          "content": "Malariologist J.L. Gill first proposed, and researchers including science journalist Sonia Shah have subsequently explored in depth, the estimate that malaria may have killed roughly half of all human beings who have ever lived, across the entire span of human existence on this planet. That estimate is not a precise figure — it cannot be, given the absence of systematic cause-of-death records across most of human history — but it is grounded in calculations about the longevity of the parasite in human populations, the historical geographic extent of malaria transmission, the mortality rates documented in more recent centuries, and the evolutionary pressure the parasite has exerted on the human genome.",
+          "description": "Wide atmospheric shot of tropical African wetland at dawn, mist over the water, mosquito breeding habitat",
+          "type": [
+            "tropical wetland mosquito habitat misty morning",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 118,
+          "content": "Even the most conservative academic estimates place malaria's cumulative historical toll at hundreds of millions of deaths. Historians who work specifically on the ancient and classical periods have identified malaria — caused by Plasmodium vivax in more temperate climates, and by the more lethal Plasmodium falciparum in tropical Africa — as a significant cause of death in ancient Rome, ancient Greece, ancient India, Han dynasty China, and virtually every major civilization that arose in the tropical and subtropical regions of the world. The parasite's presence in ancient Egypt has been confirmed through genetic analysis of mummy tissue.",
+          "description": "Ancient ruins in tropical or subtropical climate, overgrown stone columns near ancient waterway",
+          "type": [
+            "ancient civilization ruins water source archive",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 119,
+          "content": "The parasite responsible, Plasmodium, exists in five species that infect humans. Plasmodium falciparum is responsible for the vast majority of severe disease and death, particularly in sub-Saharan Africa. It invades red blood cells, replicating inside them over a forty-eight-hour cycle before bursting the cell and releasing a new generation of merozoites that immediately invade additional cells. This synchronized rupture of infected red blood cells produces the disease's characteristic cyclical fever pattern, and in severe falciparum malaria, the accumulation of infected cells in cerebral blood vessels produces cerebral malaria, which can cause death or permanent neurological damage within hours of onset.",
+          "description": "Microscope imagery of Plasmodium falciparum parasites inside stained human red blood cells",
+          "type": [
+            "plasmodium parasite red blood cells microscope",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 120,
+          "content": "British physician Ronald Ross proved in 1897 that Anopheles mosquitoes are the transmission vector for malaria, identifying the parasite in the stomach lining of Anopheles mosquitoes during research conducted in Secunderabad, India, using birds as experimental hosts and then confirming the principle applied to human malaria. The work earned Ross the Nobel Prize in Physiology or Medicine in 1902 — the second Nobel Prize awarded in that category — and finally gave physicians a mechanistic understanding of a disease that had confused and killed humans for at least three thousand years of documented medical history.",
+          "description": "Historical colonial-era India research laboratory setting, late 19th century scientific atmosphere",
+          "type": [
+            "historical india colonial research laboratory",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 121,
+          "content": "The WHO's most recent World Malaria Report documents approximately 600,000 malaria deaths annually, with roughly ninety-five percent of cases and deaths concentrated in the WHO African Region. Children under five years of age account for a devastating proportion of those fatalities — around seventy-six percent of all malaria deaths globally in recent reports — meaning that the disease's primary toll falls most heavily on the population least equipped to survive a severe febrile illness. The geographic and demographic concentration of malaria mortality is one of the most consistent and troubling patterns in global health data.",
+          "description": "Pediatric ward in sub-Saharan African clinic treating children with fever and malaria symptoms",
+          "type": [
+            "pediatric clinic africa children medical",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 122,
+          "content": "Malaria has shaped human genetics in ways that provide compelling evidence of its long historical presence and the evolutionary pressure it has exerted. The sickle cell trait — a genetic variant that causes hemoglobin to form abnormal shapes under low-oxygen conditions — provides carriers with partial resistance to severe Plasmodium falciparum infection, because the abnormal hemoglobin is less hospitable to parasite reproduction. The geographic distribution of sickle cell trait in human populations maps almost precisely onto historical malaria transmission zones in Africa, the Mediterranean, and South Asia. This is textbook natural selection operating across human generations, driven by a single parasite, over thousands of years, reshaping the genome of entire populations at measurable frequency.",
+          "description": "DNA genetic research visualization, double helix illustration, medical science background",
+          "type": [
+            "dna genetic illustration medical research",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 123,
+          "content": "The disease has also shaped colonial history, military campaigns, and geopolitical boundaries in ways that historians are still working to fully document. European colonial forces attempting to penetrate the interior of Africa and Southeast Asia faced catastrophic mortality rates from malaria that effectively set geographic limits on expansion for centuries. The British Army in West Africa in the early nineteenth century had annual death rates among stationed soldiers that historians have calculated at over fifty percent from disease, the majority from malaria — a level of attrition that made sustained inland presence essentially impossible until quinine prophylaxis became standard practice.",
+          "description": "Historical colonial-era military or expedition imagery, archival tone, tropical landscape setting",
+          "type": [
+            "historical colonial military archive tone",
+            "commons"
+          ]
+        },
+        {
+          "segment_id": 124,
+          "content": "The first malaria vaccine, RTS,S — developed over three decades by GlaxoSmithKline in collaboration with the PATH Malaria Vaccine Initiative — received a landmark WHO recommendation for broad use in children in sub-Saharan Africa in October 2021. A second vaccine, R21, developed by the Jenner Institute at Oxford University in collaboration with the Serum Institute of India, received WHO recommendation in October 2023. Both represent the culmination of over a century of failed vaccine attempts against a parasite that has proven uniquely difficult to vaccinate against, given its complex multi-stage life cycle and its remarkable capacity to vary surface proteins to evade immune recognition.",
+          "description": "Young child receiving vaccine injection in African clinic, healthcare worker attending carefully",
+          "type": [
+            "child vaccination african clinic documentary",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 125,
+          "content": "Insecticide-treated bed nets remain the single most cost-effective and widely deployed intervention against malaria at current scale. The WHO credits bed net distribution programs with preventing an estimated 663 million malaria cases between 2000 and 2015 alone — a public health achievement built on a technology that costs a few dollars per net and requires no clinical infrastructure to deploy beyond the logistics of distribution. That combination of low cost, proven efficacy, and deployment simplicity makes bed nets one of the most analyzed cost-effectiveness success stories in all of global health economics.",
+          "description": "Family sleeping under treated mosquito net in rural home, soft documentary night lighting",
+          "type": [
+            "family mosquito net rural home",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 126,
+          "content": "Despite the availability of vaccines, bed nets, indoor residual spraying, and effective artemisinin-based combination therapies, malaria kills approximately 600,000 people per year — a figure that has declined significantly from peak levels in the early 2000s but remains deeply embedded in the public health landscape of sub-Saharan Africa. The persistence of that toll, despite tools that demonstrably work, reflects the same gap between scientific capability and delivery infrastructure that appears repeatedly across this list, with the added complication that Plasmodium falciparum has developed partial resistance to artemisinin in parts of Southeast Asia.",
+          "description": "Wide aerial shot of East African landscape at dawn, wetlands and farmland visible, quiet vastness",
+          "type": [
+            "african landscape dawn wetland aerial",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 127,
+          "content": "It is worth sitting with the actual shape of the claim that puts this entry at number one. Not a single dramatic epidemic year. Not one catastrophic outbreak with a definable beginning and end. Just a relentless, compounding, quiet accumulation of deaths — across every continent in the tropical and subtropical band, across every millennium of recorded history, bite by bite, child by child, generation by generation — for as long as Homo sapiens and Anopheles mosquitoes have shared the same water sources, which is to say, for our entire existence as a species on this planet.",
+          "description": "Slow-motion macro close-up of single mosquito touching the surface of still water, ripples spreading outward",
+          "type": [
+            "mosquito landing water surface ripples slow motion",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 128,
+          "content": "Every entry on this list, from the tsetse fly at number ten to this mosquito at number one, tells the same underlying story from a different angle: the animals that have shaped human history most profoundly were never the ones with claws, fangs, or venom. They were the ones small enough to go unnoticed, efficient enough to work across centuries, and connected to the water sources and living spaces that human civilization has always depended on. Understanding that is not just interesting biology — it is a framework for thinking about where the next entry on a list like this is most likely to come from.",
+          "description": "Final wide montage: wetland at golden hour, mosquito swarm against light, human community near water",
+          "type": [
+            "wetland mosquito human community montage final",
+            "stock"
+          ]
+        }
+      ]
+    },
+    {
+      "beat": 16,
+      "label": "Outro",
+      "segments": [
+        {
+          "segment_id": 129,
+          "content": "So here is the actual ranking one more time, for anyone who wants to hold onto it: tsetse fly at number ten, sandfly at nine, blackfly at eight, freshwater snail at seven, kissing bug at six, body louse at five, black rat at four, domestic dog at three, Aedes mosquito at two, and the Anopheles mosquito — and malaria — at number one. The through-line connecting all ten is the same: none of them are the animals most people fear, and all of them have done more damage to the human species than every predator in natural history combined.",
+          "description": "Rapid but legible recap montage of all ten entries, each animal shown briefly in sequence",
+          "type": [
+            "recap montage animals sequence fast cuts",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 130,
+          "content": "Here's the question we want to leave you thinking about: knowing what you know now, which of these ten would you actually be most afraid of encountering in the real world — the visible predator you can see coming, or the invisible vector you'd never notice in the moment it infected you? That question cuts to the actual psychology of how humans assess danger versus how biological reality distributes it. Drop your answer in the comments — we read them and they shape what we cover next.",
+          "description": "Wide contemplative split-frame: shark silhouette underwater versus mosquito swarm in evening light",
+          "type": [
+            "shark mosquito comparison silhouette swarm",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 131,
+          "content": "If you're in one of the regions we covered today — parts of sub-Saharan Africa, South Asia, or Latin America — and any of these diseases have directly affected your community or family, we want to hear that context. The numbers in this video are real and sourced, but lived experience adds something to this subject that no dataset ever fully captures, and we want this comment section to reflect both.",
+          "description": "Wide shot of diverse global community landscapes, people near water sources, everyday life",
+          "type": [
+            "global community landscape diverse",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 132,
+          "content": "The next video on this channel shifts registers entirely. Instead of disease vectors and death tolls, we're looking at animals whose bodies have evolved solutions to biological problems that human engineering still cannot replicate — mechanisms so extreme that researchers have been trying to reverse-engineer them for decades with limited success. If that sounds like a different kind of remarkable, it's because it is.",
+          "description": "Teaser montage of extreme biological survivors, tardigrade and mantis shrimp style science imagery",
+          "type": [
+            "extreme survival animal biology teaser montage",
+            "stock"
+          ]
+        },
+        {
+          "segment_id": 133,
+          "content": "If this ranking surprised you at any point — and especially if number one surprised you — hit like and subscribe. New rankings drop every other day, the research always goes deeper than the headline number, and the next one is already in production.",
+          "description": "Wide nature-documentary montage shot of wetland and wildlife at golden hour, cinematic closing tone",
+          "type": "remotion:FactCard",
+          "remotion": {
+            "composition": "FactCard",
+            "layout": "overlay",
+            "overlay": {
+              "position": "lower-third"
+            },
+            "broll": {
+              "search_query": "nature documentary montage wetland wildlife",
+              "category": "stock"
+            },
+            "props": {
+              "title": "Like & Subscribe",
+              "body": "New rankings every other day. Always sourced.",
+              "factNumber": null,
+              "showFactBadge": false,
+              "accentColor": "#ff6a1a",
+              "textColor": "#fefaf3",
+              "bodyColor": "#c9c2b6",
+              "backgroundGradient": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+              "fontFamily": "Anton, Impact, sans-serif",
+              "bodyFontFamily": "Barlow Condensed, Arial Narrow, sans-serif",
+              "textAlign": "left",
+              "verticalAlign": "center",
+              "padding": 44,
+              "contentMaxWidth": 1700,
+              "titleSize": 100,
+              "bodySize": 56,
+              "titleWeight": 400,
+              "lineHeight": 1.35
+            },
+            "design": {
+              "intent": "Subscribe/CTA popup over continuing b-roll, never stock CTA footage",
+              "layout": {
+                "mode": "overlay",
+                "position": "lower-third",
+                "textAlign": "left",
+                "verticalAlign": "center",
+                "hierarchy": "title dominant, one-line body secondary"
+              },
+              "typography": {
+                "titleFont": "Anton",
+                "bodyFont": "Barlow Condensed",
+                "titleSize": "100px",
+                "bodySize": "56px",
+                "titleWeight": 400,
+                "lineHeight": 1.35
+              },
+              "color": {
+                "background": "radial-gradient(ellipse at center, #1a1410 0%, #0c0c0c 100%)",
+                "text": "#fefaf3",
+                "body": "#c9c2b6",
+                "accent": "#ff6a1a",
+                "accentUsage": "thin accent bar beneath title"
+              },
+              "motion": {
+                "enter": "fast fade-up 30px, ~0.4s",
+                "exit": "popup fades as narration continues",
+                "stagger": "title +0 -> body +14 frames",
+                "emphasis": "none",
+                "easing": "spring, fast"
+              },
+              "overlays": {
+                "badge": "none",
+                "decorations": "subtle vignette on popup edges only",
+                "iconography": "none"
+              },
+              "transitions": {
+                "in": "popup rises fast over continuing b-roll",
+                "out": "soft fade, b-roll holds"
+              },
+              "durationHint": "hold through CTA line, ~3-4 seconds"
+            },
+            "prompt": "Full-frame b-roll (nature documentary montage wetland wildlife) plays underneath. Large lower-third Remotion popup panel (Anton 100px title, Barlow Condensed 56px body) rises fast over the footage - not a stock subscribe graphic. Title 'Like & Subscribe' in hot white (#fefaf3), body line 'New rankings every other day. Always sourced.' in warm ash grey (#c9c2b6). Warm near-black popup background (#1a1410 to #0c0c0c). Thin accent bar (#ff6a1a) beneath title. B-roll remains visible around the panel. Fast fade-up enter ~0.4s. Hold through CTA line then fade, b-roll continues."
+          }
+        },
+        {
+          "segment_id": 134,
+          "content": "Thanks for watching all the way through — genuinely, most people don't make it to the end of a video this long, and the fact that you did means this kind of deep-dive, properly-sourced research format is worth continuing. We'll see you in the next one.",
+          "description": "Slow fade wide shot of tropical wetland at sunset, birds crossing the frame, peaceful closing image",
+          "type": [
+            "wetland sunset birds flying fade",
+            "stock"
+          ]
+        }
+      ]
+    }
+  ]
+}

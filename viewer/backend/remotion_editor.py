@@ -38,7 +38,7 @@ def merge_remotion_props(segment: dict[str, Any], updates: dict[str, Any]) -> di
         "composition": composition,
         "props": merged,
     }
-    for key in ("design", "prompt", "layout", "broll"):
+    for key in ("design", "prompt", "layout", "broll", "overlay"):
         if key in parsed:
             result[key] = parsed[key]
     return result
@@ -65,7 +65,7 @@ def update_remotion_segment_props(workspace: Path, segment_id: int, props: dict[
         remotion_block = {}
     remotion_block["composition"] = merged["composition"]
     remotion_block["props"] = merged["props"]
-    for key in ("design", "prompt", "layout", "broll"):
+    for key in ("design", "prompt", "layout", "broll", "overlay"):
         if key in merged:
             remotion_block[key] = merged[key]
         elif key not in remotion_block and key in (segment.get("remotion") or {}):

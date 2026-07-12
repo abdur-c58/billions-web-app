@@ -23,10 +23,10 @@ import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Callable
 
 ROOT = Path(__file__).resolve().parent
-EXPORT_API_VERSION = 9  # bump when export pipeline changes (9 = split-screen Remotion + FactCard layout)
+EXPORT_API_VERSION = 10  # bump when export pipeline changes (10 = Remotion overlay popups on b-roll)
 DEFAULT_OUTPUT = ROOT / "final_video.mp4"
 CLIP_CACHE_DIR = ROOT / ".broll_cache"
 SEGMENT_CACHE_DIR = ROOT / ".export_cache" / "segments"
@@ -76,6 +76,70 @@ def _current_export_project_id() -> str | None:
 
 class ExportCancelled(Exception):
     """Raised when an export is cancelled by the user."""
+
+
+def _is_file_lock_error(exc: BaseException) -> bool:
+    if isinstance(exc, PermissionError):
+        return True
+    return isinstance(exc, OSError) and getattr(exc, "winerror", None) == 32
+
+
+def _retry_file_op(
+    action: Callable[[], None],
+    *,
+    description: str,
+    max_attempts: int = 10,
+    base_delay_s: float = 0.2,
+) -> None:
+    last_error: BaseException | None = None
+    for attempt in range(max_attempts):
+        try:
+            action()
+            return
+        except BaseException as exc:  # noqa: BLE001 - retry only lock errors
+            if not _is_file_lock_error(exc):
+                raise
+            last_error = exc
+            time.sleep(base_delay_s * (attempt + 1))
+    if last_error is not None:
+        raise PermissionError(
+            f"{description}: file is locked by another process. "
+            "Close any player/preview using the export file and retry."
+        ) from last_error
+    raise RuntimeError(f"{description}: file operation failed")
+
+
+def safe_unlink(path: Path) -> bool:
+    """Delete a file, retrying on Windows file-lock errors. Returns False if missing."""
+    if not path.exists():
+        return False
+
+    def _delete() -> None:
+        path.unlink()
+
+    _retry_file_op(_delete, description=f"Could not delete {path.name}")
+    return True
+
+
+def safe_replace(src: Path, dest: Path) -> None:
+    """Atomically replace dest with src, retrying on Windows file-lock errors."""
+
+    def _replace() -> None:
+        if dest.exists():
+            dest.unlink()
+        src.replace(dest)
+
+    _retry_file_op(_replace, description=f"Could not replace {dest.name}")
+
+
+def safe_rmtree(path: Path) -> None:
+    if not path.exists():
+        return
+
+    def _remove() -> None:
+        shutil.rmtree(path)
+
+    _retry_file_op(_remove, description=f"Could not clear {path.name}")
 
 
 def request_export_cancel(project_id: str | None = None) -> None:
@@ -556,14 +620,27 @@ def build_credit_filter(selection: dict[str, Any] | None) -> str | None:
 def clear_export_work_cache(cache_dir: Path, output_path: Path | None = None) -> None:
     """Remove encoded segment cache and intermediate export artifacts."""
     segments_dir = cache_dir / "segments"
-    if segments_dir.exists():
-        shutil.rmtree(segments_dir)
+    try:
+        safe_rmtree(segments_dir)
+    except PermissionError:
+        print(
+            f"[export] Could not fully clear {segments_dir}; continuing with stale cache files."
+        )
     for name in ("video_only.mp4", "video_only_trimmed.mp4", "concat_list.txt", "narration_adjusted.m4a"):
         path = cache_dir / name
-        if path.exists():
-            path.unlink()
+        try:
+            safe_unlink(path)
+        except PermissionError:
+            print(f"[export] Could not delete cache file {path.name}; continuing.")
     if output_path and output_path.exists():
-        output_path.unlink()
+        try:
+            safe_unlink(output_path)
+        except PermissionError:
+            # ffmpeg -y overwrites on mux; a locked prior export should not abort the run.
+            print(
+                f"[export] Could not delete prior export {output_path.name}; "
+                "will overwrite if the file unlocks before mux."
+            )
 
 
 def segment_cache_duration_ok(path: Path, expected_duration: float, *, tolerance: float = 0.75) -> bool:
@@ -614,7 +691,6 @@ def render_broll_panel_clip(
     """Render a stock clip scaled to exact panel dimensions."""
     duration_str = f"{duration:.3f}"
     if not force and segment_cache_duration_ok(output_path, duration):
-        normalize_segment_timestamps(output_path, should_cancel=should_cancel)
         return output_path
 
     clip_cache_dir = (cache_dir / "clips") if cache_dir else CLIP_CACHE_DIR
@@ -705,6 +781,69 @@ def render_black_panel_clip(
     return output_path
 
 
+OVERLAY_POSITIONS: dict[str, dict[str, float | None]] = {
+    "lower-third": {"margin_x": 100, "height_ratio": 0.38, "y_ratio": 0.55},
+    "center": {"margin_x": 260, "height_ratio": 0.46, "y_ratio": None},
+    "top-banner": {"margin_x": 100, "height_ratio": 0.28, "y_ratio": 0.08},
+}
+
+
+def overlay_panel_geometry(
+    out_width: int,
+    out_height: int,
+    position: str = "lower-third",
+) -> tuple[int, int, int, int]:
+    spec = OVERLAY_POSITIONS.get(position, OVERLAY_POSITIONS["lower-third"])
+    margin_x = int(spec["margin_x"] or 100)
+    panel_w = max(320, out_width - 2 * margin_x)
+    panel_h = max(120, int(out_height * float(spec["height_ratio"] or 0.38)))
+    x = margin_x
+    y_ratio = spec["y_ratio"]
+    if y_ratio is None:
+        y = max(0, (out_height - panel_h) // 2)
+    else:
+        y = max(0, min(out_height - panel_h, int(out_height * float(y_ratio))))
+    return panel_w, panel_h, x, y
+
+
+def composite_overlay_panel(
+    *,
+    broll_path: Path,
+    panel_path: Path,
+    output_path: Path,
+    out_width: int,
+    out_height: int,
+    duration: float,
+    position: str,
+    enc_args: list[str],
+    should_cancel: CancelCheck | None = None,
+) -> Path:
+    panel_w, panel_h, x, y = overlay_panel_geometry(out_width, out_height, position)
+    duration_str = f"{duration:.3f}"
+    filter_complex = (
+        f"[0:v]scale={out_width}:{out_height}:force_original_aspect_ratio=increase,"
+        f"crop={out_width}:{out_height},setsar=1[bg];"
+        f"[1:v]scale={panel_w}:{panel_h},setsar=1[panel];"
+        f"[bg][panel]overlay={x}:{y}[out]"
+    )
+    run_ffmpeg(
+        [
+            "-i", str(broll_path),
+            "-i", str(panel_path),
+            "-filter_complex", filter_complex,
+            "-map", "[out]",
+            "-t", duration_str,
+            "-an",
+            *enc_args,
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ],
+        should_cancel=should_cancel,
+    )
+    normalize_segment_timestamps(output_path, should_cancel=should_cancel)
+    return output_path
+
+
 def composite_split_panels(
     *,
     left_path: Path,
@@ -768,9 +907,14 @@ def render_segment_clip(
         composition = str(remotion["composition"])
         props = dict(remotion.get("props") or {})
         layout = str(remotion.get("layout") or "").strip().lower()
-        if layout not in {"split-right", "full"}:
+        if layout not in {"split-right", "full", "overlay"}:
             layout = "split-right" if composition == "FactCard" else "full"
         is_split = layout == "split-right" and composition == "FactCard"
+        is_overlay = layout == "overlay"
+        overlay_block = remotion.get("overlay") if isinstance(remotion.get("overlay"), dict) else {}
+        overlay_position = str(overlay_block.get("position") or "lower-third").strip().lower()
+        if overlay_position not in OVERLAY_POSITIONS:
+            overlay_position = "lower-third"
         half_w = max(2, out_width // 2)
         cache_payload: dict[str, Any] = {
             "composition": composition,
@@ -780,8 +924,10 @@ def render_segment_clip(
             "height": out_height,
             "layout": layout,
         }
-        if is_split:
+        if is_split or is_overlay:
             cache_payload["selection"] = selection_cache_id(selection)
+        if is_overlay:
+            cache_payload["overlay_position"] = overlay_position
         cache_id = hashlib.sha256(
             json.dumps(cache_payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
         ).hexdigest()[:12]
@@ -789,7 +935,6 @@ def render_segment_clip(
             f"segment_{segment_id:03d}_remotion_{cache_id}_{res_tag}.mp4"
         )
         if not force and segment_cache_duration_ok(out_path, duration):
-            normalize_segment_timestamps(out_path, should_cancel=should_cancel)
             return out_path
 
         remotion_cache = (cache_dir / "remotion") if cache_dir else (ROOT / ".export_cache" / "remotion")
@@ -859,6 +1004,76 @@ def render_segment_clip(
             )
             return out_path
 
+        if is_overlay:
+            panel_w, panel_h, _, _ = overlay_panel_geometry(
+                out_width, out_height, overlay_position
+            )
+            broll_path = segment_cache_dir / (
+                f"segment_{segment_id:03d}_remotion_bg_{cache_id}_{res_tag}.mp4"
+            )
+            panel_path = segment_cache_dir / (
+                f"segment_{segment_id:03d}_remotion_panel_{cache_id}_{res_tag}.mp4"
+            )
+            if not force and broll_path.exists() and panel_path.exists():
+                composite_overlay_panel(
+                    broll_path=broll_path,
+                    panel_path=panel_path,
+                    output_path=out_path,
+                    out_width=out_width,
+                    out_height=out_height,
+                    duration=duration,
+                    position=overlay_position,
+                    enc_args=enc_args,
+                    should_cancel=should_cancel,
+                )
+                return out_path
+
+            render_remotion_clip(
+                composition=composition,
+                props=props,
+                duration_seconds=duration,
+                output_path=panel_path,
+                width=panel_w,
+                height=panel_h,
+                cache_dir=remotion_cache,
+                force=force,
+            )
+            if selection and selection.get("url"):
+                render_broll_panel_clip(
+                    duration=duration,
+                    selection=selection,
+                    encoder=encoder,
+                    enc_args=enc_args,
+                    cache_dir=cache_dir,
+                    out_width=out_width,
+                    out_height=out_height,
+                    output_path=broll_path,
+                    force=force,
+                    should_cancel=should_cancel,
+                )
+            else:
+                render_black_panel_clip(
+                    duration=duration,
+                    out_width=out_width,
+                    out_height=out_height,
+                    output_path=broll_path,
+                    encoder=encoder,
+                    enc_args=enc_args,
+                    should_cancel=should_cancel,
+                )
+            composite_overlay_panel(
+                broll_path=broll_path,
+                panel_path=panel_path,
+                output_path=out_path,
+                out_width=out_width,
+                out_height=out_height,
+                duration=duration,
+                position=overlay_position,
+                enc_args=enc_args,
+                should_cancel=should_cancel,
+            )
+            return out_path
+
         render_remotion_clip(
             composition=composition,
             props=props,
@@ -876,7 +1091,6 @@ def render_segment_clip(
     duration_ms = int(round(duration * 1000))
     out_path = segment_cache_dir / f"segment_{segment_id:03d}_{cache_id}_{duration_ms}ms_{res_tag}.mp4"
     if not force and segment_cache_duration_ok(out_path, duration):
-        normalize_segment_timestamps(out_path, should_cancel=should_cancel)
         return out_path
 
     if selection and selection.get("url"):
@@ -977,6 +1191,11 @@ def normalize_segment_timestamps(
 ) -> None:
     """Remux a segment so concat demuxer gets a consistent timebase (Remotion vs NVENC)."""
     temp = path.with_suffix(".norm.mp4")
+    if temp.exists():
+        try:
+            safe_unlink(temp)
+        except PermissionError:
+            temp = path.with_name(f"{path.stem}.norm-{time.time_ns()}.mp4")
     run_ffmpeg(
         [
             "-i",
@@ -991,7 +1210,7 @@ def normalize_segment_timestamps(
         ],
         should_cancel=should_cancel,
     )
-    temp.replace(path)
+    safe_replace(temp, path)
 
 
 def concat_segments(
@@ -1205,7 +1424,7 @@ def add_faststart(input_path: Path, *, should_cancel: CancelCheck | None = None)
             should_cancel=should_cancel,
         )
         temp = input_path.with_suffix(".faststart.mp4")
-        temp.replace(input_path)
+        safe_replace(temp, input_path)
 
 
 def probe_duration(audio_path: Path) -> float:
@@ -1546,16 +1765,24 @@ def export_video(
         selection = segment["selection"]
         is_remotion = segment.get("render_mode") == "remotion" and segment.get("remotion")
         remotion = segment.get("remotion") if is_remotion else None
+        layout_name = str(remotion.get("layout") or "").strip().lower() if remotion else ""
         is_split = (
             is_remotion
-            and str(remotion.get("layout") or "").strip().lower() == "split-right"
+            and layout_name == "split-right"
             and str(remotion.get("composition") or "") == "FactCard"
         )
+        is_overlay = is_remotion and layout_name == "overlay"
+        needs_broll = is_split or is_overlay
         if not selection and not is_remotion:
             missing += 1
-        elif is_split and not selection:
+        elif needs_broll and not selection:
             missing += 1
-        label = "Remotion split" if is_split else ("Remotion" if is_remotion else "clip")
+        if is_overlay:
+            label = "Remotion overlay"
+        elif is_split:
+            label = "Remotion split"
+        else:
+            label = "Remotion" if is_remotion else "clip"
         progress(
             "prepare",
             index,

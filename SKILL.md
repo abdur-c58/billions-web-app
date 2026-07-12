@@ -23,14 +23,20 @@ This section records what was actually inferred from the provided channel transc
 | Estimated runtime at 145 wpm | ~17 minutes |
 | Average segment length | ~85–110 words |
 | Beats in episode | 8 |
-| Remotion vs b-roll ratio | ~15% Remotion (FactCard/TitleCard overlays), ~85% stock/commons |
-| Remotion placement | Key facts, chapter breaks, infrastructure/warning lists |
-| Subscribe CTA placement | Segment ~5–6 (after hook promise established), then mid-video before the payoff |
+| Remotion vs b-roll ratio | ~35% Remotion (overlays + split cards + full TitleCards), ~65% stock/commons |
+| Remotion placement | Subscribe CTAs, mid-video CTAs, key facts, dates/names, chapter breaks, numbered lists |
+| Subscribe CTA placement | Segment ~5–6 and mid-video — **always Remotion overlay popups**, never stock CTA footage |
 | Title pattern | Specific place or event + layered mystery + implied resolution that surprises |
 
 **Inferred narration speed:** 145 wpm (same as Apex Archives; consistent with documentary pacing).
 
-**Remotion composition observed in screenshot:** Split-screen hybrid — left side is commons/stock b-roll (actual location footage), right side is a dark `FactCard` with serif title and bullet list. This is NOT full-screen Remotion. The b-roll plays behind or beside the Remotion card. Treat this as `"type": "remotion:FactCard"` with the understanding that the pipeline composites it over or beside the b-roll. The `description` field on these segments still names the underlying b-roll for reference.
+**Remotion layouts observed / supported:**
+
+1. **`overlay`** — full-frame b-roll with a large Remotion popup on top (lower-third, center, or top-banner). Use for subscribe CTAs, mid-video CTAs, quick facts, dates, names, and one-line revelations while landscape b-roll continues underneath.
+2. **`split-right`** — b-roll left half, FactCard right half. Use for dense bullet lists that need a full side panel.
+3. **`full`** — entire frame is Remotion (TitleCard chapter breaks, occasional full-screen FactCard).
+
+**Default:** prefer `overlay` over `split-right` when the on-screen copy is short (title + 1–3 lines). Reserve `split-right` for longer bullet lists. Never fetch stock "subscribe CTA" footage — always use `remotion:FactCard` or `remotion:TitleCard` with `layout: "overlay"`.
 
 ---
 
@@ -123,7 +129,7 @@ Update after every new video generated. Format: `[Date] Title — Register — N
 
 Open on a specific, concrete, visually grounded scene. No abstract thesis statement. The first sentence must place the viewer in a location or confront them with a fact they did not expect. The hook establishes a **resolvable curiosity gap** — the viewer must feel that the answer exists and that this video has it.
 
-Segment 5 or 6: first subscribe CTA. Keep it short. Tie it to the channel's specific promise ("this channel covers British history that most people were never properly taught").
+Segment 5 or 6: first subscribe CTA. **Must be `remotion:FactCard` with `layout: "overlay"`** — b-roll of the location continues underneath; a large popup asks viewers to subscribe. Do **not** use stock subscribe CTA footage.
 
 ### Beat 2 — Setting / Geography (2–3 segments, ~225 words)
 
@@ -143,7 +149,7 @@ What stories grew up around this subject, and when? Trace the mythology explicit
 
 ### Beat 6 — Mid-video CTA (1 segment, ~70 words)
 
-Placed just before the payoff. Acknowledge that the viewer is waiting for the explanation. Second subscribe ask. Tease that the real finding is more interesting than the supernatural version.
+Placed just before the payoff. **Must be `remotion:FactCard` or `remotion:TitleCard` with `layout: "overlay"`** — not stock CTA footage. Acknowledge that the viewer is waiting for the explanation. Second subscribe ask. Tease that the real finding is more interesting than the supernatural version.
 
 ### Beat 7 — Scientific / Historical Investigation (3–4 segments, ~320 words)
 
@@ -184,17 +190,46 @@ If any of these four layers is missing from a beat, the beat is not finished. De
 
 ## Remotion vs Stock Placement Rules
 
-| Content type | Segment type |
-|---|---|
-| Chapter title, new beat opening | `remotion:TitleCard` |
-| Key fact, numbered list, named statistic | `remotion:FactCard` (split-screen: b-roll left, card right) |
-| Atmospheric narration, landscape, process | `stock` or `commons` b-roll only |
-| Historical event with no available footage | `commons` archival or `stock` reconstruction |
-| Geological or archaeological explanation | `stock` with matching search query |
+| Content type | Segment type | Layout |
+|---|---|---|
+| Subscribe CTA (hook or mid-video) | `remotion:FactCard` | **`overlay`** — never stock CTA footage |
+| Quick fact, date, name, statistic while narration continues | `remotion:FactCard` | **`overlay`** (default) |
+| Dense numbered list, warning checklist | `remotion:FactCard` | `split-right` |
+| Chapter title, new beat opening | `remotion:TitleCard` | `full` |
+| Atmospheric narration, landscape, process | `stock` or `commons` b-roll only | — |
+| Historical event with no available footage | `commons` archival or `stock` reconstruction | — |
 
-**The split-screen Remotion style** (as seen in channel screenshot): FactCard renders on the right half of frame. B-roll or commons footage plays on the left. The `description` field on a `remotion:FactCard` segment should name the b-roll that occupies the left side. The pipeline handles the compositing — the script just needs both pieces described.
+### Layout decision tree
 
-**Ratio target:** no more than 3–4 Remotion segments per episode. Overuse of FactCards reduces the visual texture of the video. Use them for the moments that need visual anchoring — the key fact that would otherwise float past in narration.
+1. **Is it a subscribe or channel CTA?** → `overlay` Remotion popup. B-roll = relevant location footage underneath.
+2. **Is it a short fact (≤ 3 lines on screen)?** → `overlay` popup while b-roll plays.
+3. **Is it a long bullet list (4+ items)?** → `split-right` FactCard.
+4. **Is it a chapter break with no b-roll?** → `full` TitleCard.
+5. **Everything else atmospheric** → plain `stock` / `commons` segment.
+
+### Overlay popup rules
+
+- Set `remotion.layout` to `"overlay"`.
+- Set `remotion.overlay.position` to one of: `"lower-third"` (default, best for CTAs), `"center"` (revelations, named discoveries), `"top-banner"` (chapter labels, dates).
+- The `description` field names the **full-frame b-roll** playing underneath (same as split-screen left panel).
+- Include `remotion.broll` with `search_query` and `category` when the script source is explicit — the pipeline uses this for fetch.
+- Popup copy must be **short and huge** — viewers should read it in under 2 seconds. Title + 1–2 lines max for CTAs; title + 3 bullets max for info popups.
+
+### Split-screen rules
+
+- FactCard renders on the right half. B-roll plays on the left.
+- Use only when the on-screen list is too long for a popup panel.
+
+### Ratio target
+
+**6–10 Remotion segments per episode**, mixed across layouts:
+
+- 2 overlay CTAs (hook + mid-video) — mandatory
+- 2–4 overlay info popups (dates, names, key facts)
+- 1–2 split-right FactCards (dense lists)
+- 1–2 full TitleCards (chapter breaks)
+
+Do not make every segment Remotion. Atmospheric stock/commons segments are still the backbone (~60–65% of runtime).
 
 ---
 
@@ -209,11 +244,32 @@ All Remotion segments default to this design system unless the beat demands an o
 - Accent: deep British heritage red `#8b1a1a` (used for badge, bullet dots, accent bar — never for background)
 - Badge background: `#8b1a1a` at 90% opacity
 
-**Typography:**
-- Title font: serif — `"Georgia, 'Times New Roman', serif"` — weight 700, ~52px
-- Body font: same serif stack — weight 400, ~28px
-- Line height: 1.55 for body, 1.2 for title
-- Text align: left for FactCard, center for TitleCard
+**Typography (mandatory — fill the frame):**
+
+Text must be **large, legible on a TV/phone, and use most of the available card area**. Small type is an error. When in doubt, go bigger.
+
+- **Primary font:** [Special Elite](https://fonts.google.com/specimen/Special+Elite) — `"Special Elite", Georgia, serif"`
+- **Title weight:** 400 (Special Elite is a single-weight display face; do not use 700)
+- **Line height:** 1.45 for body, 1.15 for title
+- **Text align:** left for FactCard, center for TitleCard
+
+**Size floors (never go below these):**
+
+| Composition | Layout | `titleSize` | `bodySize` / `subtitleSize` | `labelSize` | `contentMaxWidth` | `padding` |
+|---|---|---:|---:|---:|---:|---:|
+| FactCard | overlay popup | **80** | **48** | **30** | **1600** | **40** |
+| FactCard | split-right (960px panel) | **96** | **52** | **32** | **900** | **36** |
+| FactCard | full frame | **110** | **56** | **34** | **1700** | **64** |
+| TitleCard | full frame | **120** | **56** | — | **1700** | **72** |
+| TitleCard | overlay popup | **88** | **48** | — | **1600** | **40** |
+
+**Space rules:**
+- **Overlay popups** render on a wide lower-third or center panel over full-frame b-roll. Text must dominate the popup — not float small inside a huge dark box.
+- **Split-right** FactCards render in a **960×1080** panel. Set `contentMaxWidth` to **900** so text spans nearly the full right half.
+- **Full-frame** cards should feel poster-sized. Title at 110–120px is normal, not excessive.
+- Keep `padding` tight. Do not pad so much that the type shrinks visually.
+- Limit on-screen copy: short title (≤ 8 words), body as 1–4 bullet lines max. Fewer words → bump sizes toward the top of the range.
+- Every Remotion `props`, `design.typography`, and `prompt` must cite **Special Elite** and the numeric sizes above.
 
 **Motion personality:** calm and deliberate. No kinetic energy. Spring fade-up on enter (~0.5s, 40px travel). Badge enters first (8 frames), then title (8 frames), then body (12 frames). No zoom. No bounce. Hold through full narration. Soft cut to b-roll after.
 
@@ -244,24 +300,124 @@ All Remotion segments default to this design system unless the beat demands an o
 }
 ```
 
+### Required top-level structure
+
+- The deliverable must be a JSON object with a top-level `script` array.
+- Do **not** use a top-level `segments` array.
+- Every item in `script` must be a beat block:
+  - `beat`: integer
+  - `label`: short beat name
+  - `segments`: array of segment objects
+
 ### Stock / commons segment rules
 
 - `type` is always a 2-element array: `[search_query, category]`
 - `search_query`: plain English, pasteable into Storyblocks or Wikimedia Commons. Specific and visual.
 - `category`: `"stock"` for Storyblocks / commercial footage; `"commons"` for Wikimedia Commons / public domain archival
+- Do **not** use `"type": "broll"`. That is invalid for this pipeline.
 - **Identical strings every recurrence** — character-for-character. `"granite boulder field aerial"` must appear as `"granite boulder field aerial"` every time it is used. No phrasing drift.
 - Reuse connective-tissue queries across beats: `"narrator documentary British landscape"`, `"historical archive map parchment"`, `"aerial countryside England"`.
 
 ### Remotion segment rules
 
+Supported `remotion.layout` values: `"overlay"`, `"split-right"`, `"full"`.
+
+**Overlay popup (default for CTAs and short facts):**
+
+```json
+{
+  "segment_id": 5,
+  "content": "This channel covers the British history most people were never properly taught. If that's your kind of thing, subscribe now.",
+  "description": "Wide aerial of the subject landscape — b-roll plays full frame underneath popup",
+  "type": "remotion:FactCard",
+  "remotion": {
+    "composition": "FactCard",
+    "layout": "overlay",
+    "overlay": {
+      "position": "lower-third"
+    },
+    "broll": {
+      "search_query": "aerial countryside England misty morning",
+      "category": "stock"
+    },
+    "props": {
+      "title": "Subscribe for the Real History",
+      "body": "British places and stories behind the postcard version",
+      "factNumber": null,
+      "showFactBadge": false,
+      "accentColor": "#8b1a1a",
+      "textColor": "#f0ede8",
+      "bodyColor": "#b8b3ab",
+      "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
+      "fontFamily": "Special Elite, Georgia, serif",
+      "textAlign": "left",
+      "verticalAlign": "center",
+      "padding": 40,
+      "contentMaxWidth": 1600,
+      "titleSize": 80,
+      "bodySize": 48,
+      "titleWeight": 400,
+      "lineHeight": 1.45
+    },
+    "design": {
+      "intent": "Hook subscribe CTA — large popup over landscape b-roll, not stock CTA footage",
+      "layout": {
+        "mode": "overlay",
+        "position": "lower-third",
+        "textAlign": "left",
+        "verticalAlign": "center",
+        "hierarchy": "title dominant, one-line body secondary",
+        "contentMaxWidth": "wide lower-third popup panel over full-frame b-roll"
+      },
+      "typography": {
+        "titleFont": "Special Elite",
+        "bodyFont": "Special Elite",
+        "titleSize": "80px",
+        "bodySize": "48px",
+        "titleWeight": 400,
+        "lineHeight": 1.45
+      },
+      "color": {
+        "background": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
+        "text": "#f0ede8",
+        "body": "#b8b3ab",
+        "accent": "#8b1a1a",
+        "accentUsage": "optional thin accent bar only"
+      },
+      "motion": {
+        "enter": "spring fade-up 40px, ~0.5s, calm",
+        "exit": "popup fades as narration continues over b-roll",
+        "stagger": "title +8 frames → body +16 frames",
+        "emphasis": "none",
+        "easing": "spring"
+      },
+      "overlays": {
+        "badge": "none for CTA popups",
+        "decorations": "subtle vignette on popup panel edges only — b-roll stays visible around it",
+        "iconography": "none"
+      },
+      "transitions": {
+        "in": "popup rises over continuing b-roll",
+        "out": "soft fade, b-roll holds"
+      },
+      "durationHint": "hold through CTA narration line"
+    },
+    "prompt": "Full-frame aerial b-roll of misty British countryside plays underneath. Large lower-third Remotion popup panel (Special Elite, 80px title, 48px body) rises over the footage — not a stock subscribe graphic. Title 'Subscribe for the Real History' in off-white (#f0ede8), one body line below in muted grey (#b8b3ab). Deep charcoal popup background (#2e2e2e to #1a1a1a). B-roll remains visible above and around the panel. Spring fade-up enter. No badge. Hold through CTA line then fade popup while b-roll continues."
+  }
+}
+```
+
+**Split-right FactCard (dense lists):**
+
 ```json
 {
   "segment_id": 7,
   "content": "narration — what the voiceover says during this card",
-  "description": "b-roll for left side of split-screen (if applicable)",
+  "description": "b-roll for left side of split-screen",
   "type": "remotion:FactCard",
   "remotion": {
     "composition": "FactCard",
+    "layout": "split-right",
     "props": {
       "title": "string — card headline",
       "body": "string — bullet list or short paragraph shown on card",
@@ -271,16 +427,16 @@ All Remotion segments default to this design system unless the beat demands an o
       "textColor": "#f0ede8",
       "bodyColor": "#b8b3ab",
       "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
-      "fontFamily": "Georgia, 'Times New Roman', serif",
+      "fontFamily": "Special Elite, Georgia, serif",
       "textAlign": "left",
       "verticalAlign": "center",
-      "padding": "48px",
-      "contentMaxWidth": "520px",
-      "titleSize": "52px",
-      "bodySize": "28px",
-      "labelSize": "14px",
-      "titleWeight": 700,
-      "lineHeight": 1.55
+      "padding": 36,
+      "contentMaxWidth": 900,
+      "titleSize": 96,
+      "bodySize": 52,
+      "labelSize": 32,
+      "titleWeight": 400,
+      "lineHeight": 1.45
     },
     "design": {
       "intent": "one sentence — on-screen purpose and mood",
@@ -288,15 +444,15 @@ All Remotion segments default to this design system unless the beat demands an o
         "textAlign": "left",
         "verticalAlign": "center",
         "hierarchy": "title dominant, body secondary, badge tertiary",
-        "contentMaxWidth": "right half of split-screen frame, max 520px"
+        "contentMaxWidth": "right half of split-screen frame, 900px — nearly full panel width"
       },
       "typography": {
-        "titleFont": "Georgia serif stack",
-        "bodyFont": "Georgia serif stack",
-        "titleSize": "52px",
-        "bodySize": "28px",
-        "titleWeight": 700,
-        "lineHeight": 1.55
+        "titleFont": "Special Elite",
+        "bodyFont": "Special Elite",
+        "titleSize": "96px",
+        "bodySize": "52px",
+        "titleWeight": 400,
+        "lineHeight": 1.45
       },
       "color": {
         "background": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
@@ -341,20 +497,36 @@ All Remotion segments default to this design system unless the beat demands an o
     "textColor": "#f0ede8",
     "subtitleColor": "#b8b3ab",
     "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
-    "fontFamily": "Georgia, 'Times New Roman', serif",
+    "fontFamily": "Special Elite, Georgia, serif",
     "textAlign": "center",
     "verticalAlign": "center",
-    "padding": "64px",
-    "contentMaxWidth": "700px",
-    "titleSize": "68px",
-    "subtitleSize": "30px",
-    "titleWeight": 700,
-    "lineHeight": 1.2
+    "padding": 72,
+    "contentMaxWidth": 1700,
+    "titleSize": 120,
+    "subtitleSize": 56,
+    "titleWeight": 400,
+    "lineHeight": 1.15
   }
 }
 ```
 
 `props`, `design`, and `prompt` must be **consistent**. If they conflict, fix before delivering.
+
+### Remotion compatibility rules
+
+- Use only supported compositions: `FactCard`, `TitleCard`
+- Use only supported layouts: `overlay`, `split-right`, `full`
+- Put layout on `remotion.layout`, **not** inside `remotion.props`
+- Put popup position on `remotion.overlay.position` (`lower-third`, `center`, `top-banner`)
+- **Never use stock footage for subscribe CTAs** — always `remotion` with `layout: "overlay"`
+- Use `body`, **not** `bullets`
+- Use `bodyColor`, **not** `bulletColor`
+- Use numeric values for size/layout props (`96`, `52`, `900`), **not** pixel strings like `"48px"`
+- **Typography is non-negotiable:** always use `"Special Elite, Georgia, serif"` and meet the size floors in Channel Design System.
+- Overlay FactCard: `titleSize` ≥ 80, `bodySize` ≥ 48. Split-right: `titleSize` ≥ 96, `bodySize` ≥ 52. Full TitleCard: `titleSize` ≥ 120.
+- Set `contentMaxWidth` to **900** for split-right, **1600+** for overlay popups.
+- Do not invent custom render props like `badgeText` unless they are duplicated safely in `design` / `prompt` only
+- If you want bullet-style text on screen, encode it inside `props.body` as newline-separated bullet text
 
 ---
 
@@ -381,6 +553,7 @@ All Remotion segments default to this design system unless the beat demands an o
   "type": "remotion:FactCard",
   "remotion": {
     "composition": "FactCard",
+    "layout": "split-right",
     "props": {
       "title": "Infrastructure Missing",
       "body": "• No marked trail into the boulder field\n• No safety barrier installed partway\n• No rescue infrastructure built in",
@@ -390,16 +563,16 @@ All Remotion segments default to this design system unless the beat demands an o
       "textColor": "#f0ede8",
       "bodyColor": "#b8b3ab",
       "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
-      "fontFamily": "Georgia, 'Times New Roman', serif",
+      "fontFamily": "Special Elite, Georgia, serif",
       "textAlign": "left",
       "verticalAlign": "center",
-      "padding": "48px",
-      "contentMaxWidth": "520px",
-      "titleSize": "52px",
-      "bodySize": "28px",
-      "labelSize": "14px",
-      "titleWeight": 700,
-      "lineHeight": 1.55
+      "padding": 36,
+      "contentMaxWidth": 900,
+      "titleSize": 96,
+      "bodySize": 52,
+      "labelSize": 32,
+      "titleWeight": 400,
+      "lineHeight": 1.45
     },
     "design": {
       "intent": "Anchor the viewer to the physical reality that no safety infrastructure exists — this is not neglect but genuine impossibility. Calm, factual, slightly ominous.",
@@ -407,15 +580,15 @@ All Remotion segments default to this design system unless the beat demands an o
         "textAlign": "left",
         "verticalAlign": "center",
         "hierarchy": "Title dominant. Three-bullet body secondary. Heritage red badge tertiary.",
-        "contentMaxWidth": "Right half of split-screen, 520px max"
+        "contentMaxWidth": "Right half of split-screen, 900px — text spans nearly full panel"
       },
       "typography": {
-        "titleFont": "Georgia serif",
-        "bodyFont": "Georgia serif",
-        "titleSize": "52px",
-        "bodySize": "28px",
-        "titleWeight": 700,
-        "lineHeight": 1.55
+        "titleFont": "Special Elite",
+        "bodyFont": "Special Elite",
+        "titleSize": "96px",
+        "bodySize": "52px",
+        "titleWeight": 400,
+        "lineHeight": 1.45
       },
       "color": {
         "background": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
@@ -442,7 +615,7 @@ All Remotion segments default to this design system unless the beat demands an o
       },
       "durationHint": "hold through full narration — approximately 20 seconds"
     },
-    "prompt": "Deep charcoal radial gradient background (#2e2e2e to #1a1a1a). Right-half split-screen layout — b-roll footage of a closed gate with rocky formation visible plays on the left; this card occupies the right. Left-aligned text, vertically centered. Large serif title 'Infrastructure Missing' in off-white (#f0ede8), 52px Georgia, weight 700. Three bullet points below in muted warm grey (#b8b3ab), 28px, same serif stack, line height 1.55. Heritage red badge pill (#8b1a1a) top-left corner labelled 'Warning'. Spring fade-up enter animation over ~0.5 seconds: badge appears first, title rises 8 frames later, bullets stagger 6 frames apart. No zoom. No bounce. Subtle edge vignette on card only. Hold through full narration (~20 seconds). Soft cut to location b-roll after."
+    "prompt": "Deep charcoal radial gradient background (#2e2e2e to #1a1a1a). Right-half split-screen layout — b-roll footage of a closed gate with rocky formation visible plays on the left; this card occupies the right 960px panel. Left-aligned text, vertically centered, content spanning ~900px width. Very large Special Elite title 'Infrastructure Missing' in off-white (#f0ede8), 96px, weight 400. Three bullet points below in muted warm grey (#b8b3ab), 52px Special Elite, line height 1.45. Heritage red badge pill (#8b1a1a) top-left labelled 'Warning', 32px. Spring fade-up enter animation over ~0.5 seconds: badge appears first, title rises 8 frames later, bullets stagger 6 frames apart. No zoom. No bounce. Subtle edge vignette on card only. Hold through full narration (~20 seconds). Soft cut to location b-roll after."
   }
 }
 ```
@@ -457,6 +630,7 @@ All Remotion segments default to this design system unless the beat demands an o
   "type": "remotion:TitleCard",
   "remotion": {
     "composition": "TitleCard",
+    "layout": "full",
     "props": {
       "title": "What the Historian Found",
       "subtitle": "Testing 150 years of stories against the actual record",
@@ -465,15 +639,15 @@ All Remotion segments default to this design system unless the beat demands an o
       "textColor": "#f0ede8",
       "subtitleColor": "#b8b3ab",
       "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
-      "fontFamily": "Georgia, 'Times New Roman', serif",
+      "fontFamily": "Special Elite, Georgia, serif",
       "textAlign": "center",
       "verticalAlign": "center",
-      "padding": "64px",
-      "contentMaxWidth": "700px",
-      "titleSize": "68px",
-      "subtitleSize": "30px",
-      "titleWeight": 700,
-      "lineHeight": 1.2
+      "padding": 72,
+      "contentMaxWidth": 1700,
+      "titleSize": 120,
+      "subtitleSize": 56,
+      "titleWeight": 400,
+      "lineHeight": 1.15
     },
     "design": {
       "intent": "Chapter-break card signalling the shift from mystery-building to evidence-testing. Tone: calm authority, not dramatic reveal.",
@@ -481,15 +655,15 @@ All Remotion segments default to this design system unless the beat demands an o
         "textAlign": "center",
         "verticalAlign": "center",
         "hierarchy": "Title dominant, thin accent bar below title, subtitle tertiary",
-        "contentMaxWidth": "700px centered on full frame"
+        "contentMaxWidth": "1700px centered on full frame — title fills the width"
       },
       "typography": {
-        "titleFont": "Georgia serif",
-        "bodyFont": "Georgia serif",
-        "titleSize": "68px",
-        "bodySize": "30px",
-        "titleWeight": 700,
-        "lineHeight": 1.2
+        "titleFont": "Special Elite",
+        "bodyFont": "Special Elite",
+        "titleSize": "120px",
+        "bodySize": "56px",
+        "titleWeight": 400,
+        "lineHeight": 1.15
       },
       "color": {
         "background": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
@@ -516,7 +690,106 @@ All Remotion segments default to this design system unless the beat demands an o
       },
       "durationHint": "hold 4–5 seconds, enough for narration line plus a breath"
     },
-    "prompt": "Full-frame deep charcoal radial gradient (#2e2e2e to #1a1a1a). Centered layout. Large serif title 'What the Historian Found' in off-white (#f0ede8), 68px Georgia, weight 700, centered horizontally and vertically. Thin heritage red horizontal rule (#8b1a1a, 3px) immediately beneath the title. Subtitle 'Testing 150 years of stories against the actual record' below the rule in muted warm grey (#b8b3ab), 30px serif, weight 400. Spring fade-up enter over ~0.6s: title rises first, accent bar appears 8 frames later, subtitle fades in 16 frames after that. No badge. No grain. No vignette. Clean card. Hold 4–5 seconds. Soft fade to b-roll showing researcher or archive footage."
+    "prompt": "Full-frame deep charcoal radial gradient (#2e2e2e to #1a1a1a). Centered layout, content max-width 1700px. Poster-sized Special Elite title 'What the Historian Found' in off-white (#f0ede8), 120px, weight 400, centered horizontally and vertically — title should dominate the frame. Thin heritage red horizontal rule (#8b1a1a, 3px) immediately beneath the title. Subtitle 'Testing 150 years of stories against the actual record' below the rule in muted warm grey (#b8b3ab), 56px Special Elite, weight 400. Spring fade-up enter over ~0.6s: title rises first, accent bar appears 8 frames later, subtitle fades in 16 frames after that. No badge. No grain. No vignette. Clean card. Hold 4–5 seconds. Soft fade to b-roll showing researcher or archive footage."
+  }
+}
+```
+
+### Example D — Overlay info popup (date / fact over b-roll)
+
+```json
+{
+  "segment_id": 14,
+  "content": "Radiocarbon dating places the main occupation phase between roughly 3180 and 2500 BC — nearly six hundred continuous years on the same site.",
+  "description": "Archaeological dig site, researchers working in trenches — full-frame b-roll underneath",
+  "type": "remotion:FactCard",
+  "remotion": {
+    "composition": "FactCard",
+    "layout": "overlay",
+    "overlay": { "position": "center" },
+    "broll": {
+      "search_query": "archaeological excavation trench workers",
+      "category": "stock"
+    },
+    "props": {
+      "title": "3180–2500 BC",
+      "body": "Nearly 600 years of continuous occupation",
+      "showFactBadge": true,
+      "accentColor": "#8b1a1a",
+      "textColor": "#f0ede8",
+      "bodyColor": "#b8b3ab",
+      "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
+      "fontFamily": "Special Elite, Georgia, serif",
+      "textAlign": "center",
+      "verticalAlign": "center",
+      "padding": 40,
+      "contentMaxWidth": 1600,
+      "titleSize": 88,
+      "bodySize": 48,
+      "labelSize": 30,
+      "titleWeight": 400,
+      "lineHeight": 1.45
+    },
+    "design": {
+      "intent": "Anchor the date range while dig b-roll continues — viewer reads the span instantly",
+      "layout": {
+        "mode": "overlay",
+        "position": "center",
+        "hierarchy": "date title dominant, one-line context secondary"
+      },
+      "typography": {
+        "titleFont": "Special Elite",
+        "bodyFont": "Special Elite",
+        "titleSize": "88px",
+        "bodySize": "48px",
+        "titleWeight": 400,
+        "lineHeight": 1.45
+      },
+      "motion": {
+        "enter": "spring fade-up, calm",
+        "exit": "fade while b-roll holds"
+      }
+    },
+    "prompt": "Full-frame excavation b-roll underneath. Centered overlay popup with huge Special Elite date range '3180–2500 BC' at 88px and one context line at 48px. B-roll stays visible around the panel. Heritage red badge 'The Dates'. Spring fade-up enter. Hold through narration line."
+  }
+}
+```
+
+### Example E — Overlay subscribe CTA (mid-video)
+
+```json
+{
+  "segment_id": 23,
+  "content": "If you're enjoying this one, subscribe — the real explanation for what happened here is stranger and slower than any single storm.",
+  "description": "Wide landscape of the subject location — atmospheric b-roll full frame",
+  "type": "remotion:FactCard",
+  "remotion": {
+    "composition": "FactCard",
+    "layout": "overlay",
+    "overlay": { "position": "lower-third" },
+    "broll": {
+      "search_query": "aerial British landscape coastline mist",
+      "category": "stock"
+    },
+    "props": {
+      "title": "Subscribe Before the Payoff",
+      "body": "The real story is more interesting than the myth",
+      "showFactBadge": false,
+      "accentColor": "#8b1a1a",
+      "textColor": "#f0ede8",
+      "bodyColor": "#b8b3ab",
+      "backgroundGradient": "radial-gradient(ellipse at center, #2e2e2e 0%, #1a1a1a 100%)",
+      "fontFamily": "Special Elite, Georgia, serif",
+      "textAlign": "left",
+      "verticalAlign": "center",
+      "padding": 40,
+      "contentMaxWidth": 1600,
+      "titleSize": 80,
+      "bodySize": 48,
+      "titleWeight": 400,
+      "lineHeight": 1.45
+    },
+    "prompt": "Mid-video subscribe moment. Full-frame misty British landscape b-roll continues underneath. Large lower-third popup — NOT stock subscribe footage. Special Elite 80px title, 48px body line. Popup rises over b-roll, holds through CTA, fades while landscape continues."
   }
 }
 ```
@@ -533,13 +806,17 @@ Run all of these silently before presenting the file:
 4. **Segment word count** — target 85–110 words per segment. Flag segments under 70 words and expand unless they are CTA or transitional segments.
 5. **Type-field consistency** — group all `type[0]` strings and confirm identical string and category on every recurrence. Fix near-duplicates.
 6. **Title check** — confirm title follows formula: specific subject + received version + implied twist. No vague titles.
-7. **Remotion segment audit** — every Remotion segment must have: `composition`, complete `props` (no placeholder values), complete `design`, non-empty `prompt`. `props`, `design`, and `prompt` must be internally consistent.
-8. **Remotion count** — no more than 4 Remotion segments per episode. More than 4 is an error.
-9. **Copy to `/mnt/user-data/outputs/`** and use `present_files`.
-10. **Update Topic Rotation Log** with the new entry.
+7. **Remotion segment audit** — every Remotion segment must have: `composition`, `layout`, complete `props`, complete `design`, non-empty `prompt`. Overlay/split segments must have b-roll described in `description` (and `remotion.broll` when explicit). `props`, `design`, and `prompt` must be internally consistent.
+8. **Remotion count** — 6–10 Remotion segments per episode (mix of overlay, split-right, full). Fewer than 6 = under-visualized. More than 12 = error.
+9. **CTA check** — both subscribe CTAs (hook + mid-video) must be `remotion` with `layout: "overlay"`. No stock subscribe CTA segments.
+10. **Schema check** — top-level object contains `script`, not `segments`.
+11. **Stock type check** — every non-Remotion segment uses `type: [search_query, category]`; no `"broll"` strings.
+12. **Typography check** — every Remotion segment uses `"Special Elite, Georgia, serif"`, meets size floors, and `props` / `design` / `prompt` all agree.
+13. **Layout mix check** — episode includes at least 2 overlay CTAs, 2+ overlay info popups, and no more than 3 split-right cards unless justified by long lists.
+14. **Update Topic Rotation Log** with the new entry.
 
 ---
 
 ## Efficiency Note
 
-Write complete files in a single `bash_tool` heredoc pass. Do not use incremental `str_replace` for large additions. When the user says "make new video," proceed immediately — apply register rotation and title formula automatically, research real facts via web search, and deliver `script.json`. Do not ask clarifying questions when this skill's rules already provide the answer.
+Write complete files in a single pass. When the user says "make new video," proceed immediately — apply register rotation and title formula automatically, research real facts via web search, and deliver `script.json`. Do not ask clarifying questions when this skill's rules already provide the answer.
