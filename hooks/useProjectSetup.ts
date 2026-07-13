@@ -145,6 +145,32 @@ export function useProjectSetup(projectId: string | null) {
     setAutoTtsCountdown(null);
   }, []);
 
+  const triggerAudioGeneration = useCallback(async () => {
+    if (
+      autoTtsStartedRef.current ||
+      statusRef.current?.audio_uploaded ||
+      statusRef.current?.tts_job.status === "running"
+    ) {
+      return;
+    }
+    autoTtsStartedRef.current = true;
+    clearAutoTtsCountdown();
+    setError(null);
+    try {
+      await startAudioGeneration();
+      await pollTts();
+    } catch (err) {
+      autoTtsStartedRef.current = false;
+      setError(err instanceof Error ? err.message : "Failed to start narration generation");
+    }
+  }, [clearAutoTtsCountdown, pollTts]);
+
+  const generateNarration = useCallback(async () => {
+    manualAudioChosenRef.current = false;
+    autoTtsStartedRef.current = false;
+    await triggerAudioGeneration();
+  }, [triggerAudioGeneration]);
+
   const beginAutoTtsCountdown = useCallback(() => {
     clearAutoTtsCountdown();
     autoTtsStartedRef.current = false;
@@ -162,21 +188,12 @@ export function useProjectSetup(projectId: string | null) {
         ) {
           return;
         }
-        autoTtsStartedRef.current = true;
-        void (async () => {
-          try {
-            setError(null);
-            await startAudioGeneration();
-            await pollTts();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to start narration generation");
-          }
-        })();
+        void triggerAudioGeneration();
         return;
       }
       setAutoTtsCountdown(remaining);
     }, 1000);
-  }, [clearAutoTtsCountdown, pollTts]);
+  }, [clearAutoTtsCountdown, triggerAudioGeneration]);
 
   const loadTranscriptPreview = useCallback(async () => {
     try {
@@ -358,6 +375,7 @@ export function useProjectSetup(projectId: string | null) {
     refresh,
     importScript,
     importScriptJson,
+    generateNarration,
     importAudio,
     importTimestamps,
     segmentTimestamps,

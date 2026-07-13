@@ -744,6 +744,13 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
 
     validate_script_payload(script_data)
     paths = workspace_paths(workspace)
+    with _tts_lock:
+        tts_running = _get_tts_state_unlocked(workspace).get("status") == "running"
+    if tts_running:
+        cancel_audio_generation(
+            workspace,
+            reason="Script re-import cancelled narration generation.",
+        )
     paths["script"].write_text(
         json.dumps(script_data, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

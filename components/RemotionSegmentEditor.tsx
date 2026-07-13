@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Play, RotateCcw, Save, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, Loader2, Play, RotateCcw, Save, Sparkles } from "lucide-react";
 import type { ViewerSegment } from "@/lib/types";
+import type { RemotionFieldDef } from "@/lib/remotionEditor";
 import {
   applyExtraPropsJson,
   buildRemotionPropsPayload,
@@ -27,6 +28,200 @@ type RemotionSegmentEditorProps = {
     currentProps: Record<string, unknown>,
   ) => Promise<{ props: Record<string, unknown>; summary: string }>;
 };
+
+const FIELD_GROUPS: Record<string, Array<{ id: string; label: string; keys: string[] }>> = {
+  FactCard: [
+    { id: "content", label: "Content", keys: ["title", "body", "factNumber", "showFactBadge"] },
+    {
+      id: "colors",
+      label: "Colors",
+      keys: ["accentColor", "textColor", "bodyColor", "backgroundGradient"],
+    },
+    {
+      id: "layout",
+      label: "Layout & typography",
+      keys: [
+        "fontFamily",
+        "textAlign",
+        "verticalAlign",
+        "padding",
+        "contentMaxWidth",
+        "titleSize",
+        "bodySize",
+        "labelSize",
+        "titleWeight",
+        "lineHeight",
+      ],
+    },
+  ],
+  TitleCard: [
+    { id: "content", label: "Content", keys: ["title", "subtitle", "showAccentBar"] },
+    {
+      id: "colors",
+      label: "Colors",
+      keys: ["accentColor", "textColor", "subtitleColor", "backgroundGradient"],
+    },
+    {
+      id: "layout",
+      label: "Layout & typography",
+      keys: [
+        "fontFamily",
+        "textAlign",
+        "verticalAlign",
+        "padding",
+        "contentMaxWidth",
+        "titleSize",
+        "subtitleSize",
+        "titleWeight",
+        "lineHeight",
+      ],
+    },
+  ],
+};
+
+function groupSummary(label: string, fields: RemotionFieldDef[], values: Record<string, string>) {
+  const preview = fields
+    .map((field) => {
+      const raw = (values[field.key] ?? "").trim();
+      if (!raw) return null;
+      if (field.type === "boolean") return raw === "true" ? field.label : null;
+      if (field.type === "color") return raw;
+      const text = raw.replace(/\s+/g, " ");
+      return text.length > 28 ? `${text.slice(0, 28)}…` : text;
+    })
+    .filter(Boolean)
+    .slice(0, 2);
+  if (!preview.length) return label;
+  return `${label} · ${preview.join(" · ")}`;
+}
+
+function PropField({
+  field,
+  value,
+  onChange,
+}: {
+  field: RemotionFieldDef;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const controlClass =
+    "glow-control w-full rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)]";
+
+  if (field.type === "textarea" || field.type === "css") {
+    return (
+      <label className="flex flex-col gap-1 sm:col-span-2">
+        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          {field.label}
+        </span>
+        <textarea
+          rows={field.type === "css" ? 2 : 2}
+          value={value}
+          placeholder={field.placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className={`${controlClass} min-h-[3rem] resize-y`}
+        />
+      </label>
+    );
+  }
+
+  if (field.type === "boolean") {
+    return (
+      <label className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2.5 py-2 sm:col-span-2">
+        <input
+          type="checkbox"
+          checked={value === "true"}
+          onChange={(event) => onChange(event.target.checked ? "true" : "false")}
+          className="h-4 w-4 accent-violet-400"
+        />
+        <span className="text-[0.78rem] text-[var(--foreground)]">{field.label}</span>
+      </label>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <label className="flex flex-col gap-1">
+        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          {field.label}
+        </span>
+        <select value={value} onChange={(event) => onChange(event.target.value)} className={controlClass}>
+          <option value="">Default</option>
+          {(field.options ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  if (field.type === "color") {
+    return (
+      <label className="flex flex-col gap-1">
+        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          {field.label}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={value.startsWith("#") ? value : "#5ecf8a"}
+            onChange={(event) => onChange(event.target.value)}
+            className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+          />
+          <input
+            type="text"
+            value={value}
+            placeholder="#5ecf8a"
+            onChange={(event) => onChange(event.target.value)}
+            className={`${controlClass} min-w-0 flex-1`}
+          />
+        </div>
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+        {field.label}
+      </span>
+      <input
+        type={field.type === "number" ? "number" : "text"}
+        value={value}
+        min={field.min}
+        max={field.max}
+        step={field.step}
+        placeholder={field.placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className={controlClass}
+      />
+    </label>
+  );
+}
+
+function CollapsibleFieldGroup({
+  summary,
+  defaultOpen = false,
+  children,
+}: {
+  summary: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      className="group rounded-lg border border-white/8 bg-white/[0.02]"
+      {...(defaultOpen ? { open: true } : {})}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-2.5 py-2 text-[0.72rem] font-medium text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--muted)] transition-transform group-open:rotate-180" />
+        <span className="min-w-0 truncate">{summary}</span>
+      </summary>
+      <div className="border-t border-white/6 px-2.5 pb-2.5 pt-2">{children}</div>
+    </details>
+  );
+}
 
 export function RemotionSegmentEditor({
   segment,
@@ -106,6 +301,30 @@ export function RemotionSegmentEditor({
   const payload = buildRemotionPropsPayload(composition, values);
   const controlsBusy = isBusy || promptBusy;
   const allowExtra = remotionSchemaAllowsExtra(composition);
+
+  const fieldGroups = useMemo(() => {
+    const byKey = new Map(fields.map((field) => [field.key, field]));
+    const groups = FIELD_GROUPS[composition] ?? [];
+    const groupedKeys = new Set<string>();
+    const result: Array<{ id: string; label: string; fields: RemotionFieldDef[] }> = [];
+
+    for (const group of groups) {
+      const groupFields = group.keys
+        .map((key) => byKey.get(key))
+        .filter((field): field is RemotionFieldDef => Boolean(field));
+      groupFields.forEach((field) => groupedKeys.add(field.key));
+      if (groupFields.length) {
+        result.push({ id: group.id, label: group.label, fields: groupFields });
+      }
+    }
+
+    const remaining = fields.filter((field) => !groupedKeys.has(field.key));
+    if (remaining.length) {
+      result.push({ id: "other", label: "Other", fields: remaining });
+    }
+
+    return result;
+  }, [composition, fields]);
 
   const updateField = (key: string, value: string) => {
     const next = { ...values, [key]: value };
@@ -206,136 +425,54 @@ export function RemotionSegmentEditor({
         ) : null}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {fields.map((field) => {
-          const value = values[field.key] ?? "";
-          const controlClass =
-            "glow-control w-full rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)]";
-
-          if (field.type === "textarea" || field.type === "css") {
-            return (
-              <label key={field.key} className="flex flex-col gap-1 sm:col-span-2">
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-                  {field.label}
-                </span>
-                <textarea
-                  rows={field.type === "css" ? 2 : 3}
-                  value={value}
-                  placeholder={field.placeholder}
-                  onChange={(event) => updateField(field.key, event.target.value)}
-                  className={`${controlClass} min-h-[4.5rem] resize-y`}
+      <div className="flex flex-col gap-1.5">
+        {fieldGroups.map((group) => (
+          <CollapsibleFieldGroup
+            key={group.id}
+            summary={groupSummary(group.label, group.fields, values)}
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              {group.fields.map((field) => (
+                <PropField
+                  key={field.key}
+                  field={field}
+                  value={values[field.key] ?? ""}
+                  onChange={(next) => updateField(field.key, next)}
                 />
-              </label>
-            );
-          }
+              ))}
+            </div>
+          </CollapsibleFieldGroup>
+        ))}
 
-          if (field.type === "boolean") {
-            return (
-              <label
-                key={field.key}
-                className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2.5 py-2"
-              >
-                <input
-                  type="checkbox"
-                  checked={value === "true"}
-                  onChange={(event) =>
-                    updateField(field.key, event.target.checked ? "true" : "false")
-                  }
-                  className="h-4 w-4 accent-violet-400"
-                />
-                <span className="text-[0.78rem] text-[var(--foreground)]">{field.label}</span>
-              </label>
-            );
-          }
-
-          if (field.type === "select") {
-            return (
-              <label key={field.key} className="flex flex-col gap-1">
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-                  {field.label}
-                </span>
-                <select
-                  value={value}
-                  onChange={(event) => updateField(field.key, event.target.value)}
-                  className={controlClass}
-                >
-                  <option value="">Default</option>
-                  {(field.options ?? []).map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            );
-          }
-
-          if (field.type === "color") {
-            return (
-              <label key={field.key} className="flex flex-col gap-1">
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-                  {field.label}
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={value.startsWith("#") ? value : "#5ecf8a"}
-                    onChange={(event) => updateField(field.key, event.target.value)}
-                    className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={value}
-                    placeholder="#5ecf8a"
-                    onChange={(event) => updateField(field.key, event.target.value)}
-                    className={`${controlClass} min-w-0 flex-1`}
-                  />
-                </div>
-              </label>
-            );
-          }
-
-          return (
-            <label key={field.key} className="flex flex-col gap-1">
-              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-                {field.label}
-              </span>
-              <input
-                type={field.type === "number" ? "number" : "text"}
-                value={value}
-                min={field.min}
-                max={field.max}
-                step={field.step}
-                placeholder={field.placeholder}
-                onChange={(event) => updateField(field.key, event.target.value)}
-                className={controlClass}
+        {allowExtra ? (
+          <CollapsibleFieldGroup
+            summary={
+              extraJsonError
+                ? "Additional props · Invalid JSON"
+                : extraJson.trim()
+                  ? "Additional props · JSON configured"
+                  : "Additional props (JSON)"
+            }
+          >
+            <label className="flex flex-col gap-1">
+              <textarea
+                rows={3}
+                value={extraJson}
+                onChange={(event) => updateExtraJson(event.target.value)}
+                placeholder='{"customFlag": true, "glowStrength": 0.8}'
+                className="glow-control min-h-[4rem] w-full resize-y rounded-lg px-2.5 py-1.5 font-mono text-[0.72rem] text-[var(--foreground)]"
               />
+              {extraJsonError ? (
+                <span className="text-[0.68rem] text-red-300">{extraJsonError}</span>
+              ) : (
+                <span className="text-[0.65rem] text-[var(--muted)]">
+                  Extra camelCase props pass through to Remotion for custom compositions.
+                </span>
+              )}
             </label>
-          );
-        })}
+          </CollapsibleFieldGroup>
+        ) : null}
       </div>
-
-      {allowExtra ? (
-        <label className="flex flex-col gap-1">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-            Additional props (JSON)
-          </span>
-          <textarea
-            rows={4}
-            value={extraJson}
-            onChange={(event) => updateExtraJson(event.target.value)}
-            placeholder='{"customFlag": true, "glowStrength": 0.8}'
-            className="glow-control min-h-[5rem] w-full resize-y rounded-lg px-2.5 py-1.5 font-mono text-[0.72rem] text-[var(--foreground)]"
-          />
-          {extraJsonError ? (
-            <span className="text-[0.68rem] text-red-300">{extraJsonError}</span>
-          ) : (
-            <span className="text-[0.65rem] text-[var(--muted)]">
-              Extra camelCase props pass through to Remotion for custom compositions.
-            </span>
-          )}
-        </label>
-      ) : null}
 
       <div className="flex flex-wrap items-center gap-1.5">
         <button

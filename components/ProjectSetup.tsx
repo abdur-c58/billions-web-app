@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Mic2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import { WhisperModelSelect } from "@/components/WhisperModelSelect";
@@ -183,6 +183,14 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
     setup.audioUploadProgress != null;
   const scriptImportDisabled = setup.busy || timestampsRunning || ttsRunning;
   const scriptSummary = setup.scriptSummary ?? setup.status?.script_summary ?? null;
+  const canGenerateNarration =
+    Boolean(setup.status?.script_uploaded) &&
+    !setup.status?.audio_uploaded &&
+    !ttsRunning &&
+    setup.audioUploadProgress == null &&
+    !setup.busy;
+  const ttsFailed =
+    setup.status?.tts_job.status === "error" && !setup.status?.audio_uploaded && !ttsRunning;
 
   const runPasteImport = useCallback(
     async (raw: string) => {
@@ -382,16 +390,32 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                         ? setup.status?.tts_job.message || "Generating narration with Fish Audio…"
                         : setup.status?.audio_uploaded
                           ? "Narration audio ready"
-                          : "Upload your own MP3 or wait for Fish Audio auto-generation."}
+                          : ttsFailed
+                            ? "Generation failed — retry with Fish Audio or upload your own MP3."
+                            : "Upload your own MP3 or generate narration with Fish Audio."}
                   </p>
                 </div>
-                <label
-                  className={`glow-btn-secondary shrink-0 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
-                    setup.status?.script_uploaded && !audioControlsDisabled
-                      ? "cursor-pointer"
-                      : "cursor-not-allowed opacity-50"
-                  }`}
-                >
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {canGenerateNarration ? (
+                    <button
+                      type="button"
+                      className="glow-btn-primary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                      disabled={!canGenerateNarration}
+                      onClick={() => void setup.generateNarration()}
+                    >
+                      <Mic2 className="h-4 w-4" />
+                      {setup.autoTtsCountdown != null
+                        ? `Generate now (${setup.autoTtsCountdown}s)`
+                        : "Generate MP3"}
+                    </button>
+                  ) : null}
+                  <label
+                    className={`glow-btn-secondary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
+                      setup.status?.script_uploaded && !audioControlsDisabled
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-50"
+                    }`}
+                  >
                   {setup.audioUploadProgress != null ? (
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -412,6 +436,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     }}
                   />
                 </label>
+                </div>
               </div>
               {setup.audioUploadProgress != null ? (
                 <div className="pl-8">
@@ -430,8 +455,18 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
               {setup.autoTtsCountdown != null && !setup.status?.audio_uploaded && !ttsRunning ? (
                 <div className="sm:pl-8">
                   <div className="rounded-[10px] border border-[rgba(255,193,7,0.45)] bg-[rgba(255,193,7,0.1)] px-4 py-3 text-sm text-[#ffe8a3]">
-                    Auto-generating voice in {setup.autoTtsCountdown}s… Upload your own MP3 to skip.
+                    Auto-generating voice in {setup.autoTtsCountdown}s… Click{" "}
+                    <span className="font-semibold text-[var(--foreground)]">Generate MP3</span> to start
+                    now, or upload your own MP3 to skip.
                   </div>
+                </div>
+              ) : null}
+              {ttsFailed && !ttsRestartRequired ? (
+                <div className="sm:pl-8">
+                  <div className="rounded-[10px] border border-[rgba(255,107,107,0.35)] bg-[rgba(255,107,107,0.08)] px-4 py-3 text-sm text-[#ffc9c9]">
+                    {setup.status?.tts_job.error || "Narration generation failed."}
+                  </div>
+                  <TtsJobLogs job={setup.status?.tts_job} />
                 </div>
               ) : null}
               {ttsRestartRequired && !ttsRunning ? (

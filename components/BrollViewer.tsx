@@ -45,6 +45,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [regeneratingThumbnails, setRegeneratingThumbnails] = useState(false);
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [copiedThumbnailLabel, setCopiedThumbnailLabel] = useState<string | null>(null);
+  const [titleCopied, setTitleCopied] = useState(false);
   const thumbnailGenerationRef = useRef(false);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
@@ -304,6 +305,18 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     }
   }, []);
 
+  const handleCopyTitle = useCallback(async () => {
+    const text = viewer.title?.trim();
+    if (!text || text === "Loading script…") return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setTitleCopied(true);
+      window.setTimeout(() => setTitleCopied(false), 2000);
+    } catch {
+      setTitleCopied(false);
+    }
+  }, [viewer.title]);
+
   return (
     <div className="glow-page w-full text-[var(--foreground)]">
       <header className="glow-header w-full border-b border-[var(--border)] px-4 py-4 lg:px-6">
@@ -322,7 +335,20 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
                 </button>
               ) : null}
             </div>
-            <p className="mt-0.5 text-sm text-[var(--muted)]">{viewer.title}</p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-2">
+              <p className="min-w-0 truncate text-sm text-[var(--muted)]">{viewer.title}</p>
+              {viewer.title && viewer.title !== "Loading script…" ? (
+                <button
+                  type="button"
+                  onClick={() => void handleCopyTitle()}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-[6px] border border-[var(--border)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
+                  title="Copy video title"
+                >
+                  {titleCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {titleCopied ? "Copied" : "Copy title"}
+                </button>
+              ) : null}
+            </div>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
               {viewer.projectFolder}
             </p>

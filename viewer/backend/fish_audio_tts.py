@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import urllib.error
 import urllib.request
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -210,6 +212,12 @@ def synthesize_chunk(text: str, config: FishTtsConfig) -> bytes:
 def concat_mp3_chunks(chunk_paths: list[Path], output_path: Path) -> None:
     if not chunk_paths:
         raise RuntimeError("No audio chunks to concatenate.")
+
+    missing = [path for path in chunk_paths if not path.is_file()]
+    if missing:
+        names = ", ".join(path.name for path in missing[:3])
+        raise RuntimeError(f"Missing audio chunk file(s): {names}")
+
     if len(chunk_paths) == 1:
         output_path.write_bytes(chunk_paths[0].read_bytes())
         return
@@ -223,7 +231,8 @@ def concat_mp3_chunks(chunk_paths: list[Path], output_path: Path) -> None:
         dir=output_path.parent,
     ) as list_file:
         for chunk_path in chunk_paths:
-            escaped = str(chunk_path.resolve()).replace("'", "'\\''")
+            # ffmpeg concat on Windows needs forward slashes in quoted paths.
+            escaped = chunk_path.resolve().as_posix().replace("'", "'\\''")
             list_file.write(f"file '{escaped}'\n")
         list_path = Path(list_file.name)
 
@@ -267,7 +276,8 @@ def synthesize_transcript_to_file(
         raise RuntimeError("Transcript is empty.")
 
     total = len(chunks)
-    temp_dir = output_path.parent / ".tts_chunks"
+    run_id = uuid.uuid4().hex[:12]
+    temp_dir = output_path.parent / ".tts_chunks" / run_id
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     chunk_paths: list[Path] = []
@@ -285,8 +295,13 @@ def synthesize_transcript_to_file(
                     total,
                 )
             audio_bytes = synthesize_chunk(chunk_text, config)
+            if not audio_bytes:
+                raise RuntimeError(f"Fish Audio returned empty audio for chunk {index + 1}/{total}.")
+            temp_dir.mkdir(parents=True, exist_ok=True)
             chunk_path = temp_dir / f"chunk_{index:04d}.mp3"
             chunk_path.write_bytes(audio_bytes)
+            if not chunk_path.is_file() or chunk_path.stat().st_size == 0:
+                raise RuntimeError(f"Failed to write audio chunk {index + 1}/{total}.")
             chunk_paths.append(chunk_path)
             if on_progress:
                 percent = 5 + int(((index + 1) / total) * 80)
@@ -310,9 +325,4 @@ def synthesize_transcript_to_file(
             on_progress(95, "Saving narration audio…", "save", total, total)
     finally:
         if temp_dir.exists():
-            for path in temp_dir.glob("*.mp3"):
-                path.unlink(missing_ok=True)
-            try:
-                temp_dir.rmdir()
-            except OSError:
-                pass
+            shutil.rmtree(temp_dir, ignore_errors=True)
