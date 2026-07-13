@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import { WhisperModelSelect } from "@/components/WhisperModelSelect";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
 import type { ProjectStatus, ScriptSummary, TimestampAlignment } from "@/lib/project";
+import { looksLikeScriptJson } from "@/lib/script";
 
 function formatLogTime(ts: number) {
   return new Date(ts * 1000).toLocaleTimeString(undefined, {
@@ -151,6 +152,8 @@ function resolveTimestampAlignment(status: ProjectStatus | null): TimestampAlign
 export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
   const [pasteJson, setPasteJson] = useState("");
   const [pasteError, setPasteError] = useState<string | null>(null);
+  const [pasteImporting, setPasteImporting] = useState(false);
+  const setupCardRef = useRef<HTMLDivElement>(null);
 
   const step = setup.status?.next_step ?? "import_script";
   const ttsRunning = setup.status?.tts_job.status === "running";
@@ -181,20 +184,64 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
   const scriptImportDisabled = setup.busy || timestampsRunning || ttsRunning;
   const scriptSummary = setup.scriptSummary ?? setup.status?.script_summary ?? null;
 
+  const runPasteImport = useCallback(
+    async (raw: string) => {
+      if (scriptImportDisabled || pasteImporting) return;
+      setPasteImporting(true);
+      setPasteError(null);
+      try {
+        const message = await setup.importScriptJson(raw);
+        if (message) {
+          setPasteError(message);
+          return;
+        }
+        setPasteJson("");
+        setPasteError(null);
+      } finally {
+        setPasteImporting(false);
+      }
+    },
+    [pasteImporting, scriptImportDisabled, setup],
+  );
+
   const handlePasteImport = async () => {
-    setPasteError(null);
-    const message = await setup.importScriptJson(pasteJson);
-    if (message) {
-      setPasteError(message);
-      return;
-    }
-    setPasteJson("");
-    setPasteError(null);
+    await runPasteImport(pasteJson);
   };
+
+  useEffect(() => {
+    if (scriptImportDisabled) return;
+
+    const onPaste = (event: ClipboardEvent) => {
+      if (scriptImportDisabled || pasteImporting) return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        if (target.closest("[data-skip-script-paste]")) return;
+        const editable = target.closest("input, textarea, [contenteditable='true']");
+        if (editable && !setupCardRef.current?.contains(editable)) {
+          return;
+        }
+      }
+
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      if (!looksLikeScriptJson(text)) return;
+
+      event.preventDefault();
+      void runPasteImport(text);
+    };
+
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [pasteImporting, runPasteImport, scriptImportDisabled]);
 
   return (
     <section className="page-container flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10">
-      <div className="glow-card w-full p-6 lg:p-8">
+      <div
+        ref={setupCardRef}
+        tabIndex={0}
+        className="glow-card w-full p-6 lg:p-8 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        onMouseDown={() => setupCardRef.current?.focus({ preventScroll: true })}
+      >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.12em] text-[var(--muted)]">Project setup</p>
@@ -228,7 +275,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                   <p className="text-sm text-[var(--muted)]">
                     {setup.status?.script_uploaded
                       ? "Script imported — review details below or re-import."
-                      : "Upload a file or paste JSON from your editor."}
+                      : "Press Ctrl+V anywhere here to paste script JSON, or use the box below."}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -264,7 +311,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                 </div>
               </div>
 
-              <div className="sm:pl-8">
+              <div className="sm:pl-8" data-script-paste-zone>
                 <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                   Or paste JSON
                 </label>
@@ -274,19 +321,25 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     setPasteJson(event.target.value);
                     if (pasteError) setPasteError(null);
                   }}
-                  placeholder='{"title": "…", "channel": "…", "script": […]}'
+                  onPaste={(event) => {
+                    const text = event.clipboardData.getData("text/plain");
+                    if (!looksLikeScriptJson(text)) return;
+                    event.preventDefault();
+                    void runPasteImport(text);
+                  }}
+                  placeholder='Click here and Ctrl+V — imports automatically'
                   rows={5}
-                  disabled={scriptImportDisabled}
+                  disabled={scriptImportDisabled || pasteImporting}
                   className="mt-2 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2 font-mono text-xs leading-5 text-[var(--foreground)] placeholder:text-[var(--muted)] disabled:opacity-55"
                 />
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     className="glow-btn-primary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
-                    disabled={scriptImportDisabled || !pasteJson.trim()}
+                    disabled={scriptImportDisabled || pasteImporting || !pasteJson.trim()}
                     onClick={() => void handlePasteImport()}
                   >
-                    {setup.busy ? (
+                    {setup.busy || pasteImporting ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Importing…
@@ -295,6 +348,9 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                       "Import script"
                     )}
                   </button>
+                  {pasteImporting ? (
+                    <span className="text-xs text-[var(--muted)]">Validating and uploading…</span>
+                  ) : null}
                 </div>
                 {pasteError ? (
                   <p className="mt-2 text-sm text-[#ffc9c9]">{pasteError}</p>

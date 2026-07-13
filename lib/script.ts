@@ -44,6 +44,13 @@ export type ScriptJson = {
 const KNOWN_REMOTION_COMPOSITIONS = new Set(["FactCard", "TitleCard"]);
 const DEFAULT_WPM = 145;
 
+/** Heuristic: clipboard text is likely a script.json payload. */
+export function looksLikeScriptJson(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{")) return false;
+  return /"script"\s*:/.test(trimmed);
+}
+
 function isRemotionSegment(segment: ScriptSegment): boolean {
   const rawType = segment.type;
   if (typeof rawType === "string") {
