@@ -47,7 +47,7 @@ from export_video import (
     render_narration_audio,
     request_export_cancel,
     set_export_context,
-    sanitize_output_name,
+    build_export_output_path,
     summarize_export_error,
 )
 from flagged_clips import (
@@ -1384,10 +1384,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         clear_cancel_event(project_id)
         cancel_event = get_cancel_event(project_id)
 
-        title = read_json(self.timestamps_path, {}).get("title")
-        output_path = self.output_path
-        if title:
-            output_path = output_path.parent / sanitize_output_name(title)
+        script_data = read_json(self.script_path, {})
+        timestamps_data = read_json(self.timestamps_path, {})
+        title = script_data.get("title") or timestamps_data.get("title")
+        channel = script_data.get("channel") or timestamps_data.get("channel")
+        output_path = build_export_output_path(channel, title)
 
         project_name = None
         try:
@@ -1496,7 +1497,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     stage="done",
                     current=1,
                     total=1,
-                    message="Export complete",
+                    message=f"Export complete: {result['output']}",
                     output=result["output"],
                     encoder=result["encoder"],
                     error=None,

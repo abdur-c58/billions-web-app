@@ -1691,6 +1691,44 @@ def sanitize_output_name(title: str | None) -> str:
     return f"{slug[:80] or 'final_video'}.mp4"
 
 
+_INVALID_EXPORT_NAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+def sanitize_export_name(value: str, *, fallback: str, max_len: int = 120) -> str:
+    text = (value or "").strip()
+    if not text:
+        return fallback
+    text = _INVALID_EXPORT_NAME_CHARS.sub("", text)
+    text = re.sub(r"\s+", " ", text).strip().rstrip(". ")
+    if not text:
+        return fallback
+    if len(text) > max_len:
+        truncated = text[:max_len].rsplit(" ", 1)[0] or text[:max_len]
+        text = truncated.rstrip(". ")
+    return text or fallback
+
+
+def build_export_output_path(channel: str | None, title: str | None) -> Path:
+    channel_name = sanitize_export_name(
+        channel or "",
+        fallback="Unknown Channel",
+        max_len=80,
+    )
+    title_name = sanitize_export_name(
+        title or "",
+        fallback="Untitled Video",
+        max_len=120,
+    )
+    return (
+        Path.home()
+        / "Documents"
+        / "ExportedVids"
+        / channel_name
+        / "exported"
+        / f"{title_name}.mp4"
+    )
+
+
 def export_video(
     audio_path: Path,
     timestamps_path: Path,
@@ -1938,12 +1976,21 @@ def main() -> None:
     args = parse_args()
     timestamps_path = Path(args.timestamps)
     title = None
+    channel = None
     if timestamps_path.exists():
-        title = json.loads(timestamps_path.read_text(encoding="utf-8")).get("title")
+        timestamps_data = json.loads(timestamps_path.read_text(encoding="utf-8"))
+        title = timestamps_data.get("title")
+        channel = timestamps_data.get("channel")
+
+    script_path = timestamps_path.parent / "script.json"
+    if script_path.exists():
+        script_data = json.loads(script_path.read_text(encoding="utf-8"))
+        title = script_data.get("title") or title
+        channel = script_data.get("channel") or channel
 
     output_path = Path(args.output)
-    if str(output_path) == str(DEFAULT_OUTPUT) and title:
-        output_path = ROOT / sanitize_output_name(title)
+    if str(output_path) == str(DEFAULT_OUTPUT):
+        output_path = build_export_output_path(channel, title)
 
     result = export_video(
         audio_path=Path(args.audio),
