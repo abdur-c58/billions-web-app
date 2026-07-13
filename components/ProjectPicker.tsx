@@ -27,6 +27,9 @@ function formatExpiry(expiresAt: number, now: number): string {
 
 function stepLabel(project: ProjectSummary) {
   if (project.viewer_ready) return "Ready for b-roll";
+  if (project.tts_job?.status === "running") {
+    return `Generating voice ${project.tts_job.progress_percent ?? 0}%`;
+  }
   if (project.timestamps_job.status === "running") {
     return `Segmenting ${project.timestamps_job.progress_percent ?? 0}%`;
   }

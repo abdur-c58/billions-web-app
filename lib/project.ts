@@ -12,6 +12,37 @@ export type TimestampAlignment = {
   whisper_model?: string;
 };
 
+export type TranscriptPreview = {
+  transcript: string;
+  segment_count: number;
+  word_count: number;
+  estimated_duration_seconds: number;
+  estimated_duration_label: string;
+  wpm?: number;
+};
+
+export type TtsJobStatus = {
+  status: "idle" | "running" | "done" | "error";
+  message: string;
+  error: string | null;
+  progress_percent?: number;
+  stage?: string;
+  started_at?: number | null;
+  updated_at?: number | null;
+  restart_required?: boolean;
+  chunk_total?: number;
+  chunk_done?: number;
+  word_count?: number;
+  estimated_duration_seconds?: number;
+  estimated_duration_label?: string;
+  logs?: Array<{
+    ts: number;
+    message: string;
+    stage: string;
+    progress_percent: number;
+  }>;
+};
+
 export type ProjectStatus = {
   workspace: string;
   project_id?: string | null;
@@ -28,6 +59,7 @@ export type ProjectStatus = {
   timed_segments?: number;
   timestamp_alignment?: TimestampAlignment | null;
   next_step: "import_script" | "import_audio" | "segment_timestamps" | "viewer";
+  transcript_preview?: TranscriptPreview | null;
   timestamps_job: {
     status: "idle" | "running" | "done" | "error";
     message: string;
@@ -46,6 +78,7 @@ export type ProjectStatus = {
       progress_percent: number;
     }>;
   };
+  tts_job: TtsJobStatus;
 };
 
 export type SegmentationHardware = {
@@ -138,6 +171,26 @@ export async function fetchSegmentTimestampsStatus() {
   return apiFetch<ProjectStatus["timestamps_job"]>("/api/project/segment-timestamps/status");
 }
 
+export async function startAudioGeneration() {
+  return apiFetch<TtsJobStatus>("/api/project/generate-audio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function fetchAudioGenerationStatus() {
+  return apiFetch<TtsJobStatus>("/api/project/generate-audio/status");
+}
+
+export async function cancelAudioGeneration(reason = "Cancelled.") {
+  return apiFetch<TtsJobStatus>("/api/project/generate-audio/cancel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
+  });
+}
+
 export type ProjectSummary = {
   id: string;
   name: string;
@@ -152,6 +205,7 @@ export type ProjectSummary = {
   segment_count: number;
   aligned_segments: number;
   timestamps_job: ProjectStatus["timestamps_job"];
+  tts_job: TtsJobStatus;
 };
 
 export async function fetchProjectList() {

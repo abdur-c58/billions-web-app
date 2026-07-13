@@ -4,6 +4,9 @@ export type ScriptTranscript = {
   transcript: string;
   segment_count: number;
   word_count: number;
+  estimated_duration_seconds: number;
+  estimated_duration_label: string;
+  wpm?: number;
 };
 
 type ScriptBeatBlock = {

@@ -77,15 +77,20 @@ from youtube_description import build_youtube_description
 from youtube_thumbnail_prompts import build_thumbnail_prompts
 from project_manager import (
     _alignment_summary_from_timestamps_file,
+    cancel_audio_generation,
     load_all_timestamps_job_states,
+    load_all_tts_job_states,
     load_timestamps_job_state,
+    load_tts_job_state,
     parse_multipart_form,
     project_status,
     save_audio,
     save_script,
     save_timestamps,
+    start_audio_generation,
     start_segment_timestamps,
     timestamps_job_snapshot,
+    tts_job_snapshot,
     workspace_paths,
 )
 from storage_r2 import (
@@ -245,6 +250,8 @@ def project_is_protected(project_id: str) -> bool:
     try:
         workspace = project_workspace(WORKSPACE_DIR, project_id)
         if timestamps_job_snapshot(workspace).get("status") == "running":
+            return True
+        if tts_job_snapshot(workspace).get("status") == "running":
             return True
     except Exception:
         pass
@@ -1299,6 +1306,19 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                             "stage": job.get("stage"),
                         }
                     )
+                tts_job = project.get("tts_job") or {}
+                if tts_job.get("status") == "running":
+                    jobs.append(
+                        {
+                            "type": "tts",
+                            "label": "Generating voice",
+                            "project_id": project.get("id"),
+                            "project_name": project.get("name"),
+                            "progress_percent": int(tts_job.get("progress_percent") or 0),
+                            "message": tts_job.get("message") or "Generating narration…",
+                            "stage": tts_job.get("stage"),
+                        }
+                    )
         except Exception:
             pass
 
@@ -1570,7 +1590,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 prune_inactive_projects()
                 projects = list_projects(WORKSPACE_DIR)
                 running = next(
-                    (p for p in projects if p.get("timestamps_job", {}).get("status") == "running"),
+                    (
+                        p
+                        for p in projects
+                        if p.get("timestamps_job", {}).get("status") == "running"
+                        or p.get("tts_job", {}).get("status") == "running"
+                    ),
                     None,
                 )
                 self._send_json(
@@ -1598,6 +1623,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/project/script/transcript":
             try:
+                from fish_audio_tts import build_transcript_preview
                 from script_format import build_narration_transcript, iter_content_segments
 
                 if not self.script_path.exists():
@@ -1605,17 +1631,19 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 script_data = read_json(self.script_path, {})
                 transcript = build_narration_transcript(script_data)
                 segment_count = len(iter_content_segments(script_data))
-                word_count = len(transcript.split())
-                self._send_json(
-                    {
-                        "transcript": transcript,
-                        "segment_count": segment_count,
-                        "word_count": word_count,
-                    }
-                )
+                payload = build_transcript_preview(transcript, segment_count)
+                self._send_json(payload)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/project/generate-audio/status":
+            try:
+                workspace = self._require_workspace() if self.workspace_mode else self.project_dir
+                self._send_json(tts_job_snapshot(workspace))
+            except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
@@ -2087,6 +2115,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 project = create_project(WORKSPACE_DIR, name=name)
                 workspace = project_workspace(WORKSPACE_DIR, project["id"])
                 load_timestamps_job_state(workspace)
+                load_tts_job_state(workspace)
                 self._send_json(project)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
@@ -2180,6 +2209,43 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 status = save_timestamps(workspace, timestamps_data)
                 self._sync_from_workspace()
                 self._send_json(status)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/project/generate-audio/cancel":
+            try:
+                workspace = self._require_workspace() if self.workspace_mode else self.project_dir
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                reason = str(body.get("reason") or "Cancelled.").strip() or "Cancelled."
+                snapshot = cancel_audio_generation(workspace, reason=reason)
+                self._send_json(snapshot)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/project/generate-audio":
+            try:
+                workspace = self._require_workspace() if self.workspace_mode else self.project_dir
+
+                def on_complete() -> None:
+                    configure_handler_paths(
+                        workspace / "script.json",
+                        workspace / "segment_timestamps.json",
+                        workspace / "broll_selections.json",
+                        workspace / "script.mp3",
+                        workspace / "final_video.mp4",
+                    )
+
+                snapshot = start_audio_generation(
+                    workspace,
+                    on_complete=on_complete if self.workspace_mode else None,
+                )
+                self._send_json(snapshot)
+            except RuntimeError as exc:
+                message = str(exc)
+                status = HTTPStatus.CONFLICT if "already in progress" in message.lower() else HTTPStatus.BAD_REQUEST
+                self._send_json({"error": message}, status)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -2903,6 +2969,7 @@ def main() -> None:
         migrate_user_scoped_projects(WORKSPACE_DIR)
         sync_local_projects_with_r2(WORKSPACE_DIR)
         load_all_timestamps_job_states(WORKSPACE_DIR)
+        load_all_tts_job_states(WORKSPACE_DIR)
         prune_inactive_projects()
         for project in list_projects(WORKSPACE_DIR):
             try:

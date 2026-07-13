@@ -22,9 +22,12 @@ AUDIO_NAME = "script.mp3"
 TIMESTAMPS_NAME = "segment_timestamps.json"
 SELECTIONS_NAME = "broll_selections.json"
 TIMESTAMPS_JOB_NAME = ".timestamps_job.json"
+TTS_JOB_NAME = ".tts_job.json"
 STALE_JOB_SECONDS = 15 * 60
 
 _timestamps_lock = threading.Lock()
+_tts_lock = threading.Lock()
+_tts_cancel_events: dict[str, threading.Event] = {}
 _MAX_JOB_LOGS = 200
 _default_timestamps_state: dict[str, Any] = {
     "status": "idle",
@@ -38,6 +41,23 @@ _default_timestamps_state: dict[str, Any] = {
     "restart_required": False,
     "hardware": None,
     "alignment_summary": None,
+}
+
+_default_tts_state: dict[str, Any] = {
+    "status": "idle",
+    "message": "",
+    "error": None,
+    "started_at": None,
+    "updated_at": None,
+    "progress_percent": 0,
+    "stage": "idle",
+    "logs": [],
+    "restart_required": False,
+    "chunk_total": 0,
+    "chunk_done": 0,
+    "word_count": 0,
+    "estimated_duration_seconds": 0.0,
+    "estimated_duration_label": "",
 }
 
 
@@ -120,6 +140,7 @@ def _append_job_log(
     if len(logs) > _MAX_JOB_LOGS:
         del logs[: len(logs) - _MAX_JOB_LOGS]
 _timestamps_states: dict[str, dict[str, Any]] = {}
+_tts_states: dict[str, dict[str, Any]] = {}
 
 
 def _workspace_key(workspace: Path) -> str:
@@ -150,6 +171,25 @@ def forget_timestamps_state(workspace: Path) -> None:
         _timestamps_states.pop(_workspace_key(workspace), None)
 
 
+def _fresh_tts_state() -> dict[str, Any]:
+    return dict(_default_tts_state)
+
+
+def _get_tts_state_unlocked(workspace: Path) -> dict[str, Any]:
+    key = _workspace_key(workspace)
+    state = _tts_states.get(key)
+    if state is None:
+        state = _fresh_tts_state()
+        _tts_states[key] = state
+    return state
+
+
+def forget_tts_state(workspace: Path) -> None:
+    with _tts_lock:
+        _tts_states.pop(_workspace_key(workspace), None)
+        _tts_cancel_events.pop(_workspace_key(workspace), None)
+
+
 def workspace_paths(workspace: Path) -> dict[str, Path]:
     workspace.mkdir(parents=True, exist_ok=True)
     return {
@@ -162,11 +202,16 @@ def workspace_paths(workspace: Path) -> dict[str, Path]:
         "flagged": workspace / ".broll_flagged.json",
         "export_status": workspace / ".broll_export_status.json",
         "timestamps_job": workspace / TIMESTAMPS_JOB_NAME,
+        "tts_job": workspace / TTS_JOB_NAME,
     }
 
 
 def _timestamps_job_path(workspace: Path) -> Path:
     return workspace_paths(workspace)["timestamps_job"]
+
+
+def _tts_job_path(workspace: Path) -> Path:
+    return workspace_paths(workspace)["tts_job"]
 
 
 def _persist_timestamps_state(workspace: Path) -> None:
@@ -175,6 +220,296 @@ def _persist_timestamps_state(workspace: Path) -> None:
     with _timestamps_lock:
         snapshot = dict(_get_timestamps_state_unlocked(workspace))
     path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _persist_tts_state(workspace: Path) -> None:
+    path = _tts_job_path(workspace)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with _tts_lock:
+        snapshot = dict(_get_tts_state_unlocked(workspace))
+    path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _set_tts_state(workspace: Path, **kwargs: Any) -> None:
+    with _tts_lock:
+        state = _get_tts_state_unlocked(workspace)
+        kwargs["updated_at"] = time.time()
+        message = kwargs.get("message")
+        stage = kwargs.get("stage", state.get("stage", "idle"))
+        progress = int(kwargs.get("progress_percent", state.get("progress_percent", 0)))
+        if isinstance(message, str) and message:
+            _append_job_log(
+                state,
+                message=message,
+                stage=str(stage),
+                progress_percent=progress,
+            )
+        state.update(kwargs)
+    _persist_tts_state(workspace)
+
+
+def clear_tts_recovery_artifacts(workspace: Path) -> list[str]:
+    paths = workspace_paths(workspace)
+    removed: list[str] = []
+    tts_dir = paths["workspace"] / ".tts_chunks"
+    if tts_dir.exists():
+        shutil.rmtree(tts_dir, ignore_errors=True)
+        removed.append(".tts_chunks/")
+    return removed
+
+
+def _recover_interrupted_tts_job(workspace: Path, state: dict[str, Any]) -> None:
+    removed = clear_tts_recovery_artifacts(workspace)
+    removed_note = ", ".join(removed) if removed else "nothing to clear"
+    _append_job_log(
+        state,
+        message=f"Server restarted during narration generation — cleared: {removed_note}",
+        stage="error",
+        progress_percent=0,
+    )
+    state.update(
+        {
+            "status": "error",
+            "message": "Narration generation interrupted — try again.",
+            "error": (
+                "The server restarted while generating narration. Partial audio chunks "
+                "were cleared to avoid corrupt files."
+            ),
+            "progress_percent": 0,
+            "stage": "error",
+            "restart_required": True,
+        }
+    )
+
+
+def load_tts_job_state(workspace: Path, *, recover_on_startup: bool = False) -> None:
+    path = _tts_job_path(workspace)
+    state = _fresh_tts_state()
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8") as infile:
+                payload = json.load(infile)
+            if isinstance(payload, dict):
+                state.update(payload)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    if state.get("status") == "running":
+        recovered = False
+        if recover_on_startup:
+            _recover_interrupted_tts_job(workspace, state)
+            recovered = True
+        else:
+            updated_at = float(state.get("updated_at") or 0)
+            if updated_at and time.time() - updated_at > STALE_JOB_SECONDS:
+                _recover_interrupted_tts_job(workspace, state)
+                recovered = True
+    else:
+        recovered = False
+
+    if "progress_percent" not in state:
+        state["progress_percent"] = 0
+    if "stage" not in state:
+        state["stage"] = state.get("status", "idle")
+    if "restart_required" not in state:
+        state["restart_required"] = False
+
+    with _tts_lock:
+        _tts_states[_workspace_key(workspace)] = state
+
+    if recovered:
+        _persist_tts_state(workspace)
+
+
+def load_all_tts_job_states(workspace_root: Path) -> None:
+    for workspace in _iter_project_workspaces(workspace_root):
+        load_tts_job_state(workspace, recover_on_startup=True)
+
+
+def tts_job_snapshot(workspace: Path) -> dict[str, Any]:
+    with _tts_lock:
+        return dict(_get_tts_state_unlocked(workspace))
+
+
+def reset_tts_job_state(workspace: Path) -> None:
+    with _tts_lock:
+        _tts_states[_workspace_key(workspace)] = _fresh_tts_state()
+    _persist_tts_state(workspace)
+
+
+def _build_transcript_preview(script_path: Path) -> dict[str, Any] | None:
+    if not script_path.exists():
+        return None
+    try:
+        from fish_audio_tts import build_transcript_preview
+        from script_format import build_narration_transcript, iter_content_segments
+
+        with script_path.open("r", encoding="utf-8") as infile:
+            script_data = json.load(infile)
+        transcript = build_narration_transcript(script_data)
+        segment_count = len(iter_content_segments(script_data))
+        return build_transcript_preview(transcript, segment_count)
+    except (json.JSONDecodeError, OSError, ValueError):
+        return None
+
+
+def cancel_audio_generation(workspace: Path, *, reason: str = "Cancelled.") -> dict[str, Any]:
+    key = _workspace_key(workspace)
+    with _tts_lock:
+        state = _get_tts_state_unlocked(workspace)
+        if state.get("status") != "running":
+            return dict(state)
+        cancel_event = _tts_cancel_events.get(key)
+        if cancel_event:
+            cancel_event.set()
+
+    _set_tts_state(
+        workspace,
+        status="error",
+        message="Narration generation cancelled.",
+        error=reason,
+        progress_percent=0,
+        stage="error",
+    )
+    clear_tts_recovery_artifacts(workspace)
+    return tts_job_snapshot(workspace)
+
+
+def start_audio_generation(
+    workspace: Path,
+    *,
+    on_complete: Callable[[], None] | None = None,
+) -> dict[str, Any]:
+    from fish_audio_tts import (
+        synthesize_transcript_to_file,
+        validate_fish_config,
+    )
+    from script_format import build_narration_transcript
+
+    paths = workspace_paths(workspace)
+    if not paths["script"].exists():
+        raise RuntimeError("Upload script.json before generating narration.")
+
+    with _tts_lock:
+        if _get_tts_state_unlocked(workspace).get("status") == "running":
+            raise RuntimeError("Narration generation already in progress.")
+        if paths["audio"].exists():
+            raise RuntimeError("script.mp3 already exists — upload manually or delete it first.")
+
+    config = validate_fish_config()
+    preview = _build_transcript_preview(paths["script"])
+    if not preview:
+        raise RuntimeError("Could not build transcript from script.json.")
+
+    key = _workspace_key(workspace)
+    cancel_event = threading.Event()
+    with _tts_lock:
+        _tts_cancel_events[key] = cancel_event
+        state = _get_tts_state_unlocked(workspace)
+        state["logs"] = []
+        state["restart_required"] = False
+
+    _set_tts_state(
+        workspace,
+        status="running",
+        message="Preparing narration transcript…",
+        error=None,
+        started_at=time.time(),
+        progress_percent=0,
+        stage="prepare",
+        chunk_total=0,
+        chunk_done=0,
+        word_count=preview["word_count"],
+        estimated_duration_seconds=preview["estimated_duration_seconds"],
+        estimated_duration_label=preview["estimated_duration_label"],
+    )
+
+    def on_progress(
+        percent: int,
+        message: str,
+        stage: str,
+        chunk_done: int,
+        chunk_total: int,
+    ) -> None:
+        _set_tts_state(
+            workspace,
+            progress_percent=percent,
+            message=message,
+            stage=stage,
+            chunk_done=chunk_done,
+            chunk_total=chunk_total,
+        )
+
+    def worker() -> None:
+        temp_output = paths["workspace"] / ".tts_output.mp3"
+        try:
+            with paths["script"].open("r", encoding="utf-8") as infile:
+                script_data = json.load(infile)
+            transcript = build_narration_transcript(script_data)
+
+            _set_tts_state(
+                workspace,
+                message="Starting Fish Audio synthesis…",
+                stage="prepare",
+                progress_percent=2,
+            )
+
+            synthesize_transcript_to_file(
+                transcript,
+                temp_output,
+                config,
+                on_progress=on_progress,
+                should_cancel=cancel_event.is_set,
+            )
+
+            if cancel_event.is_set():
+                raise RuntimeError("Narration generation cancelled.")
+
+            audio_bytes = temp_output.read_bytes()
+            save_audio(workspace, audio_bytes, from_tts=True)
+
+            _set_tts_state(
+                workspace,
+                status="done",
+                message="Narration audio saved — starting Whisper alignment…",
+                error=None,
+                progress_percent=100,
+                stage="done",
+                restart_required=False,
+            )
+
+            start_segment_timestamps(workspace, model="medium", on_complete=on_complete)
+        except BaseException as exc:
+            if isinstance(exc, SystemExit):
+                error_text = str(exc) or "Narration generation aborted."
+            else:
+                error_text = str(exc)
+            if cancel_event.is_set() and "cancel" in error_text.lower():
+                _set_tts_state(
+                    workspace,
+                    status="error",
+                    message="Narration generation cancelled.",
+                    error=error_text,
+                    progress_percent=0,
+                    stage="error",
+                )
+            else:
+                _set_tts_state(
+                    workspace,
+                    status="error",
+                    message="Narration generation failed.",
+                    error=error_text,
+                    progress_percent=0,
+                    stage="error",
+                )
+            clear_tts_recovery_artifacts(workspace)
+        finally:
+            temp_output.unlink(missing_ok=True)
+            with _tts_lock:
+                _tts_cancel_events.pop(key, None)
+
+    threading.Thread(target=worker, daemon=True).start()
+    return tts_job_snapshot(workspace)
 
 
 def clear_segmentation_recovery_artifacts(workspace: Path) -> list[str]:
@@ -361,6 +696,10 @@ def project_status(workspace: Path) -> dict[str, Any]:
     ready = script_exists and audio_exists and timestamps_exists
     with _timestamps_lock:
         timestamps_job = dict(_get_timestamps_state_unlocked(workspace))
+    with _tts_lock:
+        tts_job = dict(_get_tts_state_unlocked(workspace))
+
+    transcript_preview = _build_transcript_preview(paths["script"]) if script_exists else None
 
     from user_sessions import parse_workspace_scope
 
@@ -383,6 +722,8 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "timed_segments": timed_segments,
         "timestamp_alignment": timestamp_alignment,
         "timestamps_job": timestamps_job,
+        "tts_job": tts_job,
+        "transcript_preview": transcript_preview,
         "next_step": (
             "import_script"
             if not script_exists
@@ -406,6 +747,10 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
     )
     if paths["timestamps"].exists():
         paths["timestamps"].unlink()
+    if paths["audio"].exists():
+        paths["audio"].unlink()
+    reset_tts_job_state(workspace)
+    clear_tts_recovery_artifacts(workspace)
     try:
         from user_sessions import touch_manifest
 
@@ -425,8 +770,13 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
     return project_status(workspace)
 
 
-def save_audio(workspace: Path, audio_bytes: bytes) -> dict[str, Any]:
+def save_audio(workspace: Path, audio_bytes: bytes, *, from_tts: bool = False) -> dict[str, Any]:
     paths = workspace_paths(workspace)
+    if not from_tts:
+        with _tts_lock:
+            tts_status = _get_tts_state_unlocked(workspace).get("status")
+        if tts_status == "running":
+            cancel_audio_generation(workspace, reason="Manual audio upload cancelled generation.")
     paths["audio"].write_bytes(audio_bytes)
     if paths["timestamps"].exists():
         paths["timestamps"].unlink()

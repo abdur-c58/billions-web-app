@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown, ChevronUp, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import { WhisperModelSelect } from "@/components/WhisperModelSelect";
@@ -15,27 +16,77 @@ function formatLogTime(ts: number) {
   });
 }
 
-function TimestampJobLogs({ job }: { job?: ProjectStatus["timestamps_job"] }) {
+function JobLogsPanel({
+  title,
+  job,
+}: {
+  title: string;
+  job?: ProjectStatus["timestamps_job"] | ProjectStatus["tts_job"];
+}) {
   const logs = job?.logs ?? [];
-  if (!logs.length) return null;
+  if (!logs.length && !job?.error) return null;
 
   return (
     <div className="mt-4 rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)]">
       <div className="border-b border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--muted)]">
-        Segmentation log
+        {title}
       </div>
-      <pre className="max-h-48 overflow-auto px-3 py-2 font-mono text-[11px] leading-5 text-[var(--foreground)]">
-        {logs.map((entry, index) => (
-          <span key={`${entry.ts}-${index}`} className="block">
-            [{formatLogTime(entry.ts)}] {entry.progress_percent}% · {entry.stage}: {entry.message}
-          </span>
-        ))}
-      </pre>
+      {logs.length ? (
+        <pre className="max-h-48 overflow-auto px-3 py-2 font-mono text-[11px] leading-5 text-[var(--foreground)]">
+          {logs.map((entry, index) => (
+            <span key={`${entry.ts}-${index}`} className="block">
+              [{formatLogTime(entry.ts)}] {entry.progress_percent}% · {entry.stage}: {entry.message}
+            </span>
+          ))}
+        </pre>
+      ) : null}
       {job?.error ? (
         <p className="border-t border-[rgba(255,107,107,0.35)] bg-[rgba(255,107,107,0.08)] px-3 py-2 text-xs text-[#ffc9c9]">
           {job.error}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function TimestampJobLogs({ job }: { job?: ProjectStatus["timestamps_job"] }) {
+  return <JobLogsPanel title="Segmentation log" job={job} />;
+}
+
+function TtsJobLogs({ job }: { job?: ProjectStatus["tts_job"] }) {
+  return <JobLogsPanel title="Narration generation log" job={job} />;
+}
+
+function TranscriptPreviewPanel({
+  preview,
+}: {
+  preview: NonNullable<ReturnType<typeof useProjectSetup>["transcriptPreview"]>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="sm:pl-8">
+      <p className="text-sm text-[var(--muted)]">
+        {preview.segment_count} segments · {preview.word_count.toLocaleString()} words ·{" "}
+        {preview.estimated_duration_label} at 145 wpm
+      </p>
+      <div className="mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)]">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-[var(--foreground)]"
+          onClick={() => setExpanded((current) => !current)}
+        >
+          <span>Transcript preview</span>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        <div
+          className={`overflow-auto border-t border-[var(--border)] px-3 py-2 text-sm leading-6 text-[var(--muted)] ${
+            expanded ? "max-h-80" : "max-h-28"
+          }`}
+        >
+          {preview.transcript}
+        </div>
+      </div>
     </div>
   );
 }
@@ -61,10 +112,13 @@ function resolveTimestampAlignment(status: ProjectStatus | null): TimestampAlign
 export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
 
   const step = setup.status?.next_step ?? "import_script";
+  const ttsRunning = setup.status?.tts_job.status === "running";
+  const ttsRestartRequired = Boolean(setup.status?.tts_job.restart_required);
   const timestampsRunning = setup.status?.timestamps_job.status === "running";
   const timestampsDone = setup.status?.timestamps_job.status === "done";
   const restartRequired = Boolean(setup.status?.timestamps_job.restart_required);
   const alignmentSummary = resolveTimestampAlignment(setup.status);
+  const ttsProgress = Math.min(100, Math.max(0, setup.status?.tts_job.progress_percent ?? 0));
   const segmentProgress = Math.min(
     100,
     Math.max(0, setup.status?.timestamps_job.progress_percent ?? 0),
@@ -75,7 +129,14 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
     !setup.status?.script_uploaded ||
     !setup.status?.audio_uploaded ||
     setup.busy ||
-    timestampsRunning;
+    timestampsRunning ||
+    ttsRunning;
+  const audioControlsDisabled =
+    !setup.status?.script_uploaded ||
+    setup.busy ||
+    timestampsRunning ||
+    ttsRunning ||
+    setup.audioUploadProgress != null;
 
   return (
     <section className="page-container flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10">
@@ -98,10 +159,9 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
           ) : null}
         </div>
         <p className="mt-3 text-[0.95rem] leading-7 text-[var(--muted)]">
-          Load <code className="text-[var(--foreground)]">script.json</code>, then{" "}
-          <code className="text-[var(--foreground)]">script.mp3</code>, then either import an
-          existing <code className="text-[var(--foreground)]">segment_timestamps.json</code> or run
-          Whisper alignment. The b-roll viewer unlocks after all three steps.
+          Load <code className="text-[var(--foreground)]">script.json</code>, then upload or auto-generate{" "}
+          <code className="text-[var(--foreground)]">script.mp3</code> with Fish Audio, then Whisper
+          alignment runs automatically. The b-roll viewer unlocks after all three steps.
         </p>
 
         <ol className="mt-8 space-y-4">
@@ -163,7 +223,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                   <button
                     type="button"
                     onClick={() => void setup.copyTranscript()}
-                    disabled={setup.busy || setup.copyingTranscript || timestampsRunning}
+                    disabled={setup.busy || setup.copyingTranscript || timestampsRunning || ttsRunning}
                     className="glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     {setup.copyingTranscript ? (
@@ -180,7 +240,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     type="file"
                     accept=".json,application/json"
                     className="hidden"
-                    disabled={setup.busy || timestampsRunning}
+                    disabled={setup.busy || timestampsRunning || ttsRunning}
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       if (file) void setup.importScript(file);
@@ -192,6 +252,9 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
               {setup.transcriptNotice ? (
                 <p className="text-sm text-emerald-300 sm:pl-8">{setup.transcriptNotice}</p>
               ) : null}
+              {setup.transcriptPreview ? (
+                <TranscriptPreviewPanel preview={setup.transcriptPreview} />
+              ) : null}
             </div>
           </li>
 
@@ -200,18 +263,20 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
               <div className="flex items-center gap-3">
                 <FileAudio className="h-5 w-5 shrink-0 text-[var(--accent)]" />
                 <div className="flex-1">
-                  <p className="font-semibold">2. Import script.mp3</p>
+                  <p className="font-semibold">2. Narration audio</p>
                   <p className="text-sm text-[var(--muted)]">
                     {setup.audioUploadProgress != null
                       ? "Uploading narration…"
-                      : setup.status?.audio_uploaded
-                        ? "Narration audio uploaded"
-                        : "Upload the narration MP3 that matches the script."}
+                      : ttsRunning
+                        ? setup.status?.tts_job.message || "Generating narration with Fish Audio…"
+                        : setup.status?.audio_uploaded
+                          ? "Narration audio ready"
+                          : "Upload your own MP3 or wait for Fish Audio auto-generation."}
                   </p>
                 </div>
                 <label
                   className={`glow-btn-secondary shrink-0 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold ${
-                    setup.status?.script_uploaded && setup.audioUploadProgress == null
+                    setup.status?.script_uploaded && !audioControlsDisabled
                       ? "cursor-pointer"
                       : "cursor-not-allowed opacity-50"
                   }`}
@@ -228,12 +293,7 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                     type="file"
                     accept=".mp3,audio/mpeg,audio/mp3"
                     className="hidden"
-                    disabled={
-                      !setup.status?.script_uploaded ||
-                      setup.busy ||
-                      timestampsRunning ||
-                      setup.audioUploadProgress != null
-                    }
+                    disabled={audioControlsDisabled}
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       if (file) void setup.importAudio(file);
@@ -254,6 +314,44 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
                       style={{ width: `${setup.audioUploadProgress}%` }}
                     />
                   </div>
+                </div>
+              ) : null}
+              {setup.autoTtsCountdown != null && !setup.status?.audio_uploaded && !ttsRunning ? (
+                <div className="sm:pl-8">
+                  <div className="rounded-[10px] border border-[rgba(255,193,7,0.45)] bg-[rgba(255,193,7,0.1)] px-4 py-3 text-sm text-[#ffe8a3]">
+                    Auto-generating voice in {setup.autoTtsCountdown}s… Upload your own MP3 to skip.
+                  </div>
+                </div>
+              ) : null}
+              {ttsRestartRequired && !ttsRunning ? (
+                <div className="sm:pl-8">
+                  <div className="rounded-[10px] border border-[rgba(255,193,7,0.45)] bg-[rgba(255,193,7,0.1)] px-4 py-3 text-sm text-[#ffe8a3]">
+                    {setup.status?.tts_job.error ||
+                      "Narration generation was interrupted. Re-upload script.json or wait for auto-generation."}
+                  </div>
+                  <TtsJobLogs job={setup.status?.tts_job} />
+                </div>
+              ) : ttsRunning || (setup.status?.tts_job.logs?.length ?? 0) > 0 ? (
+                <div className="sm:pl-8">
+                  <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
+                    <span className="capitalize">
+                      {setup.status?.tts_job.stage?.replace(/_/g, " ") || "Generating"}
+                      {setup.status?.tts_job.chunk_total
+                        ? ` · ${setup.status.tts_job.chunk_done ?? 0}/${setup.status.tts_job.chunk_total} chunks`
+                        : ""}
+                    </span>
+                    <span className="tabular-nums">{ttsProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-300"
+                      style={{ width: `${ttsProgress}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-[var(--muted)]">
+                    Fish Audio synthesis can take several minutes for long scripts.
+                  </p>
+                  <TtsJobLogs job={setup.status?.tts_job} />
                 </div>
               ) : null}
             </div>

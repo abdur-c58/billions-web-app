@@ -120,6 +120,8 @@ def find_running_project(workspace_root: Path) -> dict[str, Any] | None:
     for entry in list_projects(workspace_root):
         if entry.get("timestamps_job", {}).get("status") == "running":
             return entry
+        if entry.get("tts_job", {}).get("status") == "running":
+            return entry
     return None
 
 
@@ -159,6 +161,7 @@ def project_summary(workspace_root: Path, project_id: str) -> dict[str, Any]:
     manifest = read_manifest(workspace)
     status = project_status(workspace)
     job = status.get("timestamps_job", {})
+    tts_job = status.get("tts_job", {})
     name = manifest.get("name") or status.get("title") or f"Project {project_id[:8]}"
 
     last_activity = project_last_activity(workspace, manifest)
@@ -178,6 +181,7 @@ def project_summary(workspace_root: Path, project_id: str) -> dict[str, Any]:
         "segment_count": status.get("segment_count", 0),
         "aligned_segments": status.get("aligned_segments", 0),
         "timestamps_job": job,
+        "tts_job": tts_job,
     }
 
 
@@ -231,9 +235,10 @@ def delete_project(workspace_root: Path, project_id: str) -> None:
         shutil.rmtree(resolved, ignore_errors=True)
     # Drop any in-memory segmentation job state for this workspace.
     try:
-        from project_manager import forget_timestamps_state
+        from project_manager import forget_timestamps_state, forget_tts_state
 
         forget_timestamps_state(workspace)
+        forget_tts_state(workspace)
     except Exception:
         pass
     try:
