@@ -322,12 +322,19 @@ function SegmentCardInner({
                 onSuggestPrompt={onSuggestRemotionPrompt}
               />
               {needsBrollRemotion ? (
-                <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-500/8 p-2.5">
-                  <p className="mb-2 text-[0.72rem] leading-snug text-amber-100/90">
+                <details className="group mt-1 rounded-lg border border-amber-400/20 bg-amber-500/8">
+                  <summary className="flex cursor-pointer list-none items-center gap-1.5 px-2 py-1.5 text-[0.72rem] font-medium text-amber-100/90 marker:content-none [&::-webkit-details-marker]:hidden">
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-amber-200/70 transition-transform group-open:rotate-180" />
+                    <span className="min-w-0 truncate">
+                      {isOverlayRemotionCard ? "Background b-roll" : "Left-panel b-roll"}
+                      {segment.search_query ? ` · ${segment.search_query}` : ""}
+                    </span>
+                  </summary>
+                  <div className="space-y-2 border-t border-amber-400/15 p-2.5">
+                  <p className="text-[0.72rem] leading-snug text-amber-100/90">
                     {isOverlayRemotionCard
-                      ? "Overlay popup: fetch full-frame b-roll underneath the card. Query defaults from script description:"
-                      : "Split-screen card: fetch b-roll for the left panel. Query defaults from script description:"}{" "}
-                    <span className="text-amber-50">{segment.search_query || "—"}</span>
+                      ? "Overlay popup: fetch full-frame b-roll underneath the card."
+                      : "Split-screen card: fetch b-roll for the left panel."}
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
@@ -391,7 +398,8 @@ function SegmentCardInner({
                       />
                     </div>
                   ) : null}
-                </div>
+                  </div>
+                </details>
               ) : null}
               </>
             ) : (

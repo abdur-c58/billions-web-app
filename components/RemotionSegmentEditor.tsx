@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ChevronDown, Loader2, Play, RotateCcw, Save, Sparkles } from "lucide-react";
 import type { ViewerSegment } from "@/lib/types";
 import type { RemotionFieldDef } from "@/lib/remotionEditor";
@@ -79,6 +79,12 @@ const FIELD_GROUPS: Record<string, Array<{ id: string; label: string; keys: stri
   ],
 };
 
+function truncate(text: string, max = 36) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= max) return cleaned;
+  return `${cleaned.slice(0, max)}…`;
+}
+
 function groupSummary(label: string, fields: RemotionFieldDef[], values: Record<string, string>) {
   const preview = fields
     .map((field) => {
@@ -86,13 +92,16 @@ function groupSummary(label: string, fields: RemotionFieldDef[], values: Record<
       if (!raw) return null;
       if (field.type === "boolean") return raw === "true" ? field.label : null;
       if (field.type === "color") return raw;
-      const text = raw.replace(/\s+/g, " ");
-      return text.length > 28 ? `${text.slice(0, 28)}…` : text;
+      return truncate(raw, 22);
     })
     .filter(Boolean)
-    .slice(0, 2);
+    .slice(0, 1);
   if (!preview.length) return label;
   return `${label} · ${preview.join(" · ")}`;
+}
+
+function stopSummaryToggle(event: MouseEvent | KeyboardEvent) {
+  event.stopPropagation();
 }
 
 function PropField({
@@ -114,11 +123,11 @@ function PropField({
           {field.label}
         </span>
         <textarea
-          rows={field.type === "css" ? 2 : 2}
+          rows={2}
           value={value}
           placeholder={field.placeholder}
           onChange={(event) => onChange(event.target.value)}
-          className={`${controlClass} min-h-[3rem] resize-y`}
+          className={`${controlClass} min-h-[2.75rem] resize-y`}
         />
       </label>
     );
@@ -126,7 +135,7 @@ function PropField({
 
   if (field.type === "boolean") {
     return (
-      <label className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2.5 py-2 sm:col-span-2">
+      <label className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2.5 py-1.5 sm:col-span-2">
         <input
           type="checkbox"
           checked={value === "true"}
@@ -167,7 +176,7 @@ function PropField({
             type="color"
             value={value.startsWith("#") ? value : "#5ecf8a"}
             onChange={(event) => onChange(event.target.value)}
-            className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+            className="h-8 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
           />
           <input
             type="text"
@@ -202,23 +211,18 @@ function PropField({
 
 function CollapsibleFieldGroup({
   summary,
-  defaultOpen = false,
   children,
 }: {
   summary: string;
-  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   return (
-    <details
-      className="group rounded-lg border border-white/8 bg-white/[0.02]"
-      {...(defaultOpen ? { open: true } : {})}
-    >
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-2.5 py-2 text-[0.72rem] font-medium text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--muted)] transition-transform group-open:rotate-180" />
+    <details className="group rounded-md border border-white/8 bg-white/[0.02]">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 px-2 py-1.5 text-[0.7rem] font-medium text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown className="h-3 w-3 shrink-0 text-[var(--muted)] transition-transform group-open:rotate-180" />
         <span className="min-w-0 truncate">{summary}</span>
       </summary>
-      <div className="border-t border-white/6 px-2.5 pb-2.5 pt-2">{children}</div>
+      <div className="border-t border-white/6 px-2 pb-2 pt-1.5">{children}</div>
     </details>
   );
 }
@@ -301,6 +305,7 @@ export function RemotionSegmentEditor({
   const payload = buildRemotionPropsPayload(composition, values);
   const controlsBusy = isBusy || promptBusy;
   const allowExtra = remotionSchemaAllowsExtra(composition);
+  const titlePreview = truncate(values.title || values.subtitle || "", 32);
 
   const fieldGroups = useMemo(() => {
     const byKey = new Map(fields.map((field) => [field.key, field]));
@@ -373,59 +378,88 @@ export function RemotionSegmentEditor({
     }
   };
 
+  const actionButtonClass =
+    "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.68rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55";
+
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="rounded-lg border border-violet-400/20 bg-violet-500/8 p-2.5">
-        {segment.remotion?.prompt ? (
-          <details className="mb-2">
-            <summary className="cursor-pointer text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-violet-200/80">
-              Script motion brief
-            </summary>
-            <p className="mt-1.5 text-[0.72rem] leading-snug text-violet-100/85">
-              {segment.remotion.prompt}
-            </p>
-          </details>
-        ) : null}
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-violet-200/90">
-            Describe the look
-          </span>
-          <textarea
-            rows={2}
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                void applyPrompt();
-              }
-            }}
-            placeholder='e.g. "Center everything, smaller body text, blue accent"'
-            className="glow-control min-h-[3.25rem] w-full resize-y rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)] placeholder:text-[var(--muted)]"
-          />
-        </label>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+    <details className="group rounded-lg border border-violet-400/20 bg-violet-500/6">
+      <summary className="flex list-none items-center gap-1.5 px-2 py-1.5 marker:content-none [&::-webkit-details-marker]:hidden">
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-violet-200/80 transition-transform group-open:rotate-180" />
+        <span className="min-w-0 flex-1 truncate text-[0.72rem] font-medium text-violet-100/90">
+          Remotion · {composition}
+          {titlePreview ? ` · ${titlePreview}` : ""}
+          {dirty ? " · unsaved" : ""}
+        </span>
+        <span
+          className="flex shrink-0 items-center gap-1"
+          onClick={stopSummaryToggle}
+          onKeyDown={stopSummaryToggle}
+        >
           <button
             type="button"
-            disabled={controlsBusy || !prompt.trim()}
-            onClick={() => void applyPrompt()}
-            className="glow-btn-primary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={controlsBusy}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => void onPreview(payload)}
+            className={`${actionButtonClass} glow-btn-primary`}
+            title="Preview"
           >
-            {promptBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            Apply & save
+            {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            Preview
           </button>
-          <span className="text-[0.65rem] text-[var(--muted)]">Ctrl+Enter</span>
-        </div>
-        {promptSummary ? (
-          <p className="mt-2 text-[0.72rem] leading-snug text-violet-100/85">{promptSummary}</p>
-        ) : null}
-      </div>
+        </span>
+      </summary>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="space-y-1.5 border-t border-violet-400/15 p-2">
+        <details className="rounded-md border border-violet-400/15 bg-violet-500/5">
+          <summary className="cursor-pointer px-2 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-violet-200/80 marker:content-none [&::-webkit-details-marker]:hidden">
+            Describe the look
+          </summary>
+          <div className="space-y-2 border-t border-violet-400/10 p-2">
+            {segment.remotion?.prompt ? (
+              <details>
+                <summary className="cursor-pointer text-[0.68rem] font-medium text-violet-200/75">
+                  Script motion brief
+                </summary>
+                <p className="mt-1 text-[0.72rem] leading-snug text-violet-100/85">
+                  {segment.remotion.prompt}
+                </p>
+              </details>
+            ) : null}
+            <textarea
+              rows={2}
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault();
+                  void applyPrompt();
+                }
+              }}
+              placeholder='e.g. "Center everything, smaller body text, blue accent"'
+              className="glow-control min-h-[2.75rem] w-full resize-y rounded-lg px-2.5 py-1.5 text-[0.78rem] text-[var(--foreground)] placeholder:text-[var(--muted)]"
+            />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                disabled={controlsBusy || !prompt.trim()}
+                onClick={() => void applyPrompt()}
+                className="glow-btn-primary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                {promptBusy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                Apply & save
+              </button>
+              <span className="text-[0.65rem] text-[var(--muted)]">Ctrl+Enter</span>
+            </div>
+            {promptSummary ? (
+              <p className="text-[0.72rem] leading-snug text-violet-100/85">{promptSummary}</p>
+            ) : null}
+          </div>
+        </details>
+
         {fieldGroups.map((group) => (
           <CollapsibleFieldGroup
             key={group.id}
@@ -460,7 +494,7 @@ export function RemotionSegmentEditor({
                 value={extraJson}
                 onChange={(event) => updateExtraJson(event.target.value)}
                 placeholder='{"customFlag": true, "glowStrength": 0.8}'
-                className="glow-control min-h-[4rem] w-full resize-y rounded-lg px-2.5 py-1.5 font-mono text-[0.72rem] text-[var(--foreground)]"
+                className="glow-control min-h-[3.5rem] w-full resize-y rounded-lg px-2.5 py-1.5 font-mono text-[0.72rem] text-[var(--foreground)]"
               />
               {extraJsonError ? (
                 <span className="text-[0.68rem] text-red-300">{extraJsonError}</span>
@@ -472,44 +506,42 @@ export function RemotionSegmentEditor({
             </label>
           </CollapsibleFieldGroup>
         ) : null}
-      </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          disabled={controlsBusy}
-          onClick={() => void onPreview(payload)}
-          className="glow-btn-primary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
-        >
-          {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          Preview
-        </button>
-        <button
-          type="button"
-          disabled={controlsBusy || !dirty}
-          onClick={() => void onSave(payload)}
-          className="glow-btn-secondary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
-        >
-          <Save className="h-3.5 w-3.5" />
-          Save
-        </button>
-        <button
-          type="button"
-          disabled={controlsBusy || !dirty}
-          onClick={resetFields}
-          className="glow-btn-secondary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Reset
-        </button>
-        {dirty ? (
-          <span className="text-[0.68rem] text-amber-200/85">
-            Unsaved edits — click Save before export
-          </span>
-        ) : previewUrl ? (
-          <span className="text-[0.68rem] text-violet-200/75">Preview uses current form values</span>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <button
+            type="button"
+            disabled={controlsBusy}
+            onClick={() => void onPreview(payload)}
+            className="glow-btn-primary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            Preview
+          </button>
+          <button
+            type="button"
+            disabled={controlsBusy || !dirty}
+            onClick={() => void onSave(payload)}
+            className="glow-btn-secondary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save
+          </button>
+          <button
+            type="button"
+            disabled={controlsBusy || !dirty}
+            onClick={resetFields}
+            className="glow-btn-secondary inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </button>
+          {dirty ? (
+            <span className="text-[0.68rem] text-amber-200/85">Unsaved — save before export</span>
+          ) : previewUrl ? (
+            <span className="text-[0.68rem] text-violet-200/75">Preview uses current values</span>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </details>
   );
 }
