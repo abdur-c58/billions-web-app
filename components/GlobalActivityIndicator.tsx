@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AudioLines, Clapperboard, Cpu, Music2 } from "lucide-react";
+import { AudioLines, Clapperboard, Cpu, Mic2, Music2 } from "lucide-react";
 import { fetchActivity, type ActivityJob, type ActivitySnapshot } from "@/lib/activity";
 import { STATUS_POLL_MS } from "@/hooks/usePolling";
 
@@ -27,6 +27,17 @@ const JOB_STYLES: Record<
     fill: "rgba(59, 130, 246, 0.18)",
     accent: "#3b82f6",
   },
+  tts: {
+    icon: Mic2,
+    fill: "rgba(168, 85, 247, 0.18)",
+    accent: "#a855f7",
+  },
+};
+
+const DEFAULT_JOB_STYLE = {
+  icon: Cpu,
+  fill: "rgba(127, 208, 163, 0.14)",
+  accent: "#7fd0a3",
 };
 
 function clampPercent(value: number): number {
@@ -35,7 +46,7 @@ function clampPercent(value: number): number {
 }
 
 function JobPill({ job }: { job: ActivityJob }) {
-  const style = JOB_STYLES[job.type];
+  const style = JOB_STYLES[job.type] ?? DEFAULT_JOB_STYLE;
   const Icon = style.icon;
   const percent = clampPercent(job.progress_percent);
   const project = job.project_name || job.project_id?.slice(0, 8) || "Project";
