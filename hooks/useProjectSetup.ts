@@ -9,13 +9,14 @@ import {
   startAudioGeneration,
   startSegmentTimestamps,
   uploadAudioFile,
-  uploadScriptFile,
+  uploadScriptPayload,
   uploadTimestampsFile,
   type ProjectStatus,
+  type ScriptSummary,
   type TranscriptPreview,
 } from "@/lib/project";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
-import { fetchScriptTranscript } from "@/lib/script";
+import { fetchScriptTranscript, prepareScriptImport } from "@/lib/script";
 import { useWhisperModel } from "@/hooks/useWhisperResegment";
 
 const AUTO_TTS_DELAY_SECONDS = 10;
@@ -31,6 +32,7 @@ export function useProjectSetup(projectId: string | null) {
   const [copyingTranscript, setCopyingTranscript] = useState(false);
   const [transcriptNotice, setTranscriptNotice] = useState<string | null>(null);
   const [transcriptPreview, setTranscriptPreview] = useState<TranscriptPreview | null>(null);
+  const [scriptSummary, setScriptSummary] = useState<ScriptSummary | null>(null);
   const [autoTtsCountdown, setAutoTtsCountdown] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const ttsPollRef = useRef<number | null>(null);
@@ -54,6 +56,9 @@ export function useProjectSetup(projectId: string | null) {
     try {
       const next = await fetchProjectStatus();
       setStatus(next);
+      if (next.script_summary) {
+        setScriptSummary(next.script_summary);
+      }
       if (next.transcript_preview) {
         setTranscriptPreview(next.transcript_preview);
       }
@@ -202,6 +207,9 @@ export function useProjectSetup(projectId: string | null) {
       if (next?.tts_job.status === "running") {
         void pollTts();
       }
+      if (next?.script_summary) {
+        setScriptSummary(next.script_summary);
+      }
       if (next?.transcript_preview) {
         setTranscriptPreview(next.transcript_preview);
       }
@@ -215,6 +223,23 @@ export function useProjectSetup(projectId: string | null) {
 
   usePolling(() => void refresh(), STATUS_POLL_MS, sessionReady);
 
+  const finishScriptImport = useCallback(
+    async (next: ProjectStatus) => {
+      setStatus(next);
+      if (next.script_summary) {
+        setScriptSummary(next.script_summary);
+      }
+      if (next.transcript_preview) {
+        setTranscriptPreview(next.transcript_preview);
+      }
+      await loadTranscriptPreview();
+      if (!next.audio_uploaded) {
+        beginAutoTtsCountdown();
+      }
+    },
+    [beginAutoTtsCountdown, loadTranscriptPreview],
+  );
+
   const importScript = useCallback(async (file: File) => {
     setBusy(true);
     setError(null);
@@ -223,21 +248,39 @@ export function useProjectSetup(projectId: string | null) {
     manualAudioChosenRef.current = false;
     autoTtsStartedRef.current = false;
     try {
-      const next = await uploadScriptFile(file);
-      setStatus(next);
-      if (next.transcript_preview) {
-        setTranscriptPreview(next.transcript_preview);
-      }
-      await loadTranscriptPreview();
-      if (!next.audio_uploaded) {
-        beginAutoTtsCountdown();
-      }
+      const raw = await file.text();
+      const parsed = prepareScriptImport(raw);
+      const next = await uploadScriptPayload(parsed);
+      await finishScriptImport(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Script upload failed");
     } finally {
       setBusy(false);
     }
-  }, [beginAutoTtsCountdown, clearAutoTtsCountdown, loadTranscriptPreview]);
+  }, [clearAutoTtsCountdown, finishScriptImport]);
+
+  const importScriptJson = useCallback(
+    async (raw: string): Promise<string | null> => {
+      setBusy(true);
+      setError(null);
+      setTranscriptNotice(null);
+      clearAutoTtsCountdown();
+      manualAudioChosenRef.current = false;
+      autoTtsStartedRef.current = false;
+      try {
+        const parsed = prepareScriptImport(raw);
+        const next = await uploadScriptPayload(parsed);
+        await finishScriptImport(next);
+        return null;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Script import failed";
+        return message;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [clearAutoTtsCountdown, finishScriptImport],
+  );
 
   const importAudio = useCallback(async (file: File) => {
     setBusy(true);
@@ -314,6 +357,7 @@ export function useProjectSetup(projectId: string | null) {
     error,
     refresh,
     importScript,
+    importScriptJson,
     importAudio,
     importTimestamps,
     segmentTimestamps,
@@ -321,6 +365,7 @@ export function useProjectSetup(projectId: string | null) {
     copyingTranscript,
     transcriptNotice,
     transcriptPreview,
+    scriptSummary,
     autoTtsCountdown,
     viewerReady: Boolean(status?.viewer_ready),
     audioUploadProgress,

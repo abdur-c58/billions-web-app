@@ -1,5 +1,8 @@
 import { apiFetch, invalidateBackendUrlCache, uploadFormData } from "@/lib/api";
+import type { ScriptSummary } from "@/lib/script";
 import type { ScriptFormat, RemotionScriptSummary } from "@/lib/types";
+
+export type { ScriptSummary } from "@/lib/script";
 
 export type TimestampAlignment = {
   total_segments: number;
@@ -60,6 +63,7 @@ export type ProjectStatus = {
   timestamp_alignment?: TimestampAlignment | null;
   next_step: "import_script" | "import_audio" | "segment_timestamps" | "viewer";
   transcript_preview?: TranscriptPreview | null;
+  script_summary?: ScriptSummary | null;
   timestamps_job: {
     status: "idle" | "running" | "done" | "error";
     message: string;
@@ -111,6 +115,14 @@ export async function uploadScriptFile(file: File) {
   return apiFetch<ProjectStatus>("/api/project/upload/script", {
     method: "POST",
     body: form,
+  });
+}
+
+export async function uploadScriptPayload(script: object) {
+  return apiFetch<ProjectStatus>("/api/project/upload/script", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(script),
   });
 }
 

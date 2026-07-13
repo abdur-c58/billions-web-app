@@ -662,21 +662,23 @@ def project_status(workspace: Path) -> dict[str, Any]:
     segment_count = 0
     script_format = None
     remotion_summary: dict[str, Any] | None = None
+    script_summary: dict[str, Any] | None = None
     if script_exists:
         try:
             with paths["script"].open("r", encoding="utf-8") as infile:
                 script_data = json.load(infile)
-            script_title = script_data.get("title")
-            for beat_block in script_data.get("script", []):
-                segment_count += len(beat_block.get("segments", []))
-            from script_format import analyze_script_remotion, detect_script_format
+            from script_format import analyze_script_remotion, build_script_summary, detect_script_format
 
-            script_format = detect_script_format(script_data)
-            remotion_summary = analyze_script_remotion(script_data)
-        except (json.JSONDecodeError, OSError):
+            script_summary = build_script_summary(script_data)
+            script_title = script_summary.get("title")
+            segment_count = int(script_summary.get("segment_count") or 0)
+            script_format = script_summary.get("script_format")
+            remotion_summary = script_summary.get("remotion")
+        except (json.JSONDecodeError, OSError, ValueError):
             script_title = None
             script_format = None
             remotion_summary = None
+            script_summary = None
 
     aligned_segments = 0
     timed_segments = 0
@@ -724,6 +726,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "timestamps_job": timestamps_job,
         "tts_job": tts_job,
         "transcript_preview": transcript_preview,
+        "script_summary": script_summary,
         "next_step": (
             "import_script"
             if not script_exists

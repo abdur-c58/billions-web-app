@@ -315,6 +315,8 @@ def analyze_script_remotion(script_data: dict[str, Any]) -> dict[str, Any]:
 def validate_script_payload(script_data: dict[str, Any]) -> None:
     if not isinstance(script_data, dict):
         raise ValueError("Script JSON must be an object.")
+    if "segments" in script_data and not script_data.get("script"):
+        raise ValueError('Script must use a top-level "script" array, not "segments".')
     beats = script_data.get("script")
     if not isinstance(beats, list) or not beats:
         raise ValueError("Script must include a non-empty 'script' array.")
@@ -369,6 +371,34 @@ def build_narration_transcript(script_data: dict[str, Any], *, separator: str = 
     if not parts:
         raise ValueError("No segment content found in script.")
     return separator.join(parts)
+
+
+def build_script_summary(script_data: dict[str, Any]) -> dict[str, Any]:
+    """Metadata summary for script.json (title, channel, stats)."""
+    from fish_audio_tts import estimate_duration_seconds, format_duration_label
+
+    beats = script_data.get("script") or []
+    beat_count = len(beats)
+    segment_count = sum(len(beat.get("segments") or []) for beat in beats)
+    transcript = build_narration_transcript(script_data)
+    word_count = len(transcript.split())
+    duration_seconds = estimate_duration_seconds(word_count)
+
+    title = script_data.get("title")
+    channel = script_data.get("channel")
+
+    return {
+        "title": str(title).strip() if title else None,
+        "channel": str(channel).strip() if channel else None,
+        "beat_count": beat_count,
+        "segment_count": segment_count,
+        "word_count": word_count,
+        "estimated_duration_seconds": duration_seconds,
+        "estimated_duration_label": format_duration_label(duration_seconds),
+        "wpm": 145,
+        "script_format": detect_script_format(script_data),
+        "remotion": analyze_script_remotion(script_data),
+    }
 
 
 def iter_broll_script_segments(script_data: dict[str, Any]) -> list[dict[str, Any]]:

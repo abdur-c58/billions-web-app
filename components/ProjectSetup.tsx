@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, ChevronUp, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Copy, FileAudio, FileJson, FileStack, Loader2, Sparkles, X } from "lucide-react";
 import { SegmentationAlignmentSummary } from "@/components/SegmentationAlignmentSummary";
 import { SegmentationHardwarePanel } from "@/components/SegmentationHardwarePanel";
 import { WhisperModelSelect } from "@/components/WhisperModelSelect";
 import type { useProjectSetup } from "@/hooks/useProjectSetup";
-import type { ProjectStatus, TimestampAlignment } from "@/lib/project";
+import type { ProjectStatus, ScriptSummary, TimestampAlignment } from "@/lib/project";
 
 function formatLogTime(ts: number) {
   return new Date(ts * 1000).toLocaleTimeString(undefined, {
@@ -57,35 +57,74 @@ function TtsJobLogs({ job }: { job?: ProjectStatus["tts_job"] }) {
   return <JobLogsPanel title="Narration generation log" job={job} />;
 }
 
-function TranscriptPreviewPanel({
-  preview,
+function ScriptSummaryPanel({
+  summary,
+  remotionRuntimeReady,
 }: {
-  preview: NonNullable<ReturnType<typeof useProjectSetup>["transcriptPreview"]>;
+  summary: ScriptSummary;
+  remotionRuntimeReady?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   return (
     <div className="sm:pl-8">
-      <p className="text-sm text-[var(--muted)]">
-        {preview.segment_count} segments · {preview.word_count.toLocaleString()} words ·{" "}
-        {preview.estimated_duration_label} at 145 wpm
-      </p>
-      <div className="mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)]">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-[var(--foreground)]"
-          onClick={() => setExpanded((current) => !current)}
-        >
-          <span>Transcript preview</span>
-          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-        <div
-          className={`overflow-auto border-t border-[var(--border)] px-3 py-2 text-sm leading-6 text-[var(--muted)] ${
-            expanded ? "max-h-80" : "max-h-28"
-          }`}
-        >
-          {preview.transcript}
+      <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-3">
+        <dl className="space-y-2 text-sm">
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Video title</dt>
+            <dd className="mt-0.5 font-medium text-[var(--foreground)]">{summary.title || "Untitled"}</dd>
+          </div>
+          {summary.channel ? (
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Channel</dt>
+              <dd className="mt-0.5 text-[var(--foreground)]">{summary.channel}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Script stats</dt>
+            <dd className="mt-0.5 text-[var(--muted)]">
+              {summary.beat_count} beat{summary.beat_count === 1 ? "" : "s"} ·{" "}
+              {summary.segment_count} segment{summary.segment_count === 1 ? "" : "s"} ·{" "}
+              {summary.word_count.toLocaleString()} words · {summary.estimated_duration_label} at{" "}
+              {summary.wpm ?? 145} wpm
+            </dd>
+          </div>
+        </dl>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p
+            className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+              summary.script_format === "folder" ? "text-emerald-300" : "text-[var(--muted)]"
+            }`}
+          >
+            {summary.script_format === "folder" ? (
+              <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            Folder fetch
+          </p>
+          <p
+            className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+              summary.remotion?.detected ? "text-violet-300" : "text-[var(--muted)]"
+            }`}
+          >
+            {summary.remotion?.detected ? (
+              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            Remotion
+            {summary.remotion?.detected
+              ? ` · ${summary.remotion.segment_count} scene${
+                  summary.remotion.segment_count === 1 ? "" : "s"
+                } (${summary.remotion.compositions.join(", ")})`
+              : ""}
+          </p>
         </div>
+        {summary.remotion?.detected && remotionRuntimeReady === false ? (
+          <p className="mt-2 text-xs text-amber-200">
+            Run <code className="text-[var(--foreground)]">npm install</code> in{" "}
+            <code className="text-[var(--foreground)]">remotion/</code> before export.
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -110,6 +149,8 @@ function resolveTimestampAlignment(status: ProjectStatus | null): TimestampAlign
 }
 
 export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
+  const [pasteJson, setPasteJson] = useState("");
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   const step = setup.status?.next_step ?? "import_script";
   const ttsRunning = setup.status?.tts_job.status === "running";
@@ -137,6 +178,19 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
     timestampsRunning ||
     ttsRunning ||
     setup.audioUploadProgress != null;
+  const scriptImportDisabled = setup.busy || timestampsRunning || ttsRunning;
+  const scriptSummary = setup.scriptSummary ?? setup.status?.script_summary ?? null;
+
+  const handlePasteImport = async () => {
+    setPasteError(null);
+    const message = await setup.importScriptJson(pasteJson);
+    if (message) {
+      setPasteError(message);
+      return;
+    }
+    setPasteJson("");
+    setPasteError(null);
+  };
 
   return (
     <section className="page-container flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10">
@@ -159,9 +213,9 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
           ) : null}
         </div>
         <p className="mt-3 text-[0.95rem] leading-7 text-[var(--muted)]">
-          Load <code className="text-[var(--foreground)]">script.json</code>, then upload or auto-generate{" "}
-          <code className="text-[var(--foreground)]">script.mp3</code> with Fish Audio, then Whisper
-          alignment runs automatically. The b-roll viewer unlocks after all three steps.
+          Upload or paste <code className="text-[var(--foreground)]">script.json</code>, then upload or
+          auto-generate <code className="text-[var(--foreground)]">script.mp3</code> with Fish Audio, then
+          Whisper alignment runs automatically. The b-roll viewer unlocks after all three steps.
         </p>
 
         <ol className="mt-8 space-y-4">
@@ -170,90 +224,91 @@ export function ProjectSetup({ setup, onBackToProjects }: ProjectSetupProps) {
               <div className="flex items-center gap-3">
                 <FileJson className="h-5 w-5 text-[var(--accent)]" />
                 <div className="flex-1">
-                <p className="font-semibold">1. Import script.json</p>
-                <p className="text-sm text-[var(--muted)]">
-                  {setup.status?.script_uploaded
-                    ? setup.status.title || "Script uploaded"
-                    : "Upload your documentary script JSON."}
-                </p>
-                {setup.status?.script_uploaded ? (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                    <p
-                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                        setup.status.script_format === "folder"
-                          ? "text-emerald-300"
-                          : "text-[var(--muted)]"
-                      }`}
+                  <p className="font-semibold">1. Import script.json</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    {setup.status?.script_uploaded
+                      ? "Script imported — review details below or re-import."
+                      : "Upload a file or paste JSON from your editor."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {setup.status?.script_uploaded ? (
+                    <button
+                      type="button"
+                      onClick={() => void setup.copyTranscript()}
+                      disabled={setup.busy || setup.copyingTranscript || timestampsRunning || ttsRunning}
+                      className="glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
                     >
-                      {setup.status.script_format === "folder" ? (
-                        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {setup.copyingTranscript ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <Copy className="h-4 w-4" />
                       )}
-                      Folder fetch
-                    </p>
-                    <p
-                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                        setup.status.remotion?.detected ? "text-violet-300" : "text-[var(--muted)]"
-                      }`}
-                    >
-                      {setup.status.remotion?.detected ? (
-                        <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      )}
-                      Remotion
-                      {setup.status.remotion?.detected
-                        ? ` · ${setup.status.remotion.segment_count} scene${
-                            setup.status.remotion.segment_count === 1 ? "" : "s"
-                          } (${setup.status.remotion.compositions.join(", ")})`
-                        : ""}
-                    </p>
-                    {setup.status.remotion?.detected && setup.status.remotion_runtime_ready === false ? (
-                      <p className="mt-1 text-xs text-amber-200">
-                        Run <code className="text-[var(--foreground)]">npm install</code> in{" "}
-                        <code className="text-[var(--foreground)]">remotion/</code> before export.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
+                      Copy transcript
+                    </button>
+                  ) : null}
+                  <label className="glow-btn-secondary cursor-pointer rounded-[10px] px-3.5 py-2.5 text-sm font-semibold">
+                    Choose file
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      disabled={scriptImportDisabled}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void setup.importScript(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {setup.status?.script_uploaded ? (
+
+              <div className="sm:pl-8">
+                <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                  Or paste JSON
+                </label>
+                <textarea
+                  value={pasteJson}
+                  onChange={(event) => {
+                    setPasteJson(event.target.value);
+                    if (pasteError) setPasteError(null);
+                  }}
+                  placeholder='{"title": "…", "channel": "…", "script": […]}'
+                  rows={5}
+                  disabled={scriptImportDisabled}
+                  className="mt-2 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2 font-mono text-xs leading-5 text-[var(--foreground)] placeholder:text-[var(--muted)] disabled:opacity-55"
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => void setup.copyTranscript()}
-                    disabled={setup.busy || setup.copyingTranscript || timestampsRunning || ttsRunning}
-                    className="glow-btn-secondary inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                    className="glow-btn-primary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
+                    disabled={scriptImportDisabled || !pasteJson.trim()}
+                    onClick={() => void handlePasteImport()}
                   >
-                    {setup.copyingTranscript ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                    {setup.busy ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing…
+                      </span>
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      "Import script"
                     )}
-                    Copy transcript
                   </button>
+                </div>
+                {pasteError ? (
+                  <p className="mt-2 text-sm text-[#ffc9c9]">{pasteError}</p>
                 ) : null}
-                <label className="glow-btn-secondary cursor-pointer rounded-[10px] px-3.5 py-2.5 text-sm font-semibold">
-                  Choose file
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    className="hidden"
-                    disabled={setup.busy || timestampsRunning || ttsRunning}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void setup.importScript(file);
-                    }}
-                  />
-                </label>
               </div>
-              </div>
+
               {setup.transcriptNotice ? (
                 <p className="text-sm text-emerald-300 sm:pl-8">{setup.transcriptNotice}</p>
               ) : null}
-              {setup.transcriptPreview ? (
-                <TranscriptPreviewPanel preview={setup.transcriptPreview} />
+              {scriptSummary ? (
+                <ScriptSummaryPanel
+                  summary={scriptSummary}
+                  remotionRuntimeReady={setup.status?.remotion_runtime_ready}
+                />
               ) : null}
             </div>
           </li>
