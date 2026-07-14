@@ -250,11 +250,18 @@ export function useProjectSetup(projectId: string | null) {
         setTranscriptPreview(next.transcript_preview);
       }
       await loadTranscriptPreview();
-      if (!next.audio_uploaded) {
+      // Backend auto-starts Fish TTS on script save — follow that job instead of
+      // starting a second generation from a countdown.
+      if (next.tts_job?.status === "running") {
+        autoTtsStartedRef.current = true;
+        clearAutoTtsCountdown();
+        await pollTts();
+      } else if (!next.audio_uploaded && next.tts_job?.status !== "done") {
+        // Fallback if backend auto-TTS was skipped (e.g. missing Fish config).
         beginAutoTtsCountdown();
       }
     },
-    [beginAutoTtsCountdown, loadTranscriptPreview],
+    [beginAutoTtsCountdown, clearAutoTtsCountdown, loadTranscriptPreview, pollTts],
   );
 
   const importScript = useCallback(async (file: File) => {

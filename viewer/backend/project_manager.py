@@ -23,6 +23,7 @@ TIMESTAMPS_NAME = "segment_timestamps.json"
 SELECTIONS_NAME = "broll_selections.json"
 TIMESTAMPS_JOB_NAME = ".timestamps_job.json"
 TTS_JOB_NAME = ".tts_job.json"
+PIPELINE_JOB_NAME = ".broll_pipeline.json"
 STALE_JOB_SECONDS = 15 * 60
 
 _timestamps_lock = threading.Lock()
@@ -203,6 +204,7 @@ def workspace_paths(workspace: Path) -> dict[str, Path]:
         "export_status": workspace / ".broll_export_status.json",
         "timestamps_job": workspace / TIMESTAMPS_JOB_NAME,
         "tts_job": workspace / TTS_JOB_NAME,
+        "pipeline_job": workspace / PIPELINE_JOB_NAME,
     }
 
 
@@ -701,6 +703,58 @@ def project_status(workspace: Path) -> dict[str, Any]:
     with _tts_lock:
         tts_job = dict(_get_tts_state_unlocked(workspace))
 
+    from pipeline_jobs import (
+        compute_broll_counts,
+        compute_list_status,
+        pipeline_job_snapshot,
+    )
+    from export_job_state import read_export_state_file
+    from user_sessions import read_manifest
+
+    pipeline_job = pipeline_job_snapshot(workspace)
+    export_job: dict[str, Any] = {}
+    try:
+        export_path = paths["export_status"]
+        export_job = read_export_state_file(export_path) if export_path.exists() else {}
+    except Exception:
+        export_job = {}
+
+    manual_refetch_done = False
+    try:
+        manifest = read_manifest(workspace)
+        manual_refetch_done = bool(manifest.get("manual_refetch_done"))
+    except Exception:
+        manual_refetch_done = False
+
+    broll_fetched = 0
+    broll_total = 0
+    duplicates_remaining = 0
+    if ready:
+        try:
+            from broll_viewer import build_segment_rows
+            from flagged_clips import find_duplicate_clips
+
+            rows = build_segment_rows(paths["script"], paths["timestamps"], paths["selections"])
+            broll_fetched, broll_total = compute_broll_counts(rows)
+            if broll_total > 0 and broll_fetched >= broll_total:
+                duplicates_remaining = len(find_duplicate_clips(rows))
+        except Exception:
+            pass
+
+    list_status = compute_list_status(
+        script_exists=script_exists,
+        audio_exists=audio_exists,
+        timestamps_exists=timestamps_exists,
+        tts_job=tts_job,
+        timestamps_job=timestamps_job,
+        pipeline_job=pipeline_job,
+        export_job=export_job,
+        broll_fetched=broll_fetched,
+        broll_total=broll_total,
+        duplicates_remaining=duplicates_remaining,
+        manual_refetch_done=manual_refetch_done,
+    )
+
     transcript_preview = _build_transcript_preview(paths["script"]) if script_exists else None
 
     from user_sessions import parse_workspace_scope
@@ -725,6 +779,20 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "timestamp_alignment": timestamp_alignment,
         "timestamps_job": timestamps_job,
         "tts_job": tts_job,
+        "pipeline_job": pipeline_job,
+        "export_job": {
+            "status": export_job.get("status") or "idle",
+            "stage": export_job.get("stage") or "",
+            "message": export_job.get("message") or "",
+            "progress_percent": export_job.get("progress_percent") or 0,
+            "error": export_job.get("error"),
+            "output": export_job.get("output"),
+        },
+        "broll_fetched": broll_fetched,
+        "broll_total": broll_total,
+        "duplicates_remaining": duplicates_remaining,
+        "manual_refetch_done": manual_refetch_done,
+        "list_status": list_status,
         "transcript_preview": transcript_preview,
         "script_summary": script_summary,
         "next_step": (
@@ -762,13 +830,19 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
     reset_tts_job_state(workspace)
     clear_tts_recovery_artifacts(workspace)
     try:
+        from pipeline_jobs import reset_pipeline_job_state
+
+        reset_pipeline_job_state(workspace)
+    except Exception:
+        pass
+    try:
         from user_sessions import touch_manifest
 
         title = script_data.get("title")
+        updates: dict[str, Any] = {"manual_refetch_done": False}
         if isinstance(title, str) and title.strip():
-            touch_manifest(workspace, name=title.strip())
-        else:
-            touch_manifest(workspace)
+            updates["name"] = title.strip()
+        touch_manifest(workspace, **updates)
     except Exception:
         pass
     try:
@@ -777,6 +851,16 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
         sync_workspace_file(workspace, SCRIPT_NAME)
     except Exception:
         pass
+
+    # Auto-start Fish TTS so home-page bulk imports keep moving without opening setup.
+    try:
+        from fish_audio_tts import validate_fish_config
+
+        validate_fish_config()
+        start_audio_generation(workspace)
+    except Exception as exc:
+        print(f"[pipeline] auto-TTS skipped: {exc}")
+
     return project_status(workspace)
 
 
@@ -912,6 +996,18 @@ def start_segment_timestamps(
                 sync_workspace_file(paths["workspace"], TIMESTAMPS_NAME)
             except Exception:
                 pass
+            try:
+                from user_sessions import touch_manifest
+
+                touch_manifest(workspace, manual_refetch_done=False)
+            except Exception:
+                pass
+            try:
+                from pipeline_jobs import start_broll_pipeline
+
+                start_broll_pipeline(workspace)
+            except Exception as pipeline_exc:
+                print(f"[pipeline] auto b-roll start skipped: {pipeline_exc}")
             if on_complete:
                 on_complete()
         except BaseException as exc:
@@ -992,6 +1088,18 @@ def save_timestamps(workspace: Path, timestamps_data: dict[str, Any]) -> dict[st
         sync_workspace_file(workspace, TIMESTAMPS_NAME)
     except Exception:
         pass
+    try:
+        from user_sessions import touch_manifest
+
+        touch_manifest(workspace, manual_refetch_done=False)
+    except Exception:
+        pass
+    try:
+        from pipeline_jobs import start_broll_pipeline
+
+        start_broll_pipeline(workspace)
+    except Exception as pipeline_exc:
+        print(f"[pipeline] auto b-roll start skipped: {pipeline_exc}")
     return project_status(workspace)
 
 

@@ -46,6 +46,35 @@ export type TtsJobStatus = {
   }>;
 };
 
+export type PipelineJobStatus = {
+  status: "idle" | "running" | "done" | "error";
+  message: string;
+  error: string | null;
+  progress_percent?: number;
+  stage?: string;
+  done?: number;
+  total?: number;
+  cleared?: number;
+  clear_total?: number;
+  started_at?: number | null;
+  updated_at?: number | null;
+};
+
+export type ProjectListStatus =
+  | "needs_script"
+  | "generating_voice"
+  | "needs_audio"
+  | "segmenting"
+  | "needs_timestamps"
+  | "ready_for_broll"
+  | "fetching_broll"
+  | "clearing_duplicates"
+  | "ready_for_refetch"
+  | "ready_for_export"
+  | "exporting"
+  | "complete"
+  | "in_progress";
+
 export type ProjectStatus = {
   workspace: string;
   project_id?: string | null;
@@ -83,6 +112,20 @@ export type ProjectStatus = {
     }>;
   };
   tts_job: TtsJobStatus;
+  pipeline_job?: PipelineJobStatus;
+  export_job?: {
+    status: string;
+    stage?: string;
+    message?: string;
+    progress_percent?: number;
+    error?: string | null;
+    output?: string | null;
+  };
+  broll_fetched?: number;
+  broll_total?: number;
+  duplicates_remaining?: number;
+  manual_refetch_done?: boolean;
+  list_status?: ProjectListStatus;
 };
 
 export type SegmentationHardware = {
@@ -118,10 +161,13 @@ export async function uploadScriptFile(file: File) {
   });
 }
 
-export async function uploadScriptPayload(script: object) {
+export async function uploadScriptPayload(script: object, projectId?: string) {
   return apiFetch<ProjectStatus>("/api/project/upload/script", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(projectId ? { "X-Billions-Project": projectId } : {}),
+    },
     body: JSON.stringify(script),
   });
 }
@@ -218,6 +264,13 @@ export type ProjectSummary = {
   aligned_segments: number;
   timestamps_job: ProjectStatus["timestamps_job"];
   tts_job: TtsJobStatus;
+  pipeline_job?: PipelineJobStatus;
+  export_job?: ProjectStatus["export_job"];
+  broll_fetched?: number;
+  broll_total?: number;
+  duplicates_remaining?: number;
+  manual_refetch_done?: boolean;
+  list_status?: ProjectListStatus;
 };
 
 export async function fetchProjectList() {
@@ -241,5 +294,28 @@ export async function deleteProject(projectId: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ project_id: projectId }),
+  });
+}
+
+export async function startExportForProject(projectId: string) {
+  return apiFetch<{
+    status: string;
+    progress_percent?: number;
+    message?: string;
+    error?: string | null;
+  }>("/api/export/start", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Billions-Project": projectId,
+    },
+    body: JSON.stringify({
+      background_audio: null,
+      narration_adjust_db: 0,
+      background_adjust_db: 0,
+      resolution: "4k",
+      quality: "balanced",
+      include_subtitles: false,
+    }),
   });
 }

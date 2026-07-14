@@ -93,6 +93,7 @@ from project_manager import (
     tts_job_snapshot,
     workspace_paths,
 )
+from pipeline_jobs import load_all_pipeline_job_states, load_pipeline_job_state
 from storage_r2 import (
     list_r2_background_audio,
     purge_stale_exported_videos,
@@ -1818,6 +1819,11 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     "true",
                     "yes",
                 }
+                manual = params.get("manual", ["false"])[0].lower() in {
+                    "1",
+                    "true",
+                    "yes",
+                }
                 rows = build_segment_rows(
                     self.script_path,
                     self.timestamps_path,
@@ -1859,6 +1865,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     judgment_cache=self.judgment_cache,
                     flagged_path=self.flagged_path,
                 )
+                if refetch and manual:
+                    try:
+                        workspace = self._require_workspace()
+                        touch_manifest(workspace, manual_refetch_done=True)
+                    except Exception as manifest_exc:
+                        print(f"[fetch] manual_refetch_done not saved: {manifest_exc}")
                 self._send_json(payload)
             except Exception as exc:
                 print(f"Fetch failed segment {segment_id}: {exc}")
@@ -2117,6 +2129,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 workspace = project_workspace(WORKSPACE_DIR, project["id"])
                 load_timestamps_job_state(workspace)
                 load_tts_job_state(workspace)
+                load_pipeline_job_state(workspace)
                 self._send_json(project)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
@@ -2971,6 +2984,7 @@ def main() -> None:
         sync_local_projects_with_r2(WORKSPACE_DIR)
         load_all_timestamps_job_states(WORKSPACE_DIR)
         load_all_tts_job_states(WORKSPACE_DIR)
+        load_all_pipeline_job_states(WORKSPACE_DIR)
         prune_inactive_projects()
         for project in list_projects(WORKSPACE_DIR):
             try:

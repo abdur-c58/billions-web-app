@@ -286,11 +286,19 @@ export function useBrollViewer() {
   }, []);
 
   const fetchSegmentOnce = useCallback(
-    async (segmentId: number, refetch: boolean, provider: FetchProvider) => {
+    async (
+      segmentId: number,
+      refetch: boolean,
+      provider: FetchProvider,
+      options?: { manual?: boolean },
+    ) => {
     const customQuery = (customQueriesRef.current[segmentId] || "").trim();
       let url = `/api/fetch?segment_id=${segmentId}&refetch=${refetch ? "true" : "false"}&provider=${provider}`;
     if (customQuery) {
       url += `&query=${encodeURIComponent(customQuery)}`;
+    }
+    if (options?.manual) {
+      url += "&manual=1";
     }
     const payload = await apiFetch<FetchPayload>(url);
     applyFetchPayload(segmentId, payload);
@@ -305,6 +313,7 @@ export function useBrollViewer() {
       refetch: boolean,
       quiet = false,
       provider: FetchProvider = "mix",
+      options?: { manual?: boolean },
     ) => {
       const segment = segmentsRef.current.find((item) => item.segment_id === segmentId);
       if (segment && isRemotionSegment(segment) && !remotionNeedsBroll(segment)) {
@@ -332,7 +341,7 @@ export function useBrollViewer() {
       try {
         for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
           try {
-            const payload = await fetchSegmentOnce(segmentId, refetch, provider);
+            const payload = await fetchSegmentOnce(segmentId, refetch, provider, options);
             if (!quiet) {
               const label = payload.query_used || payload.search_query;
               const tier =

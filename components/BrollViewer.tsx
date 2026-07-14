@@ -132,7 +132,9 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
 
   const handleFetch = useCallback(
     (segmentId: number, refetch: boolean, provider: FetchProvider = "mix") => {
-      void viewer.fetchSegmentWithRetry(segmentId, refetch, false, provider);
+      void viewer.fetchSegmentWithRetry(segmentId, refetch, false, provider, {
+        manual: refetch,
+      });
     },
     [viewer.fetchSegmentWithRetry],
   );

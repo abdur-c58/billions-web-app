@@ -35,6 +35,8 @@ _ACTIVITY_FILES = (
     ".broll_export_status.json",
     ".broll_flagged.json",
     ".timestamps_job.json",
+    ".tts_job.json",
+    ".broll_pipeline.json",
 )
 
 
@@ -182,6 +184,13 @@ def project_summary(workspace_root: Path, project_id: str) -> dict[str, Any]:
         "aligned_segments": status.get("aligned_segments", 0),
         "timestamps_job": job,
         "tts_job": tts_job,
+        "pipeline_job": status.get("pipeline_job"),
+        "export_job": status.get("export_job"),
+        "broll_fetched": status.get("broll_fetched", 0),
+        "broll_total": status.get("broll_total", 0),
+        "duplicates_remaining": status.get("duplicates_remaining", 0),
+        "manual_refetch_done": status.get("manual_refetch_done", False),
+        "list_status": status.get("list_status") or "in_progress",
     }
 
 

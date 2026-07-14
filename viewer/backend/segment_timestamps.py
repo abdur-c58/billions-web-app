@@ -50,6 +50,8 @@ ALLOWED_EXTRA_FILES = {
     ".broll_flagged.json",
     ".broll_export_status.json",
     ".timestamps_job.json",
+    ".tts_job.json",
+    ".broll_pipeline.json",
     "project.json",
     "final_video.mp4",
 }

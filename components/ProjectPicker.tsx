@@ -1,13 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { FolderOpen, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { Download, FolderOpen, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import {
   createProject,
   deleteProject,
   fetchProjectList,
+  startExportForProject,
+  uploadScriptPayload,
   type ProjectSummary,
 } from "@/lib/project";
+import { buildScriptSummary, prepareScriptImport } from "@/lib/script";
 import { useSession } from "@/context/SessionContext";
 import { cn } from "@/lib/utils";
 import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
@@ -25,23 +28,85 @@ function formatExpiry(expiresAt: number, now: number): string {
   return `Auto-deletes in ${minutes}m`;
 }
 
-function stepLabel(project: ProjectSummary) {
-  if (project.viewer_ready) return "Ready for b-roll";
-  if (project.tts_job?.status === "running") {
-    return `Generating voice ${project.tts_job.progress_percent ?? 0}%`;
+function progressPercent(project: ProjectSummary): number | null {
+  const status = project.list_status;
+  if (status === "generating_voice" || project.tts_job?.status === "running") {
+    return project.tts_job?.progress_percent ?? 0;
   }
-  if (project.timestamps_job.status === "running") {
-    return `Segmenting ${project.timestamps_job.progress_percent ?? 0}%`;
+  if (status === "segmenting" || project.timestamps_job?.status === "running") {
+    return project.timestamps_job?.progress_percent ?? 0;
   }
-  switch (project.next_step) {
-    case "import_script":
+  if (status === "fetching_broll") {
+    const total = project.pipeline_job?.total ?? project.broll_total ?? 0;
+    const done = project.pipeline_job?.done ?? project.broll_fetched ?? 0;
+    if (total > 0) return Math.round((done / total) * 100);
+    return project.pipeline_job?.progress_percent ?? 0;
+  }
+  if (status === "clearing_duplicates") {
+    const total = project.pipeline_job?.clear_total ?? 0;
+    const done = project.pipeline_job?.cleared ?? 0;
+    if (total > 0) return Math.round((done / total) * 100);
+    return project.pipeline_job?.progress_percent ?? 0;
+  }
+  if (status === "exporting") {
+    return project.export_job?.progress_percent ?? 0;
+  }
+  return null;
+}
+
+function stepLabel(project: ProjectSummary): string {
+  const status = project.list_status;
+  switch (status) {
+    case "generating_voice":
+      return `Generating voice ${project.tts_job?.progress_percent ?? 0}%`;
+    case "segmenting":
+      return `Segmenting ${project.timestamps_job?.progress_percent ?? 0}%`;
+    case "fetching_broll": {
+      const done = project.pipeline_job?.done ?? project.broll_fetched ?? 0;
+      const total = project.pipeline_job?.total ?? project.broll_total ?? 0;
+      return total > 0 ? `Fetching b-roll (${done}/${total} fetched)` : "Fetching b-roll";
+    }
+    case "clearing_duplicates": {
+      const cleared = project.pipeline_job?.cleared ?? 0;
+      const total = project.pipeline_job?.clear_total ?? 0;
+      return total > 0
+        ? `Clearing duplicates (${cleared}/${total} cleared)`
+        : "Clearing duplicates";
+    }
+    case "ready_for_refetch":
+      return "Ready for refetch";
+    case "ready_for_export":
+      return "Ready for export";
+    case "exporting":
+      return `Exporting ${project.export_job?.progress_percent ?? 0}%`;
+    case "complete":
+      return "Complete";
+    case "needs_script":
       return "Needs script";
-    case "import_audio":
+    case "needs_audio":
       return "Needs audio";
-    case "segment_timestamps":
+    case "needs_timestamps":
       return "Needs timestamps";
+    case "ready_for_broll":
+      return "Ready for b-roll";
     default:
-      return "In progress";
+      if (project.tts_job?.status === "running") {
+        return `Generating voice ${project.tts_job.progress_percent ?? 0}%`;
+      }
+      if (project.timestamps_job?.status === "running") {
+        return `Segmenting ${project.timestamps_job.progress_percent ?? 0}%`;
+      }
+      if (project.viewer_ready) return "Ready for b-roll";
+      switch (project.next_step) {
+        case "import_script":
+          return "Needs script";
+        case "import_audio":
+          return "Needs audio";
+        case "segment_timestamps":
+          return "Needs timestamps";
+        default:
+          return "In progress";
+      }
   }
 }
 
@@ -51,9 +116,13 @@ export function ProjectPicker() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const dragDepthRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -115,15 +184,123 @@ export function ProjectPicker() {
     }
   };
 
+  const handleExport = async (project: ProjectSummary) => {
+    setExportingId(project.id);
+    setError(null);
+    try {
+      await startExportForProject(project.id);
+      await refresh({ silent: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start export");
+    } finally {
+      setExportingId(null);
+    }
+  };
+
+  const importJsonFiles = useCallback(
+    async (files: File[]) => {
+      const jsonFiles = files.filter(
+        (file) =>
+          file.name.toLowerCase().endsWith(".json") || file.type.includes("json"),
+      );
+      if (!jsonFiles.length) {
+        setError("Drop one or more .json script files.");
+        return;
+      }
+
+      setBusy(true);
+      setError(null);
+      setImportNotice(null);
+      const failures: string[] = [];
+      let imported = 0;
+
+      for (const file of jsonFiles) {
+        try {
+          const script = prepareScriptImport(await file.text());
+          const summary = buildScriptSummary(script);
+          const title =
+            (typeof script.title === "string" && script.title.trim()) ||
+            summary.title ||
+            file.name.replace(/\.json$/i, "");
+          const project = await createProject(title || undefined);
+          await uploadScriptPayload(script, project.id);
+          imported += 1;
+        } catch (err) {
+          failures.push(
+            `${file.name}: ${err instanceof Error ? err.message : "import failed"}`,
+          );
+        }
+      }
+
+      await refresh({ silent: true });
+      if (imported > 0) {
+        setImportNotice(
+          `Imported ${imported} script${imported === 1 ? "" : "s"} — voice → segments → b-roll runs automatically.`,
+        );
+      }
+      if (failures.length) {
+        setError(failures.join(" · "));
+      }
+      setBusy(false);
+    },
+    [refresh],
+  );
+
+  const onDragEnter = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current += 1;
+    if (event.dataTransfer.types.includes("Files")) {
+      setDragging(true);
+    }
+  };
+
+  const onDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragging(false);
+  };
+
+  const onDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = 0;
+    setDragging(false);
+    const files = Array.from(event.dataTransfer.files || []);
+    void importJsonFiles(files);
+  };
+
   return (
-    <section className="page-container flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10">
+    <section
+      className="page-container relative flex min-h-[calc(100vh-3.5rem)] w-full flex-col justify-center py-10"
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {dragging ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--accent)] bg-[rgba(8,12,24,0.72)] backdrop-blur-[2px]">
+          <p className="text-lg font-semibold text-[var(--foreground)]">
+            Drop JSON scripts to create projects
+          </p>
+        </div>
+      ) : null}
+
       <div className="glow-card w-full p-6 lg:p-8">
         <div className="flex flex-col gap-3">
           <div>
             <h2 className="glow-title text-3xl font-bold tracking-tight">Projects</h2>
             <p className="mt-3 max-w-2xl text-[0.95rem] leading-7 text-[var(--muted)]">
-              All progress and files live inside each project. Pick one to continue or start a new
-              pipeline.
+              Drop one or more script JSON files anywhere on this page to import. Pipeline runs
+              automatically through b-roll and duplicate clearing — export stays manual after you
+              refetch at least one clip.
             </p>
           </div>
         </div>
@@ -148,12 +325,14 @@ export function ProjectPicker() {
         ) : projects.length ? (
           <ul className="mt-8 space-y-3">
             {projects.map((project) => {
-              const running = project.timestamps_job.status === "running";
+              const bar = progressPercent(project);
               const expiresAt = project.expires_at ?? null;
               const remainingMs = expiresAt ? expiresAt * 1000 - now : null;
               const expiringSoon = remainingMs != null && remainingMs < DAY_MS;
               const confirming = confirmId === project.id;
               const deleting = deletingId === project.id;
+              const exporting = exportingId === project.id;
+              const canExport = project.list_status === "ready_for_export";
               return (
                 <li key={project.id}>
                   <div
@@ -169,7 +348,9 @@ export function ProjectPicker() {
                       onClick={() => openProject(project)}
                       className="flex min-w-0 flex-1 items-start gap-3 text-left"
                     >
-                      {project.viewer_ready ? (
+                      {project.list_status === "complete" ||
+                      project.list_status === "ready_for_export" ||
+                      project.list_status === "ready_for_refetch" ? (
                         <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
                       ) : (
                         <FolderOpen className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
@@ -187,24 +368,39 @@ export function ProjectPicker() {
                             {formatExpiry(expiresAt, now)}
                           </p>
                         ) : null}
-                        {running ? (
+                        {bar != null ? (
                           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-raised)]">
                             <div
                               className="h-full rounded-full bg-[var(--accent)]"
                               style={{
-                                width: `${Math.min(100, Math.max(0, project.timestamps_job.progress_percent ?? 0))}%`,
+                                width: `${Math.min(100, Math.max(0, bar))}%`,
                               }}
                             />
                           </div>
                         ) : null}
                       </div>
                     </button>
-                    <div className="flex items-center gap-3 sm:shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                       <span className="text-xs text-[var(--muted)]">
                         {project.viewer_ready
                           ? `${project.aligned_segments}/${project.segment_count} segments`
                           : project.title || project.id.slice(0, 8)}
                       </span>
+                      {canExport ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleExport(project)}
+                          disabled={exporting || busy}
+                          className="glow-btn-primary inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-xs font-semibold disabled:opacity-55"
+                        >
+                          {exporting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                          Export
+                        </button>
+                      ) : null}
                       {confirming ? (
                         <div className="flex items-center gap-1.5">
                           <button
@@ -248,9 +444,15 @@ export function ProjectPicker() {
           </ul>
         ) : (
           <p className="mt-8 text-sm text-[var(--muted)]">
-            No projects yet. Create one to import your script and narration.
+            No projects yet. Drop JSON scripts here or create one to import your script.
           </p>
         )}
+
+        {importNotice ? (
+          <p className="mt-6 rounded-[10px] border border-[rgba(80,200,120,0.35)] bg-[rgba(80,200,120,0.08)] px-4 py-3 text-sm text-[#b8f0c8]">
+            {importNotice}
+          </p>
+        ) : null}
 
         {error ? (
           <p className="mt-6 rounded-[10px] border border-[rgba(255,107,107,0.35)] bg-[rgba(255,107,107,0.08)] px-4 py-3 text-sm text-[#ffc9c9]">
