@@ -704,6 +704,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
         tts_job = dict(_get_tts_state_unlocked(workspace))
 
     from pipeline_jobs import (
+        broll_rows_for_duplicates,
         compute_broll_counts,
         compute_list_status,
         pipeline_job_snapshot,
@@ -737,7 +738,9 @@ def project_status(workspace: Path) -> dict[str, Any]:
             rows = build_segment_rows(paths["script"], paths["timestamps"], paths["selections"])
             broll_fetched, broll_total = compute_broll_counts(rows)
             if broll_total > 0 and broll_fetched >= broll_total:
-                duplicates_remaining = len(find_duplicate_clips(rows))
+                duplicates_remaining = len(
+                    find_duplicate_clips(broll_rows_for_duplicates(rows))
+                )
         except Exception:
             pass
 

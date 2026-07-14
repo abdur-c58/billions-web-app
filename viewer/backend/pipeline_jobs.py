@@ -134,11 +134,27 @@ def load_all_pipeline_job_states(workspace_root: Path) -> None:
 
 
 def segment_needs_broll(segment: dict[str, Any]) -> bool:
+    """True when export needs a stock/API clip for this segment.
+
+    Full-frame Remotion (TitleCard / layout=full) is rendered at export time and
+    should not block Ready for export. Overlay / split Remotion still need b-roll.
+    """
     if segment.get("render_mode") != "remotion":
         return True
     remotion = segment.get("remotion") or {}
     layout = str(remotion.get("layout") or "").strip().lower()
-    return layout in {"split-right", "overlay"}
+    if layout in {"split-right", "overlay"}:
+        return True
+    if layout == "full":
+        return False
+    # Match frontend remotionLayout() defaults when layout is omitted.
+    composition = str(remotion.get("composition") or "").strip()
+    if composition == "FactCard":
+        return True
+    if composition == "TitleCard":
+        return False
+    # Remotion without layout/composition defaults to full-frame.
+    return False
 
 
 def segment_has_broll_coverage(segment: dict[str, Any]) -> bool:
@@ -155,6 +171,11 @@ def compute_broll_counts(rows: list[dict[str, Any]]) -> tuple[int, int]:
     return fetched, total
 
 
+def broll_rows_for_duplicates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Only count duplicates among segments that actually need b-roll clips."""
+    return [row for row in rows if segment_needs_broll(row)]
+
+
 def _timed_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     timed: list[dict[str, Any]] = []
     for row in rows:
@@ -168,7 +189,7 @@ def _timed_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _duplicate_segment_ids(rows: list[dict[str, Any]]) -> list[int]:
     from flagged_clips import find_duplicate_clips
 
-    duplicates = find_duplicate_clips(rows)
+    duplicates = find_duplicate_clips(broll_rows_for_duplicates(rows))
     ids: set[int] = set()
     for group in duplicates:
         for segment_id in group.get("segment_ids") or []:

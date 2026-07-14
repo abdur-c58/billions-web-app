@@ -3,12 +3,20 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { apiFetch, sleep } from "@/lib/api";
+import { apiFetch, isRetryableFetchError, retryDelayMs, sleep } from "@/lib/api";
 import type { DuplicateClip, DuplicatesPayload } from "@/lib/types";
 
 type FetchProvider = "mix" | "commons";
 
 const REFETCH_DELAY_MS = 250;
+const MAX_FETCH_ATTEMPTS = 3;
+
+type BulkProgress = {
+  label: string;
+  done: number;
+  total: number;
+  currentSegmentId: number | null;
+};
 
 function formatGap(seconds: number): string {
   const total = Math.max(0, Math.round(seconds));
@@ -19,6 +27,18 @@ function formatGap(seconds: number): string {
   return `${minutes}m ${rem}s`;
 }
 
+/** Keep the first occurrence of each duplicate clip; refetch the rest. */
+function segmentIdsToRefetch(clips: DuplicateClip[]): number[] {
+  const ids = new Set<number>();
+  for (const clip of clips) {
+    const sorted = [...clip.segment_ids].sort((a, b) => a - b);
+    for (const segmentId of sorted.slice(1)) {
+      ids.add(segmentId);
+    }
+  }
+  return [...ids].sort((a, b) => a - b);
+}
+
 export default function DuplicatesPage() {
   const [duplicates, setDuplicates] = useState<DuplicateClip[]>([]);
   const [summary, setSummary] = useState({ total_groups: 0, total_segments_affected: 0 });
@@ -27,6 +47,7 @@ export default function DuplicatesPage() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState<BulkProgress | null>(null);
 
   const loadDuplicates = useCallback(async () => {
     try {
@@ -85,22 +106,83 @@ export default function DuplicatesPage() {
     setSelectedKeys(new Set());
   };
 
+  const fetchSegmentWithRetry = async (segmentId: number, provider: FetchProvider) => {
+    // Backend treats unknown providers (including "commons") as mix.
+    const apiProvider = provider === "commons" ? "mix" : provider;
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+      try {
+        await apiFetch(
+          `/api/fetch?segment_id=${segmentId}&refetch=true&provider=${apiProvider}`,
+        );
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt >= MAX_FETCH_ATTEMPTS) break;
+        if (!isRetryableFetchError(err)) break;
+        await sleep(retryDelayMs(attempt, err));
+      }
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`Failed to refetch segment ${segmentId}`);
+  };
+
   const refetchSegmentIds = async (
     segmentIds: number[],
     provider: FetchProvider,
     actionLabel: string,
   ) => {
+    if (!segmentIds.length) {
+      setStatus("Nothing to refetch — each selected batch only has one keepable segment.");
+      return;
+    }
+
+    const failures: string[] = [];
+    setProgress({
+      label: actionLabel,
+      done: 0,
+      total: segmentIds.length,
+      currentSegmentId: segmentIds[0] ?? null,
+    });
+
     for (let index = 0; index < segmentIds.length; index += 1) {
       const segmentId = segmentIds[index];
-      await apiFetch(
-        `/api/fetch?segment_id=${segmentId}&refetch=true&provider=${provider}`,
-      );
+      setProgress({
+        label: actionLabel,
+        done: index,
+        total: segmentIds.length,
+        currentSegmentId: segmentId,
+      });
+      try {
+        await fetchSegmentWithRetry(segmentId, provider);
+      } catch (err) {
+        failures.push(
+          `#${segmentId}: ${err instanceof Error ? err.message : "failed"}`,
+        );
+      }
       if (index < segmentIds.length - 1) {
         await sleep(REFETCH_DELAY_MS);
       }
     }
+
+    setProgress({
+      label: actionLabel,
+      done: segmentIds.length,
+      total: segmentIds.length,
+      currentSegmentId: null,
+    });
+
     await loadDuplicates();
-    setStatus(`${actionLabel} (${segmentIds.length} segment${segmentIds.length === 1 ? "" : "s"})`);
+
+    const ok = segmentIds.length - failures.length;
+    setStatus(
+      `${actionLabel}: ${ok}/${segmentIds.length} segment${segmentIds.length === 1 ? "" : "s"} updated` +
+        (failures.length ? ` · ${failures.length} failed` : ""),
+    );
+    if (failures.length) {
+      setError(failures.slice(0, 4).join(" · ") + (failures.length > 4 ? "…" : ""));
+    }
   };
 
   const refetchSegments = async (
@@ -112,35 +194,34 @@ export default function DuplicatesPage() {
     setStatus(null);
     setError(null);
     try {
-      await refetchSegmentIds(clip.segment_ids, provider, actionLabel);
+      await refetchSegmentIds(segmentIdsToRefetch([clip]), provider, actionLabel);
     } catch (err) {
       setError(err instanceof Error ? err.message : `${actionLabel} failed`);
     } finally {
       setBusyKey(null);
+      setProgress(null);
     }
   };
 
   const refetchSelected = async (provider: FetchProvider) => {
     if (!selectedClips.length) return;
 
-    const segmentIds = [
-      ...new Set(selectedClips.flatMap((clip) => clip.segment_ids)),
-    ].sort((a, b) => a - b);
-
+    const segmentIds = segmentIdsToRefetch(selectedClips);
     setBulkBusy(true);
     setStatus(null);
     setError(null);
     try {
       const label =
         provider === "commons"
-          ? `Refetched commons for ${selectedClips.length} selected batch${selectedClips.length === 1 ? "" : "es"}`
-          : `Refetched ${selectedClips.length} selected batch${selectedClips.length === 1 ? "" : "es"}`;
+          ? `Refetch selected (${selectedClips.length} batch${selectedClips.length === 1 ? "" : "es"})`
+          : `Refetch selected (${selectedClips.length} batch${selectedClips.length === 1 ? "" : "es"})`;
       await refetchSegmentIds(segmentIds, provider, label);
       setSelectedKeys(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bulk refetch failed");
     } finally {
       setBulkBusy(false);
+      setProgress(null);
     }
   };
 
@@ -172,9 +253,22 @@ export default function DuplicatesPage() {
     setBulkBusy(true);
     setStatus(null);
     setError(null);
+    setProgress({
+      label: "Flagging selected",
+      done: 0,
+      total: selectedClips.length,
+      currentSegmentId: null,
+    });
     try {
-      for (const clip of selectedClips) {
+      for (let index = 0; index < selectedClips.length; index += 1) {
+        const clip = selectedClips[index];
         const segmentId = clip.segment_ids[0];
+        setProgress({
+          label: "Flagging selected",
+          done: index,
+          total: selectedClips.length,
+          currentSegmentId: segmentId ?? null,
+        });
         if (segmentId == null) continue;
         await apiFetch("/api/flagged", {
           method: "POST",
@@ -183,6 +277,12 @@ export default function DuplicatesPage() {
         });
         await sleep(REFETCH_DELAY_MS);
       }
+      setProgress({
+        label: "Flagging selected",
+        done: selectedClips.length,
+        total: selectedClips.length,
+        currentSegmentId: null,
+      });
       await loadDuplicates();
       setStatus(`Flagged ${selectedClips.length} selected clip${selectedClips.length === 1 ? "" : "s"}`);
       setSelectedKeys(new Set());
@@ -190,10 +290,15 @@ export default function DuplicatesPage() {
       setError(err instanceof Error ? err.message : "Bulk flag failed");
     } finally {
       setBulkBusy(false);
+      setProgress(null);
     }
   };
 
   const anyBusy = bulkBusy || busyKey !== null;
+  const progressPercent =
+    progress && progress.total > 0
+      ? Math.round((progress.done / progress.total) * 100)
+      : 0;
 
   return (
     <main className="page-container w-full py-6 text-[var(--foreground)]">
@@ -202,8 +307,8 @@ export default function DuplicatesPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Duplicate clips</h1>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Clips selected on more than one segment. Refetch or flag them to reduce reuse in the
-              final video.
+              Clips selected on more than one segment. Refetch keeps the first use and replaces the
+              rest so reuse drops in the final video.
             </p>
             {summary.total_groups > 0 ? (
               <p className="glow-accent-text mt-1 text-sm text-[var(--accent)]">
@@ -251,7 +356,11 @@ export default function DuplicatesPage() {
               <button
                 type="button"
                 disabled={anyBusy || selectedKeys.size === 0}
-                onClick={() => void refetchSelected("mix")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void refetchSelected("mix");
+                }}
                 className="glow-btn-primary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:opacity-55"
               >
                 {bulkBusy ? "Working…" : "Refetch selected"}
@@ -259,7 +368,11 @@ export default function DuplicatesPage() {
               <button
                 type="button"
                 disabled={anyBusy || selectedKeys.size === 0}
-                onClick={() => void refetchSelected("commons")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void refetchSelected("commons");
+                }}
                 className="glow-btn-secondary rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:opacity-55"
               >
                 Refetch selected (commons)
@@ -267,11 +380,35 @@ export default function DuplicatesPage() {
               <button
                 type="button"
                 disabled={anyBusy || selectedKeys.size === 0}
-                onClick={() => void flagSelected()}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void flagSelected();
+                }}
                 className="glow-btn-flag rounded-[10px] px-3.5 py-2.5 text-sm font-semibold disabled:opacity-55"
               >
                 Flag selected
               </button>
+            </div>
+          </div>
+        ) : null}
+
+        {progress ? (
+          <div className="glow-card mb-4 rounded-[14px] p-4">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-[var(--foreground)]">
+                {progress.label}
+                {progress.currentSegmentId != null ? ` · segment #${progress.currentSegmentId}` : ""}
+              </span>
+              <span className="tabular-nums text-[var(--muted)]">
+                {progress.done}/{progress.total} · {progressPercent}%
+              </span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-200"
+                style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+              />
             </div>
           </div>
         ) : null}

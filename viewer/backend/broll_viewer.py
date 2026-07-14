@@ -113,6 +113,7 @@ from user_sessions import (
     project_workspace,
     prune_stale_projects,
     read_manifest,
+    touch_manifest,
 )
 from youtube_audio_job import (
     get_youtube_audio_job,
