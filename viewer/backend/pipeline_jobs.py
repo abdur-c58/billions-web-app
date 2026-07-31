@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from pathlib import Path
 from typing import Any
 
@@ -13,11 +13,17 @@ from project_manager import workspace_paths
 
 PIPELINE_JOB_NAME = ".broll_pipeline.json"
 STALE_JOB_SECONDS = 30 * 60
+# If fetched/cleared count doesn't move for this long while status=running,
+# treat the worker as silently hung and restart the pipeline.
+PROGRESS_STALL_SECONDS = 60
 MAX_DUPLICATE_PASSES = 10
 FETCH_CONCURRENCY = 2
 
 _pipeline_lock = threading.Lock()
 _pipeline_states: dict[str, dict[str, Any]] = {}
+# Bumped every time a new worker is launched for a workspace so a hung
+# previous worker stops writing state / claiming work.
+_pipeline_run_ids: dict[str, int] = {}
 
 _default_pipeline_state: dict[str, Any] = {
     "status": "idle",
@@ -25,6 +31,7 @@ _default_pipeline_state: dict[str, Any] = {
     "error": None,
     "started_at": None,
     "updated_at": None,
+    "progress_changed_at": None,
     "progress_percent": 0,
     "stage": "idle",
     "done": 0,
@@ -86,7 +93,15 @@ def _persist_state(workspace: Path) -> None:
 def _set_pipeline_state(workspace: Path, **kwargs: Any) -> None:
     with _pipeline_lock:
         state = _get_state_unlocked(workspace)
-        kwargs["updated_at"] = time.time()
+        now = time.time()
+        kwargs["updated_at"] = now
+        # Track when fetch/clear progress actually moves so we can detect
+        # silent hangs (status stays "running" but done/cleared never changes).
+        progress_keys = ("done", "cleared", "total", "clear_total", "stage")
+        if any(key in kwargs and kwargs[key] != state.get(key) for key in progress_keys):
+            kwargs["progress_changed_at"] = now
+        elif state.get("progress_changed_at") is None and kwargs.get("status") == "running":
+            kwargs["progress_changed_at"] = now
         state.update(kwargs)
     _persist_state(workspace)
 
@@ -94,6 +109,42 @@ def _set_pipeline_state(workspace: Path, **kwargs: Any) -> None:
 def pipeline_job_snapshot(workspace: Path) -> dict[str, Any]:
     with _pipeline_lock:
         return dict(_get_state_unlocked(workspace))
+
+
+def is_pipeline_stalled(workspace: Path, *, stall_seconds: float = PROGRESS_STALL_SECONDS) -> bool:
+    """True when status=running but done/cleared hasn't moved for stall_seconds."""
+    state = pipeline_job_snapshot(workspace)
+    if str(state.get("status") or "") != "running":
+        return False
+    marker = state.get("progress_changed_at") or state.get("updated_at") or state.get("started_at")
+    if not marker:
+        return False
+    return (time.time() - float(marker)) >= stall_seconds
+
+
+def interrupt_stalled_pipeline(workspace: Path) -> bool:
+    """Mark a hung running pipeline as interrupted so it can be restarted.
+
+    Returns True if the job was interrupted.
+    """
+    if not is_pipeline_stalled(workspace):
+        return False
+    state = pipeline_job_snapshot(workspace)
+    done = int(state.get("done") or 0)
+    total = int(state.get("total") or 0)
+    # Invalidate any hung worker so it stops writing after this point.
+    key = _workspace_key(workspace)
+    with _pipeline_lock:
+        _pipeline_run_ids[key] = int(_pipeline_run_ids.get(key, 0)) + 1
+    _set_pipeline_state(
+        workspace,
+        status="interrupted",
+        stage="interrupted",
+        message=f"B-roll fetch stalled at {done}/{total} — restarting…",
+        error=f"No progress for {PROGRESS_STALL_SECONDS}s while fetching ({done}/{total}).",
+    )
+    print(f"[pipeline] Stalled fetch interrupted for {workspace.name} at {done}/{total}")
+    return True
 
 
 def reset_pipeline_job_state(workspace: Path) -> None:
@@ -214,6 +265,16 @@ def _duplicate_segment_ids(rows: list[dict[str, Any]]) -> list[int]:
     return sorted(ids)
 
 
+def as_completed_wait(
+    pending: set[Any], *, timeout: float
+) -> tuple[set[Any], set[Any]]:
+    """Wait up to timeout for at least one future; return (done, still_pending)."""
+    if not pending:
+        return set(), set()
+    done, not_done = wait(pending, timeout=timeout, return_when=FIRST_COMPLETED)
+    return done, not_done
+
+
 def compute_list_status(
     *,
     script_exists: bool,
@@ -283,6 +344,12 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
     if not paths["script"].exists() or not paths["timestamps"].exists():
         raise RuntimeError("Script and timestamps are required before b-roll pipeline.")
 
+    # If a "running" job hasn't moved progress in PROGRESS_STALL_SECONDS, treat
+    # it as hung and reclaim the slot so we can restart from the current
+    # fetched count instead of waiting forever on a dead worker.
+    interrupt_stalled_pipeline(workspace)
+
+    key = _workspace_key(workspace)
     # Claim "running" atomically under the lock so a direct call (e.g. right
     # after Whisper finishes) and a concurrent watchdog scan can never both
     # pass the check and launch duplicate pipeline runs for the same project.
@@ -291,6 +358,8 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
         if state.get("status") == "running":
             return dict(state)
         state["status"] = "running"
+        run_id = int(_pipeline_run_ids.get(key, 0)) + 1
+        _pipeline_run_ids[key] = run_id
 
     _set_pipeline_state(
         workspace,
@@ -299,12 +368,17 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
         message="Starting b-roll fetch…",
         error=None,
         started_at=time.time(),
+        progress_changed_at=time.time(),
         progress_percent=0,
         done=0,
         total=0,
         cleared=0,
         clear_total=0,
     )
+
+    def still_current() -> bool:
+        with _pipeline_lock:
+            return _pipeline_run_ids.get(key) == run_id
 
     def worker() -> None:
         try:
@@ -329,9 +403,13 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 )
 
             def fetch_row(row: dict[str, Any], *, refetch: bool) -> None:
+                if not still_current():
+                    raise RuntimeError("Pipeline superseded by a newer run.")
                 segment_id = int(row["segment_id"])
 
                 def do_fetch() -> None:
+                    if not still_current():
+                        raise RuntimeError("Pipeline superseded by a newer run.")
                     fetch_segment_video(
                         paths["selections"],
                         paths["script"],
@@ -346,6 +424,9 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     )
 
                 run_with_retry(do_fetch, label=f"segment-{segment_id}")
+
+            if not still_current():
+                return
 
             rows = load_rows()
             missing = [
@@ -371,34 +452,53 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 still_failed: list[int] = []
                 if not batch:
                     return still_failed
-                with ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY) as pool:
+                # Don't use `with ThreadPoolExecutor` — its shutdown(wait=True) would
+                # block forever on a hung HTTP fetch and prevent the stall watchdog
+                # from launching a replacement worker. shutdown(wait=False) lets us
+                # abandon hung futures after still_current() flips.
+                pool = ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY)
+                try:
                     futures = {pool.submit(fetch_row, row, refetch=False): row for row in batch}
-                    for future in as_completed(futures):
-                        row = futures[future]
-                        segment_id = int(row["segment_id"])
-                        try:
-                            future.result()
-                            fetched_ok_nonlocal[0] += 1
-                        except Exception as exc:
-                            print(f"[pipeline] fetch failed segment {segment_id}: {exc}")
-                            still_failed.append(segment_id)
-                        _set_pipeline_state(
-                            workspace,
-                            stage="fetch_broll",
-                            message=f"Fetching b-roll ({fetched_ok_nonlocal[0]}/{needed_total})…",
-                            done=fetched_ok_nonlocal[0],
-                            total=needed_total,
-                            failed_segment_ids=sorted(set(still_failed + failed_ids)),
-                            progress_percent=int(
-                                (fetched_ok_nonlocal[0] / max(needed_total, 1)) * 70
-                            ),
-                        )
+                    pending = set(futures.keys())
+                    while pending:
+                        if not still_current():
+                            for future in pending:
+                                future.cancel()
+                            return still_failed
+                        done_set, pending = as_completed_wait(pending, timeout=5.0)
+                        for future in done_set:
+                            row = futures[future]
+                            segment_id = int(row["segment_id"])
+                            try:
+                                future.result()
+                                fetched_ok_nonlocal[0] += 1
+                            except Exception as exc:
+                                print(f"[pipeline] fetch failed segment {segment_id}: {exc}")
+                                still_failed.append(segment_id)
+                            if still_current():
+                                _set_pipeline_state(
+                                    workspace,
+                                    stage="fetch_broll",
+                                    message=f"Fetching b-roll ({fetched_ok_nonlocal[0]}/{needed_total})…",
+                                    done=fetched_ok_nonlocal[0],
+                                    total=needed_total,
+                                    failed_segment_ids=sorted(set(still_failed + failed_ids)),
+                                    progress_percent=int(
+                                        (fetched_ok_nonlocal[0] / max(needed_total, 1)) * 70
+                                    ),
+                                )
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
                 return still_failed
 
             fetched_ok_nonlocal = [fetched_ok]
             failed_ids = fetch_batch(missing)
+            if not still_current():
+                return
             retry_round = 0
             while failed_ids and retry_round < 5:
+                if not still_current():
+                    return
                 retry_round += 1
                 rows_by_id = {int(row["segment_id"]): row for row in load_rows()}
                 retry_rows = [
@@ -409,6 +509,8 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 failed_ids = fetch_batch(retry_rows)
                 if failed_ids:
                     time.sleep(3.0)
+            if not still_current():
+                return
             fetched_ok = fetched_ok_nonlocal[0]
 
             rows = load_rows()
@@ -466,12 +568,16 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
 
             cleared_cleanly = False
             for _pass_index in range(MAX_DUPLICATE_PASSES):
+                if not still_current():
+                    return
                 rows = load_rows()
                 affected = _duplicate_segment_ids(rows)
                 if not affected:
                     cleared_cleanly = True
                     break
                 for segment_id in affected:
+                    if not still_current():
+                        return
                     row = next((r for r in rows if int(r["segment_id"]) == segment_id), None)
                     if row is None or not segment_needs_broll(row):
                         continue
@@ -480,17 +586,21 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     except Exception as exc:
                         print(f"[pipeline] duplicate refetch failed segment {segment_id}: {exc}")
                     cleared_ids.add(segment_id)
-                    _set_pipeline_state(
-                        workspace,
-                        stage="clear_duplicates",
-                        message=f"Clearing duplicates ({len(cleared_ids)}/{max(clear_total, 1)})…",
-                        cleared=len(cleared_ids),
-                        clear_total=max(clear_total, len(cleared_ids)),
-                        progress_percent=min(
-                            99,
-                            75 + int((len(cleared_ids) / max(clear_total, 1)) * 24),
-                        ),
-                    )
+                    if still_current():
+                        _set_pipeline_state(
+                            workspace,
+                            stage="clear_duplicates",
+                            message=f"Clearing duplicates ({len(cleared_ids)}/{max(clear_total, 1)})…",
+                            cleared=len(cleared_ids),
+                            clear_total=max(clear_total, len(cleared_ids)),
+                            progress_percent=min(
+                                99,
+                                75 + int((len(cleared_ids) / max(clear_total, 1)) * 24),
+                            ),
+                        )
+
+            if not still_current():
+                return
 
             rows = load_rows()
             remaining_dupes = len(_duplicate_segment_ids(rows))
@@ -544,6 +654,10 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
             if automation_goal == "auto_export":
                 _nudge_export_queue(workspace)
         except BaseException as exc:
+            if not still_current():
+                return
+            if "superseded" in str(exc).lower():
+                return
             _set_pipeline_state(
                 workspace,
                 status="interrupted",

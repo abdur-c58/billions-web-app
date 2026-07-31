@@ -11,7 +11,12 @@ from typing import Any
 from automation_settings import automation_enabled, read_automation_settings
 from export_job_state import project_export_running, read_export_state_file, update_export_state
 from export_runner import start_export_for_workspace, wait_for_export_done
-from pipeline_jobs import pipeline_job_snapshot, start_broll_pipeline
+from pipeline_jobs import (
+    interrupt_stalled_pipeline,
+    is_pipeline_stalled,
+    pipeline_job_snapshot,
+    start_broll_pipeline,
+)
 from project_manager import (
     project_status,
     start_audio_generation,
@@ -164,6 +169,13 @@ def _maybe_start_pipeline(
         return
     pipeline = pipeline_job_snapshot(workspace)
     pipeline_status = str(pipeline.get("status") or "idle")
+    # Hung fetch: count hasn't moved for PROGRESS_STALL_SECONDS. Interrupt so
+    # the restart path below can reclaim the slot — without this, a "running"
+    # status that is silently stuck would be skipped forever.
+    if pipeline_status == "running" and is_pipeline_stalled(workspace):
+        interrupt_stalled_pipeline(workspace)
+        pipeline = pipeline_job_snapshot(workspace)
+        pipeline_status = str(pipeline.get("status") or "idle")
     if pipeline_status == "running":
         return
     list_status = str(status.get("list_status") or "")

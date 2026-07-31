@@ -202,9 +202,23 @@ def export_snapshot(project_id: str, status_file: Path) -> dict[str, Any]:
         return enrich_export_state(dict(state))
 
 
-def update_export_state(project_id: str, status_file: Path, **kwargs: Any) -> dict[str, Any]:
-    # project_id is already the positional arg — remove it from kwargs if a caller
-    # accidentally passed it as a keyword arg too (avoids "multiple values" TypeError).
+def update_export_state(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Update per-project export state.
+
+    Call as ``update_export_state(project_id, status_file, **fields)``.
+    A ``project_id`` in kwargs is ignored so callers that pass it both
+    positionally and as a keyword never crash with
+    ``got multiple values for argument 'project_id'``.
+    """
+    if len(args) >= 2:
+        project_id = str(args[0])
+        status_file = Path(args[1])
+    elif len(args) == 1:
+        project_id = str(args[0])
+        status_file = Path(kwargs.pop("status_file"))
+    else:
+        project_id = str(kwargs.pop("project_id"))
+        status_file = Path(kwargs.pop("status_file"))
     kwargs.pop("project_id", None)
 
     with _export_lock:
