@@ -1416,6 +1416,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             project_name = title or project_id[:8]
 
         def set_state(**kwargs: Any) -> None:
+            kwargs.pop("project_id", None)
             update_export_state(project_id, status_file, **kwargs)
 
         set_state(

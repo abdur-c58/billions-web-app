@@ -65,6 +65,10 @@ def start_export_for_workspace(
     cancel_event = get_cancel_event(project_id)
 
     def set_state(**kwargs: Any) -> None:
+        # project_id is already the first positional arg to update_export_state —
+        # never pass it again as a keyword or Python raises TypeError before the
+        # function body (and its kwargs.pop guard) can run.
+        kwargs.pop("project_id", None)
         update_export_state(project_id, status_file, **kwargs)
 
     set_state(
@@ -81,7 +85,6 @@ def start_export_for_workspace(
         elapsed_seconds=0,
         eta_seconds=None,
         hardware=None,
-        project_id=project_id,
         project_name=project_name,
         download_started_at=None,
         render_started_at=None,
