@@ -39,6 +39,20 @@ def _workspace_key(workspace: Path) -> str:
     return str(workspace.resolve())
 
 
+def _nudge_export_queue(workspace: Path) -> None:
+    """Queue export immediately once b-roll is ready, instead of waiting up to
+    WATCHDOG_INTERVAL_SECONDS for the next automation scan to notice."""
+    try:
+        from automation_orchestrator import enqueue_export
+        from user_sessions import parse_workspace_scope
+
+        project_id = parse_workspace_scope(workspace)
+        if project_id:
+            enqueue_export(project_id)
+    except Exception as exc:
+        print(f"[pipeline] Could not nudge export queue: {exc}")
+
+
 def _fresh_pipeline_state() -> dict[str, Any]:
     return dict(_default_pipeline_state)
 
@@ -433,6 +447,8 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     clear_total=0,
                     progress_percent=100,
                 )
+                if automation_goal == "auto_export":
+                    _nudge_export_queue(workspace)
                 return
 
             clear_total = len(initial_ids)
@@ -525,6 +541,8 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 clear_total=max(clear_total, len(cleared_ids)),
                 progress_percent=100,
             )
+            if automation_goal == "auto_export":
+                _nudge_export_queue(workspace)
         except BaseException as exc:
             _set_pipeline_state(
                 workspace,

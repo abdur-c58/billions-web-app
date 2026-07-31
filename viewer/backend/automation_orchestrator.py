@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from automation_settings import automation_enabled, read_automation_settings
-from export_job_state import project_export_running, read_export_state_file
+from export_job_state import project_export_running, read_export_state_file, update_export_state
 from export_runner import start_export_for_workspace, wait_for_export_done
 from pipeline_jobs import pipeline_job_snapshot, start_broll_pipeline
 from project_manager import (
@@ -18,6 +18,7 @@ from project_manager import (
     start_segment_timestamps,
     timestamps_job_snapshot,
     tts_job_snapshot,
+    workspace_paths,
 )
 from user_sessions import list_projects, project_workspace, read_manifest, touch_manifest
 
@@ -162,6 +163,7 @@ def _maybe_queue_export(
         return
     if list_status == "ready_for_export":
         enqueue_export(project_id)
+        print(f"[automation] Queued export for {project_id}")
     elif list_status == "complete":
         return
     elif list_status == "ready_for_refetch" and status.get("broll_fetched", 0) >= status.get(
@@ -170,15 +172,26 @@ def _maybe_queue_export(
         # Auto-export path: bypass manual refetch gate once b-roll is complete.
         touch_manifest(workspace, manual_refetch_done=True)
         enqueue_export(project_id)
+        print(f"[automation] Queued export for {project_id} (auto-bypassed refetch gate)")
 
 
 def _resume_single_project(
     workspace_root: Path, workspace: Path, project_id: str, *, force: bool
 ) -> None:
-    _maybe_start_tts(workspace_root, workspace, project_id, force=force)
-    _maybe_start_whisper(workspace_root, workspace, project_id, force=force)
-    _maybe_start_pipeline(workspace_root, workspace, project_id, force=force)
-    _maybe_queue_export(workspace_root, workspace, project_id, force=force)
+    # Each stage is isolated: a failure computing status for one stage (e.g. a
+    # transient file-read error) must never prevent later stages — most
+    # importantly _maybe_queue_export — from running in the same pass. Without
+    # this, one bad step silently stalls automation for the rest of the scan.
+    for stage_fn in (
+        _maybe_start_tts,
+        _maybe_start_whisper,
+        _maybe_start_pipeline,
+        _maybe_queue_export,
+    ):
+        try:
+            stage_fn(workspace_root, workspace, project_id, force=force)
+        except Exception as exc:
+            print(f"[automation] {stage_fn.__name__} failed for {project_id}: {exc}")
 
 
 def scan_projects(workspace_root: Path, *, force: bool = False) -> None:
@@ -213,11 +226,31 @@ def _export_worker_loop(workspace_root: Path) -> None:
         _set_exporting(project_id)
         try:
             for attempt in range(1, EXPORT_RETRY_ATTEMPTS + 2):
-                if project_export_running(project_id):
-                    state = wait_for_export_done(workspace, project_id)
-                else:
-                    start_export_for_workspace(workspace, project_id)
-                    state = wait_for_export_done(workspace, project_id)
+                try:
+                    if project_export_running(project_id):
+                        state = wait_for_export_done(workspace, project_id)
+                    else:
+                        start_export_for_workspace(workspace, project_id)
+                        state = wait_for_export_done(workspace, project_id)
+                except Exception as exc:
+                    # A failure here (e.g. bad script/timestamps JSON, missing
+                    # deps) happens before the export worker thread can record
+                    # its own error — persist it ourselves so it's never a
+                    # silent, invisible retry loop in the UI.
+                    message = f"Export failed to start: {exc}"
+                    try:
+                        status_file = workspace_paths(workspace)["export_status"]
+                        update_export_state(
+                            project_id,
+                            status_file,
+                            status="error",
+                            stage="error",
+                            message=message,
+                            error=message,
+                        )
+                    except Exception:
+                        pass
+                    state = {"status": "error", "error": message}
                 if str(state.get("status")) == "done":
                     print(f"[automation] Export complete for {project_id}")
                     break

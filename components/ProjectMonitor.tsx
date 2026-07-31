@@ -14,19 +14,44 @@ import { cn } from "@/lib/utils";
 
 const MONITOR_POLL_MS = 4000;
 
+/**
+ * Only surface a job's `error` text when that job is *currently* in a failed
+ * state. Job state files keep the last error message around for history even
+ * after the job succeeds on a later attempt (e.g. after the orchestrator
+ * automatically resumes it) — showing that stale text as if it were live
+ * made a fully-recovered, healthy project look broken.
+ */
 function projectError(project: ProjectSummary): string | null {
-  return (
-    project.tts_job?.error ||
-    project.timestamps_job?.error ||
-    project.pipeline_job?.error ||
-    project.export_job?.error ||
-    null
-  );
+  if (project.tts_job?.status === "error" && project.tts_job.error) {
+    return project.tts_job.error;
+  }
+  if (project.timestamps_job?.status === "error" && project.timestamps_job.error) {
+    return project.timestamps_job.error;
+  }
+  const pipelineStatus = project.pipeline_job?.status;
+  if (
+    (pipelineStatus === "error" || pipelineStatus === "interrupted" || pipelineStatus === "warning") &&
+    project.pipeline_job?.error
+  ) {
+    return project.pipeline_job.error;
+  }
+  if (project.export_job?.status === "error" && project.export_job.error) {
+    return project.export_job.error;
+  }
+  return null;
+}
+
+/** Whether a job is stuck waiting on a restart the automation goal won't trigger on its own. */
+function projectStuckOnRestart(project: ProjectSummary): boolean {
+  const ttsStuck = project.tts_job?.restart_required && project.tts_job.status !== "running";
+  const timestampsStuck =
+    project.timestamps_job?.restart_required && project.timestamps_job.status !== "running";
+  return Boolean(ttsStuck || timestampsStuck);
 }
 
 function projectNeedsAttention(project: ProjectSummary): boolean {
   if (projectError(project)) return true;
-  if (project.tts_job?.restart_required || project.timestamps_job?.restart_required) return true;
+  if (project.automation_goal === "none" && projectStuckOnRestart(project)) return true;
   if (project.list_status === "automation_paused") return true;
   return false;
 }

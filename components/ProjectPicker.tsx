@@ -112,7 +112,7 @@ export function stepLabel(project: ProjectSummary): string {
     case "ready_for_export":
       return "Ready for export";
     case "queued_for_export":
-      return "Queued for export";
+      return "Pending export";
     case "exporting":
       return `Exporting ${project.export_job?.progress_percent ?? 0}%`;
     case "automation_paused":
