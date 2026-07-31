@@ -246,14 +246,61 @@ def create_project(
     return project_summary(workspace_root, project_id)
 
 
-def delete_project(workspace_root: Path, project_id: str) -> None:
-    """Remove a project's local workspace and its R2 backup."""
+def _script_channel_title(workspace: Path) -> tuple[str | None, str | None]:
+    script_path = workspace / "script.json"
+    if not script_path.exists():
+        return None, None
+    try:
+        with script_path.open("r", encoding="utf-8") as infile:
+            payload = json.load(infile)
+        if not isinstance(payload, dict):
+            return None, None
+        channel = payload.get("channel")
+        title = payload.get("title")
+        return (
+            str(channel).strip() if isinstance(channel, str) and channel.strip() else None,
+            str(title).strip() if isinstance(title, str) and title.strip() else None,
+        )
+    except (json.JSONDecodeError, OSError):
+        return None, None
+
+
+def delete_project(
+    workspace_root: Path,
+    project_id: str,
+    *,
+    delete_exports: bool = False,
+    extra_export_channel: str | None = None,
+    extra_export_title: str | None = None,
+) -> dict[str, Any]:
+    """Remove a project's local workspace and its R2 backup.
+
+    When delete_exports is True, also remove matching files under
+    Documents/ExportedVids for the project's script channel/title and any
+    extra channel/title (e.g. the incoming overwrite script).
+    """
     workspace = project_workspace(workspace_root, project_id)
     resolved = workspace.resolve()
     root = projects_root(workspace_root).resolve()
     # Safety: never delete outside the projects root.
     if root not in resolved.parents:
         raise ValueError("Refusing to delete project outside the projects root.")
+
+    deleted_exports: list[str] = []
+    if delete_exports:
+        try:
+            from export_video import delete_exported_video
+
+            channel, title = _script_channel_title(workspace)
+            if channel or title:
+                deleted_exports.extend(delete_exported_video(channel, title))
+            if extra_export_channel or extra_export_title:
+                for path in delete_exported_video(extra_export_channel, extra_export_title):
+                    if path not in deleted_exports:
+                        deleted_exports.append(path)
+        except Exception as exc:
+            print(f"[export] Failed to delete exports for {project_id}: {exc}")
+
     if resolved.exists():
         shutil.rmtree(resolved, ignore_errors=True)
     # Drop any in-memory segmentation job state for this workspace.
@@ -265,11 +312,18 @@ def delete_project(workspace_root: Path, project_id: str) -> None:
     except Exception:
         pass
     try:
+        from pipeline_jobs import forget_pipeline_state
+
+        forget_pipeline_state(workspace)
+    except Exception:
+        pass
+    try:
         from project_r2 import delete_project_from_r2
 
         delete_project_from_r2(project_id)
     except Exception as exc:
         print(f"[project-r2] Failed to delete R2 backup for {project_id}: {exc}")
+    return {"deleted": project_id, "deleted_exports": deleted_exports}
 
 
 def prune_stale_projects(

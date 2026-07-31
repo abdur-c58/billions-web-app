@@ -302,11 +302,37 @@ export async function createProject(name?: string) {
   });
 }
 
-export async function deleteProject(projectId: string) {
-  return apiFetch<{ ok: boolean; deleted: string }>("/api/project/delete", {
+export async function deleteProject(
+  projectId: string,
+  options?: {
+    deleteExports?: boolean;
+    exportChannel?: string | null;
+    exportTitle?: string | null;
+  },
+) {
+  return apiFetch<{ ok: boolean; deleted: string; deleted_exports?: string[] }>(
+    "/api/project/delete",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: projectId,
+        delete_exports: options?.deleteExports ?? false,
+        export_channel: options?.exportChannel ?? undefined,
+        export_title: options?.exportTitle ?? undefined,
+      }),
+    },
+  );
+}
+
+export async function deleteExportedVideoByTitle(channel: string | null | undefined, title: string) {
+  return apiFetch<{ ok: boolean; deleted_exports: string[] }>("/api/export/delete-by-title", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_id: projectId }),
+    body: JSON.stringify({
+      channel: channel || undefined,
+      title,
+    }),
   });
 }
 

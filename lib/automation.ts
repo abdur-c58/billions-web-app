@@ -30,10 +30,10 @@ export async function fetchAutomationStatus() {
   return apiFetch<AutomationStatus>("/api/automation/status");
 }
 
-export async function resumeAutomation() {
+export async function resumeAutomation(projectId?: string) {
   return apiFetch<AutomationStatus>("/api/automation/resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ project_id: projectId }),
   });
 }

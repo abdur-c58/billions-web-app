@@ -1729,6 +1729,29 @@ def build_export_output_path(channel: str | None, title: str | None) -> Path:
     )
 
 
+def delete_exported_video(channel: str | None, title: str | None) -> list[str]:
+    """Delete exported video(s) for channel/title from Documents/ExportedVids.
+
+    Removes the primary .mp4 and common sidecar files sharing the same stem.
+    """
+    output_path = build_export_output_path(channel, title)
+    deleted: list[str] = []
+    if not output_path.parent.is_dir():
+        return deleted
+
+    stem = output_path.stem
+    for candidate in output_path.parent.iterdir():
+        if not candidate.is_file():
+            continue
+        if candidate.stem == stem or candidate.name == output_path.name:
+            try:
+                candidate.unlink()
+                deleted.append(str(candidate.resolve()))
+            except OSError as exc:
+                print(f"[export] Failed to delete {candidate}: {exc}")
+    return deleted
+
+
 def export_video(
     audio_path: Path,
     timestamps_path: Path,

@@ -269,9 +269,14 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
     if not paths["script"].exists() or not paths["timestamps"].exists():
         raise RuntimeError("Script and timestamps are required before b-roll pipeline.")
 
+    # Claim "running" atomically under the lock so a direct call (e.g. right
+    # after Whisper finishes) and a concurrent watchdog scan can never both
+    # pass the check and launch duplicate pipeline runs for the same project.
     with _pipeline_lock:
-        if _get_state_unlocked(workspace).get("status") == "running":
-            return pipeline_job_snapshot(workspace)
+        state = _get_state_unlocked(workspace)
+        if state.get("status") == "running":
+            return dict(state)
+        state["status"] = "running"
 
     _set_pipeline_state(
         workspace,

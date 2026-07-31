@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
-import { Download, FolderOpen, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Download, FolderOpen, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { AutomationDropModal } from "@/components/AutomationDropModal";
+import {
+  OverwriteConfirmModal,
+  type OverwriteConflict,
+} from "@/components/OverwriteConfirmModal";
 import {
   fetchAutomationSettings,
   fetchAutomationStatus,
@@ -13,6 +17,7 @@ import {
 } from "@/lib/automation";
 import {
   createProject,
+  deleteExportedVideoByTitle,
   deleteProject,
   fetchProjectList,
   startExportForProject,
@@ -26,6 +31,26 @@ import { STATUS_POLL_MS, usePolling } from "@/hooks/usePolling";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+type PendingImportItem = {
+  fileName: string;
+  script: Record<string, unknown>;
+  title: string;
+  channel: string | null;
+};
+
+function normalizeTitle(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function projectMatchesTitle(project: ProjectSummary, title: string): boolean {
+  const needle = normalizeTitle(title);
+  if (!needle) return false;
+  const candidates = [project.name, project.title].filter(
+    (value): value is string => typeof value === "string" && value.trim().length > 0,
+  );
+  return candidates.some((value) => normalizeTitle(value) === needle);
+}
+
 function formatExpiry(expiresAt: number, now: number): string {
   const remaining = expiresAt * 1000 - now;
   if (remaining <= 0) return "Deleting soon";
@@ -37,7 +62,7 @@ function formatExpiry(expiresAt: number, now: number): string {
   return `Auto-deletes in ${minutes}m`;
 }
 
-function progressPercent(project: ProjectSummary): number | null {
+export function progressPercent(project: ProjectSummary): number | null {
   const status = project.list_status;
   if (status === "generating_voice" || project.tts_job?.status === "running") {
     return project.tts_job?.progress_percent ?? 0;
@@ -63,7 +88,7 @@ function progressPercent(project: ProjectSummary): number | null {
   return null;
 }
 
-function stepLabel(project: ProjectSummary): string {
+export function stepLabel(project: ProjectSummary): string {
   const status = project.list_status;
   switch (status) {
     case "generating_voice":
@@ -133,10 +158,17 @@ export function ProjectPicker() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [resumingId, setResumingId] = useState<string | null>(null);
+  const [resumingAll, setResumingAll] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [automationEnabled, setAutomationEnabledState] = useState(true);
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
   const [pendingDropFiles, setPendingDropFiles] = useState<File[] | null>(null);
+  const [pendingOverwrite, setPendingOverwrite] = useState<{
+    items: PendingImportItem[];
+    goal: AutomationGoal;
+    conflicts: OverwriteConflict[];
+  } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const dragDepthRef = useRef(0);
 
@@ -204,6 +236,33 @@ export function ProjectPicker() {
     }
   };
 
+  const handleResumeAll = async () => {
+    setResumingAll(true);
+    setError(null);
+    try {
+      const status = await resumeAutomation();
+      setAutomationStatus(status);
+      await refresh({ silent: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resume automation");
+    } finally {
+      setResumingAll(false);
+    }
+  };
+
+  const handleResumeProject = async (project: ProjectSummary) => {
+    setResumingId(project.id);
+    setError(null);
+    try {
+      await resumeAutomation(project.id);
+      await refresh({ silent: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resume project");
+    } finally {
+      setResumingId(null);
+    }
+  };
+
   const openProject = (project: ProjectSummary) => {
     session.selectProject(project.id, project.name);
   };
@@ -249,14 +308,74 @@ export function ProjectPicker() {
   };
 
   const importJsonFiles = useCallback(
-    async (files: File[], automationGoal: AutomationGoal) => {
-      const jsonFiles = files.filter(
-        (file) =>
-          file.name.toLowerCase().endsWith(".json") || file.type.includes("json"),
-      );
-      if (!jsonFiles.length) {
-        setError("Drop one or more .json script files.");
-        return;
+    async (
+      files: File[],
+      automationGoal: AutomationGoal,
+      options?: { overwrite?: boolean; preparedItems?: PendingImportItem[] },
+    ) => {
+      let items = options?.preparedItems;
+      if (!items) {
+        const jsonFiles = files.filter(
+          (file) =>
+            file.name.toLowerCase().endsWith(".json") || file.type.includes("json"),
+        );
+        if (!jsonFiles.length) {
+          setError("Drop one or more .json script files.");
+          return;
+        }
+
+        const prepared: PendingImportItem[] = [];
+        const prepareFailures: string[] = [];
+        for (const file of jsonFiles) {
+          try {
+            const script = prepareScriptImport(await file.text()) as Record<string, unknown>;
+            const summary = buildScriptSummary(script);
+            const title =
+              (typeof script.title === "string" && script.title.trim()) ||
+              summary.title ||
+              file.name.replace(/\.json$/i, "");
+            const channel =
+              typeof script.channel === "string" && script.channel.trim()
+                ? script.channel.trim()
+                : null;
+            prepared.push({
+              fileName: file.name,
+              script,
+              title: title || "Untitled",
+              channel,
+            });
+          } catch (err) {
+            prepareFailures.push(
+              `${file.name}: ${err instanceof Error ? err.message : "import failed"}`,
+            );
+          }
+        }
+        if (prepareFailures.length) {
+          setError(prepareFailures.join(" · "));
+        }
+        if (!prepared.length) return;
+        items = prepared;
+      }
+
+      if (!options?.overwrite) {
+        const conflicts: OverwriteConflict[] = [];
+        const seen = new Set<string>();
+        for (const item of items) {
+          const match = projects.find((project) => projectMatchesTitle(project, item.title));
+          if (!match) continue;
+          const key = normalizeTitle(item.title);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          conflicts.push({
+            title: item.title,
+            projectName: match.name,
+            fileName: item.fileName,
+          });
+        }
+        if (conflicts.length) {
+          setPendingOverwrite({ items, goal: automationGoal, conflicts });
+          return;
+        }
       }
 
       setBusy(true);
@@ -264,47 +383,81 @@ export function ProjectPicker() {
       setImportNotice(null);
       const failures: string[] = [];
       let imported = 0;
+      let overwritten = 0;
+      let deletedExportCount = 0;
+      let liveProjects = [...projects];
 
-      for (const file of jsonFiles) {
-        try {
-          const script = prepareScriptImport(await file.text());
-          const summary = buildScriptSummary(script);
-          const title =
-            (typeof script.title === "string" && script.title.trim()) ||
-            summary.title ||
-            file.name.replace(/\.json$/i, "");
-          const project = await createProject(title || undefined);
-          await uploadScriptPayload(script, project.id, { automation_goal: automationGoal });
-          imported += 1;
-        } catch (err) {
-          failures.push(
-            `${file.name}: ${err instanceof Error ? err.message : "import failed"}`,
-          );
+      try {
+        for (const item of items) {
+          try {
+            if (options?.overwrite) {
+              const matches = liveProjects.filter((project) =>
+                projectMatchesTitle(project, item.title),
+              );
+              for (const match of matches) {
+                const result = await deleteProject(match.id, {
+                  deleteExports: true,
+                  exportChannel: item.channel,
+                  exportTitle: item.title,
+                });
+                deletedExportCount += result.deleted_exports?.length ?? 0;
+                overwritten += 1;
+                liveProjects = liveProjects.filter((project) => project.id !== match.id);
+              }
+              if (!matches.length) {
+                const exportResult = await deleteExportedVideoByTitle(item.channel, item.title);
+                deletedExportCount += exportResult.deleted_exports?.length ?? 0;
+              }
+            }
+
+            const project = await createProject(item.title || undefined);
+            await uploadScriptPayload(item.script, project.id, {
+              automation_goal: automationGoal,
+            });
+            liveProjects = [
+              ...liveProjects.filter((existing) => existing.id !== project.id),
+              project,
+            ];
+            imported += 1;
+          } catch (err) {
+            failures.push(
+              `${item.fileName}: ${err instanceof Error ? err.message : "import failed"}`,
+            );
+          }
         }
+      } finally {
+        await refresh({ silent: true });
+        setBusy(false);
       }
 
-      await refresh({ silent: true });
       if (imported > 0) {
+        const overwriteNote =
+          overwritten > 0
+            ? ` Overwrote ${overwritten} existing project${overwritten === 1 ? "" : "s"}${
+                deletedExportCount > 0
+                  ? ` and removed ${deletedExportCount} exported file${deletedExportCount === 1 ? "" : "s"}`
+                  : ""
+              }.`
+            : "";
         if (automationGoal === "none") {
           setImportNotice(
-            `Imported ${imported} script${imported === 1 ? "" : "s"} — automation is off. Open a project to continue manually.`,
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — automation is off. Open a project to continue manually.${overwriteNote}`,
           );
         } else if (automationGoal === "auto_export") {
           setImportNotice(
-            `Imported ${imported} script${imported === 1 ? "" : "s"} — pipeline runs automatically through export to Documents.`,
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — pipeline runs automatically through export to Documents.${overwriteNote}`,
           );
         } else {
           setImportNotice(
-            `Imported ${imported} script${imported === 1 ? "" : "s"} — voice → segments → b-roll runs automatically. Refetch at least one clip before export.`,
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — voice → segments → b-roll runs automatically. Refetch at least one clip before export.${overwriteNote}`,
           );
         }
       }
       if (failures.length) {
         setError(failures.join(" · "));
       }
-      setBusy(false);
     },
-    [refresh],
+    [projects, refresh],
   );
 
   const onDragEnter = (event: DragEvent) => {
@@ -395,6 +548,22 @@ export function ProjectPicker() {
         />
       ) : null}
 
+      {pendingOverwrite ? (
+        <OverwriteConfirmModal
+          conflicts={pendingOverwrite.conflicts}
+          busy={busy}
+          onCancel={() => setPendingOverwrite(null)}
+          onConfirm={() => {
+            const pending = pendingOverwrite;
+            setPendingOverwrite(null);
+            void importJsonFiles([], pending.goal, {
+              overwrite: true,
+              preparedItems: pending.items,
+            });
+          }}
+        />
+      ) : null}
+
       <div className="glow-card w-full p-6 lg:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -408,16 +577,32 @@ export function ProjectPicker() {
               <p className="mt-2 text-sm font-medium text-[var(--accent)]">{exportQueueLabel}</p>
             ) : null}
           </div>
-          <label className="flex shrink-0 items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] px-3 py-2 text-sm">
-            <span className="text-[var(--muted)]">Automation</span>
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-[var(--accent)]"
-              checked={automationEnabled}
-              onChange={(event) => void handleAutomationToggle(event.target.checked)}
-              disabled={busy}
-            />
-          </label>
+          <div className="flex shrink-0 items-center gap-2">
+            <label className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] px-3 py-2 text-sm">
+              <span className="text-[var(--muted)]">Automation</span>
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--accent)]"
+                checked={automationEnabled}
+                onChange={(event) => void handleAutomationToggle(event.target.checked)}
+                disabled={busy}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void handleResumeAll()}
+              disabled={resumingAll}
+              title="Fail-safe: nudge every stuck project forward without waiting"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-55"
+            >
+              {resumingAll ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Resume all
+            </button>
+          </div>
         </div>
 
         <div className="mt-8">
@@ -448,6 +633,13 @@ export function ProjectPicker() {
               const deleting = deletingId === project.id;
               const exporting = exportingId === project.id;
               const canExport = project.list_status === "ready_for_export";
+              const resuming = resumingId === project.id;
+              const canResume =
+                !!project.automation_goal &&
+                project.automation_goal !== "none" &&
+                project.list_status !== "complete" &&
+                project.list_status !== "exporting" &&
+                project.list_status !== "queued_for_export";
               return (
                 <li key={project.id}>
                   <div
@@ -515,6 +707,22 @@ export function ProjectPicker() {
                             <Download className="h-3.5 w-3.5" />
                           )}
                           Export
+                        </button>
+                      ) : null}
+                      {canResume ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleResumeProject(project)}
+                          disabled={resuming || busy}
+                          title="Fail-safe: nudge this project forward if automation got stuck"
+                          className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-55"
+                        >
+                          {resuming ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          )}
+                          Resume
                         </button>
                       ) : null}
                       {confirming ? (

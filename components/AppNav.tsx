@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clapperboard, HardDrive } from "lucide-react";
+import { Activity, Clapperboard, HardDrive } from "lucide-react";
 import { useSession } from "@/context/SessionContext";
 import { BackendTunnelConnect } from "@/components/BackendTunnelConnect";
 import { GlobalActivityIndicator } from "@/components/GlobalActivityIndicator";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Viewer", icon: Clapperboard },
+  { href: "/monitor", label: "Monitor", icon: Activity },
   { href: "/storage", label: "Storage", icon: HardDrive },
 ];
 

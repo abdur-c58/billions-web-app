@@ -81,14 +81,16 @@ def _manifest_goal(workspace: Path) -> str:
     return "none"
 
 
-def _should_automate(workspace_root: Path, workspace: Path) -> bool:
-    if not automation_enabled(workspace_root):
+def _should_automate(workspace_root: Path, workspace: Path, *, force: bool = False) -> bool:
+    if not force and not automation_enabled(workspace_root):
         return False
     return _manifest_goal(workspace) != "none"
 
 
-def _maybe_start_tts(workspace_root: Path, workspace: Path, project_id: str) -> None:
-    if not _should_automate(workspace_root, workspace):
+def _maybe_start_tts(
+    workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
+) -> None:
+    if not _should_automate(workspace_root, workspace, force=force):
         return
     status = project_status(workspace)
     if status.get("audio_uploaded"):
@@ -102,8 +104,10 @@ def _maybe_start_tts(workspace_root: Path, workspace: Path, project_id: str) -> 
         print(f"[automation] TTS start skipped for {project_id}: {exc}")
 
 
-def _maybe_start_whisper(workspace_root: Path, workspace: Path, project_id: str) -> None:
-    if not _should_automate(workspace_root, workspace):
+def _maybe_start_whisper(
+    workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
+) -> None:
+    if not _should_automate(workspace_root, workspace, force=force):
         return
     status = project_status(workspace)
     if not status.get("audio_uploaded") or status.get("timestamps_ready"):
@@ -117,8 +121,10 @@ def _maybe_start_whisper(workspace_root: Path, workspace: Path, project_id: str)
         print(f"[automation] Whisper start skipped for {project_id}: {exc}")
 
 
-def _maybe_start_pipeline(workspace_root: Path, workspace: Path, project_id: str) -> None:
-    if not _should_automate(workspace_root, workspace):
+def _maybe_start_pipeline(
+    workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
+) -> None:
+    if not _should_automate(workspace_root, workspace, force=force):
         return
     status = project_status(workspace)
     if not status.get("viewer_ready"):
@@ -142,8 +148,10 @@ def _maybe_start_pipeline(workspace_root: Path, workspace: Path, project_id: str
         print(f"[automation] Pipeline start skipped for {project_id}: {exc}")
 
 
-def _maybe_queue_export(workspace_root: Path, workspace: Path, project_id: str) -> None:
-    if not automation_enabled(workspace_root):
+def _maybe_queue_export(
+    workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
+) -> None:
+    if not force and not automation_enabled(workspace_root):
         return
     if _manifest_goal(workspace) != "auto_export":
         return
@@ -164,10 +172,19 @@ def _maybe_queue_export(workspace_root: Path, workspace: Path, project_id: str) 
         enqueue_export(project_id)
 
 
-def scan_projects(workspace_root: Path) -> None:
+def _resume_single_project(
+    workspace_root: Path, workspace: Path, project_id: str, *, force: bool
+) -> None:
+    _maybe_start_tts(workspace_root, workspace, project_id, force=force)
+    _maybe_start_whisper(workspace_root, workspace, project_id, force=force)
+    _maybe_start_pipeline(workspace_root, workspace, project_id, force=force)
+    _maybe_queue_export(workspace_root, workspace, project_id, force=force)
+
+
+def scan_projects(workspace_root: Path, *, force: bool = False) -> None:
     global _last_scan_at
     _last_scan_at = time.time()
-    if not automation_enabled(workspace_root):
+    if not force and not automation_enabled(workspace_root):
         return
     for project in list_projects(workspace_root):
         project_id = str(project.get("id") or "")
@@ -177,10 +194,10 @@ def scan_projects(workspace_root: Path) -> None:
             workspace = project_workspace(workspace_root, project_id)
         except Exception:
             continue
-        _maybe_start_tts(workspace_root, workspace, project_id)
-        _maybe_start_whisper(workspace_root, workspace, project_id)
-        _maybe_start_pipeline(workspace_root, workspace, project_id)
-        _maybe_queue_export(workspace_root, workspace, project_id)
+        try:
+            _resume_single_project(workspace_root, workspace, project_id, force=force)
+        except Exception as exc:
+            print(f"[automation] Resume failed for {project_id}: {exc}")
 
 
 def _export_worker_loop(workspace_root: Path) -> None:
@@ -236,6 +253,24 @@ def start_automation_orchestrator(workspace_root: Path) -> None:
     print("[automation] Orchestrator started")
 
 
-def resume_automation(workspace_root: Path) -> dict[str, Any]:
-    scan_projects(workspace_root)
+def resume_automation(
+    workspace_root: Path,
+    *,
+    project_id: str | None = None,
+    force: bool = True,
+) -> dict[str, Any]:
+    """Manually nudge automation forward — used by the UI's Resume / Resume all buttons.
+
+    force=True bypasses the global automation-enabled toggle so a stuck project
+    can be nudged even while automation is paused; it never bypasses a
+    project's own automation_goal (goal "none" is always left untouched).
+    """
+    if project_id:
+        try:
+            workspace = project_workspace(workspace_root, project_id)
+            _resume_single_project(workspace_root, workspace, project_id, force=force)
+        except Exception as exc:
+            print(f"[automation] Manual resume failed for {project_id}: {exc}")
+    else:
+        scan_projects(workspace_root, force=force)
     return automation_status(workspace_root)

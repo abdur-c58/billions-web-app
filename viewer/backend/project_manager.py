@@ -29,6 +29,12 @@ STALE_JOB_SECONDS = 15 * 60
 _timestamps_lock = threading.Lock()
 _tts_lock = threading.Lock()
 _tts_cancel_events: dict[str, threading.Event] = {}
+# Whisper transcription loads a model onto the GPU; running multiple projects'
+# jobs at once exhausts VRAM (CUDA OOM) and silently stalls automation across
+# every affected project. Serialize the actual GPU-bound work globally so only
+# one project transcribes at a time — everything else (TTS, b-roll fetch) can
+# still run fully in parallel per project.
+_whisper_gpu_lock = threading.Lock()
 _MAX_JOB_LOGS = 200
 _default_timestamps_state: dict[str, Any] = {
     "status": "idle",
@@ -392,24 +398,31 @@ def start_audio_generation(
     if not paths["script"].exists():
         raise RuntimeError("Upload script.json before generating narration.")
 
+    key = _workspace_key(workspace)
+    cancel_event = threading.Event()
+    # Claim "running" atomically under the lock so a direct call (e.g. right
+    # after script import) and a concurrent watchdog scan can never both pass
+    # the check and launch duplicate TTS jobs for the same project.
     with _tts_lock:
-        if _get_tts_state_unlocked(workspace).get("status") == "running":
+        state = _get_tts_state_unlocked(workspace)
+        if state.get("status") == "running":
             raise RuntimeError("Narration generation already in progress.")
         if paths["audio"].exists():
             raise RuntimeError("script.mp3 already exists — upload manually or delete it first.")
-
-    config = validate_fish_config()
-    preview = _build_transcript_preview(paths["script"])
-    if not preview:
-        raise RuntimeError("Could not build transcript from script.json.")
-
-    key = _workspace_key(workspace)
-    cancel_event = threading.Event()
-    with _tts_lock:
-        _tts_cancel_events[key] = cancel_event
-        state = _get_tts_state_unlocked(workspace)
+        state["status"] = "running"
         state["logs"] = []
         state["restart_required"] = False
+        _tts_cancel_events[key] = cancel_event
+
+    try:
+        config = validate_fish_config()
+        preview = _build_transcript_preview(paths["script"])
+    except Exception:
+        _set_tts_state(workspace, status="idle")
+        raise
+    if not preview:
+        _set_tts_state(workspace, status="idle")
+        raise RuntimeError("Could not build transcript from script.json.")
 
     _set_tts_state(
         workspace,
@@ -965,12 +978,14 @@ def start_segment_timestamps(
     if not paths["audio"].exists():
         raise RuntimeError("Upload script.mp3 before segmenting timestamps.")
 
-    with _timestamps_lock:
-        if _get_timestamps_state_unlocked(workspace).get("status") == "running":
-            raise RuntimeError("Timestamp segmentation already in progress.")
-
+    # Claim "running" atomically so a direct call (e.g. right after TTS
+    # finishes) and a concurrent watchdog scan can never both pass the check
+    # and launch duplicate Whisper jobs for the same project.
     with _timestamps_lock:
         state = _get_timestamps_state_unlocked(workspace)
+        if state.get("status") == "running":
+            raise RuntimeError("Timestamp segmentation already in progress.")
+        state["status"] = "running"
         state["logs"] = []
         state["restart_required"] = False
 
@@ -1029,7 +1044,23 @@ def start_segment_timestamps(
     def worker() -> None:
         hw_thread = threading.Thread(target=hardware_monitor_loop, daemon=True)
         hw_thread.start()
+        gpu_acquired = False
         try:
+            if not _whisper_gpu_lock.acquire(blocking=False):
+                _set_timestamps_state(
+                    workspace,
+                    stage="queued",
+                    message="Waiting for GPU (another project is transcribing)…",
+                    progress_percent=1,
+                )
+                _whisper_gpu_lock.acquire()
+            gpu_acquired = True
+            _set_timestamps_state(
+                workspace,
+                stage="prepare",
+                message="Starting Whisper alignment…",
+                progress_percent=2,
+            )
             timeline = generate_segment_timestamps(
                 paths["workspace"],
                 script_path=paths["script"],
@@ -1086,6 +1117,8 @@ def start_segment_timestamps(
             )
         finally:
             hw_stop.set()
+            if gpu_acquired:
+                _whisper_gpu_lock.release()
 
     threading.Thread(target=worker, daemon=True).start()
     return timestamps_job_snapshot(workspace)

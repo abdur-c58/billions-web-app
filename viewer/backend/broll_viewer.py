@@ -1145,6 +1145,12 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         self.export_status_file = paths["export_status"]
         self.flagged_path = paths["flagged"]
         self.cache_dir = paths["cache"]
+        # judgment_cache is keyed by (segment_id, query, candidate ids) and must be
+        # scoped to this project's own cache dir — reusing the server-startup-time
+        # class-level cache here previously let auto-pick judgments (and therefore
+        # b-roll clip choices) leak between unrelated projects that happened to
+        # share a segment id + query + candidate set.
+        self.judgment_cache = JudgmentCache(self.cache_dir)
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.log_date_time_string()}] {format % args}")
@@ -2174,7 +2180,14 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 from automation_orchestrator import resume_automation
 
-                self._send_json(resume_automation(WORKSPACE_DIR))
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                project_id = str(
+                    body.get("project_id")
+                    or self.headers.get("X-Billions-Project", "")
+                ).strip()
+                self._send_json(
+                    resume_automation(WORKSPACE_DIR, project_id=project_id or None)
+                )
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -2209,8 +2222,44 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         HTTPStatus.CONFLICT,
                     )
                     return
-                delete_project(WORKSPACE_DIR, project_id)
-                self._send_json({"ok": True, "deleted": project_id})
+                delete_exports = bool(body.get("delete_exports"))
+                extra_channel = body.get("export_channel")
+                extra_title = body.get("export_title")
+                result = delete_project(
+                    WORKSPACE_DIR,
+                    project_id,
+                    delete_exports=delete_exports,
+                    extra_export_channel=(
+                        str(extra_channel).strip()
+                        if isinstance(extra_channel, str) and extra_channel.strip()
+                        else None
+                    ),
+                    extra_export_title=(
+                        str(extra_title).strip()
+                        if isinstance(extra_title, str) and extra_title.strip()
+                        else None
+                    ),
+                )
+                self._send_json({"ok": True, **result})
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/export/delete-by-title":
+            try:
+                from export_video import delete_exported_video
+
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                channel = body.get("channel")
+                title = body.get("title")
+                if not (isinstance(title, str) and title.strip()):
+                    self._send_json({"error": "title required"}, HTTPStatus.BAD_REQUEST)
+                    return
+                deleted = delete_exported_video(
+                    str(channel).strip() if isinstance(channel, str) else None,
+                    title.strip(),
+                )
+                self._send_json({"ok": True, "deleted_exports": deleted})
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
