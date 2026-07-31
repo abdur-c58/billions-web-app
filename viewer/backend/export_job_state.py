@@ -121,7 +121,8 @@ def enrich_export_state(state: dict[str, Any]) -> dict[str, Any]:
     return enriched
 
 
-def _normalize_loaded_state(saved: dict[str, Any]) -> dict[str, Any]:
+def _normalize_startup_state(saved: dict[str, Any]) -> dict[str, Any]:
+    """Normalize state loaded at process start — orphaned 'running' jobs are dead."""
     if saved.get("status") == "running":
         saved["status"] = "interrupted"
         saved["stage"] = "interrupted"
@@ -138,7 +139,14 @@ def _normalize_loaded_state(saved: dict[str, Any]) -> dict[str, Any]:
     return {**default_export_state(), **saved}
 
 
-def read_export_state_file(path: Path) -> dict[str, Any]:
+def read_export_state_file(path: Path, *, for_startup: bool = False) -> dict[str, Any]:
+    """Read export status from disk.
+
+    Use for_startup=True only when restoring state after a process boot — that
+    path rewrites orphaned ``running`` jobs to ``interrupted``. Live polling
+    (wait_for_export_done, UI status) must use for_startup=False or every
+    in-progress export is immediately treated as interrupted.
+    """
     if not path.exists():
         return default_export_state()
     try:
@@ -148,7 +156,9 @@ def read_export_state_file(path: Path) -> dict[str, Any]:
         return default_export_state()
     if not isinstance(saved, dict):
         return default_export_state()
-    return _normalize_loaded_state(saved)
+    if for_startup:
+        return _normalize_startup_state(saved)
+    return {**default_export_state(), **saved}
 
 
 def save_export_state_file(path: Path, state: dict[str, Any]) -> None:
@@ -183,9 +193,16 @@ def load_project_export_state(project_id: str, status_file: Path) -> dict[str, A
     with _export_lock:
         if project_id in _export_states:
             return _export_states[project_id]
-        state = read_export_state_file(status_file) if status_file.exists() else default_export_state()
+        state = (
+            read_export_state_file(status_file, for_startup=True)
+            if status_file.exists()
+            else default_export_state()
+        )
         state["project_id"] = project_id
         _export_states[project_id] = state
+        # Persist the interrupted rewrite so the next boot / live poll agree.
+        if status_file.exists() and state.get("status") == "interrupted":
+            save_export_state_file(status_file, state)
         return state
 
 

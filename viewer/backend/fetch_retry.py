@@ -6,19 +6,28 @@ import re
 import time
 from typing import Any, Callable
 
-MAX_FETCH_ATTEMPTS = 50
+MAX_FETCH_ATTEMPTS = 8
 
 
 def is_retryable_fetch_error(exc: BaseException) -> bool:
     message = str(exc).lower()
+    # Permanent client mistakes — never burn rate-limit budget retrying these.
+    if re.search(
+        r"no query param|empty query|search query is required|missing search query",
+        message,
+    ):
+        return False
     status = getattr(exc, "status", None)
-    if status in (0, 429, 400, 502, 503, 504):
+    # Bare 400s are often permanent (bad query); only retry if the body looks transient.
+    if status == 400:
+        return bool(re.search(r"rate|timeout|throttl|temporar|try again", message))
+    if status in (0, 429, 502, 503, 504):
         return True
     if status is not None and isinstance(status, int) and status >= 500:
         return True
     return bool(
         re.search(
-            r"rate|timeout|timed out|network|offline|pexels|429|503|502|504|cannot reach|connection|fish audio",
+            r"rate|timeout|timed out|network|offline|429|503|502|504|cannot reach|connection|fish audio|throttl",
             message,
         )
     )

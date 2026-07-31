@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 from typing import Any
 
@@ -275,6 +276,34 @@ def as_completed_wait(
     return done, not_done
 
 
+def resolve_broll_search_query(row: dict[str, Any]) -> str:
+    """Pick a usable Pexels/Pixabay query for a segment row.
+
+    Many script segments ship with an empty ``search_query`` / ``description``
+    even though they have narration ``content`` or a ``label``. Sending '' to
+    Pexels returns 400 and used to retry 50 times, burning the whole key pool.
+    """
+    for key in ("search_query", "description", "label"):
+        value = str(row.get(key) or "").strip()
+        if value:
+            return value[:120]
+    broll = row.get("broll")
+    if isinstance(broll, dict):
+        for key in ("search_query", "query"):
+            value = str(broll.get(key) or "").strip()
+            if value:
+                return value[:120]
+    content = str(row.get("content") or row.get("text") or "").strip()
+    if content:
+        # First sentence / clause, stripped of ellipses noise.
+        first = re.split(r"(?<=[.!?])\s+", content, maxsplit=1)[0].strip()
+        first = re.sub(r"\s+", " ", first)
+        if len(first) >= 8:
+            return first[:120]
+        return content[:120]
+    return "documentary landscape"
+
+
 def compute_list_status(
     *,
     script_exists: bool,
@@ -414,7 +443,7 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                         paths["selections"],
                         paths["script"],
                         segment_id,
-                        str(row.get("search_query") or row.get("description") or ""),
+                        resolve_broll_search_query(row),
                         refetch=refetch,
                         provider_override="mix",
                         segment=row,

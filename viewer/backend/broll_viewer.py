@@ -804,6 +804,10 @@ def fetch_segment_video(
     flagged_path: Path | None = None,
 ) -> dict[str, Any]:
     script_query = search_query.strip()
+    if not script_query and not (query_override and query_override.strip()):
+        raise RuntimeError(
+            f"Missing search query for segment {segment_id} — cannot fetch b-roll."
+        )
     active_query = (
         query_override.strip()
         if query_override and query_override.strip()

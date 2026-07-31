@@ -183,12 +183,18 @@ def wait_for_export_done(
     poll_seconds: float = 2.0,
     timeout_seconds: float = 6 * 3600,
 ) -> dict[str, Any]:
-    from export_job_state import read_export_state_file
+    from export_job_state import export_snapshot, project_export_running, read_export_state_file
 
     status_file = workspace_paths(workspace)["export_status"]
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
-        state = read_export_state_file(status_file) if status_file.exists() else {}
+        # Prefer in-memory state while this process owns the export — reading
+        # the file through the old startup normalizer used to rewrite every
+        # live "running" job to "interrupted" and abort exports instantly.
+        if project_export_running(project_id):
+            state = export_snapshot(project_id, status_file)
+        else:
+            state = read_export_state_file(status_file) if status_file.exists() else {}
         status = str(state.get("status") or "idle")
         if status in {"done", "error", "interrupted"}:
             return state
