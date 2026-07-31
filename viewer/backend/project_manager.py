@@ -498,8 +498,6 @@ def start_audio_generation(
                 stage="done",
                 restart_required=False,
             )
-
-            start_segment_timestamps(workspace, model="medium", on_complete=on_complete)
         except BaseException as exc:
             if isinstance(exc, SystemExit):
                 error_text = str(exc) or "Narration generation aborted."
@@ -524,10 +522,20 @@ def start_audio_generation(
                     stage="error",
                 )
             clear_tts_recovery_artifacts(workspace)
+            return
         finally:
             temp_output.unlink(missing_ok=True)
             with _tts_lock:
                 _tts_cancel_events.pop(key, None)
+
+        # Kick off Whisper alignment as a separate step: TTS already succeeded
+        # and its "done" status is persisted above, so a failure here (e.g.
+        # Whisper already running via another path, like the automation
+        # watchdog) must never be attributed back to the TTS job as an error.
+        try:
+            start_segment_timestamps(workspace, model="medium", on_complete=on_complete)
+        except Exception as exc:
+            print(f"[tts] Could not auto-start Whisper for {workspace}: {exc}")
 
     threading.Thread(target=worker, daemon=True).start()
     return tts_job_snapshot(workspace)
@@ -717,6 +725,35 @@ def project_status(workspace: Path) -> dict[str, Any]:
             pass
 
     ready = script_exists and audio_exists and timestamps_exists
+
+    # Self-heal a stale "error" left on a job whose actual output already
+    # exists on disk. This happens when a later, unrelated step (e.g. the
+    # automation watchdog racing to auto-start the next stage) rejects with
+    # "already in progress" and that rejection gets misattributed to this
+    # job — the artifact on disk is the real source of truth, not the last
+    # recorded status. Persisted once so the UI stops showing a scary red
+    # error for a job that actually completed successfully.
+    if audio_exists and tts_job_snapshot(workspace).get("status") == "error":
+        _set_tts_state(
+            workspace,
+            status="done",
+            message="Narration audio present.",
+            error=None,
+            progress_percent=100,
+            stage="done",
+            restart_required=False,
+        )
+    if timestamps_exists and timestamps_job_snapshot(workspace).get("status") == "error":
+        _set_timestamps_state(
+            workspace,
+            status="done",
+            message="Timestamps present.",
+            error=None,
+            progress_percent=100,
+            stage="done",
+            restart_required=False,
+        )
+
     with _timestamps_lock:
         timestamps_job = dict(_get_timestamps_state_unlocked(workspace))
     with _tts_lock:
@@ -1100,8 +1137,14 @@ def start_segment_timestamps(
                     start_broll_pipeline(workspace)
             except Exception as pipeline_exc:
                 print(f"[pipeline] auto b-roll start skipped: {pipeline_exc}")
+            # Timestamps already succeeded and its "done" status is persisted
+            # above — a failure in this caller-supplied hook must never be
+            # misattributed back to Whisper as a segmentation failure.
             if on_complete:
-                on_complete()
+                try:
+                    on_complete()
+                except Exception as hook_exc:
+                    print(f"[segment-timestamps] on_complete hook failed: {hook_exc}")
         except BaseException as exc:
             if isinstance(exc, SystemExit):
                 error_text = str(exc) or "Timestamp segmentation aborted."

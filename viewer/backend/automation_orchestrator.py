@@ -16,8 +16,6 @@ from project_manager import (
     project_status,
     start_audio_generation,
     start_segment_timestamps,
-    timestamps_job_snapshot,
-    tts_job_snapshot,
     workspace_paths,
 )
 from user_sessions import list_projects, project_workspace, read_manifest, touch_manifest
@@ -88,19 +86,44 @@ def _should_automate(workspace_root: Path, workspace: Path, *, force: bool = Fal
     return _manifest_goal(workspace) != "none"
 
 
+def _master_enabled(workspace_root: Path, *, force: bool = False) -> bool:
+    return force or automation_enabled(workspace_root)
+
+
+def _should_recover(workspace_root: Path, *, force: bool = False) -> bool:
+    """Gate for resuming work that was already started but got interrupted
+    (crash, restart, incomplete fetch). This intentionally ignores the
+    per-project automation_goal — choosing "Manual" only means the user wants
+    to decide when a *new* stage begins, not that a crash mid-job should be
+    left broken forever. Only the global automation pause toggle can block
+    recovery (a manual Resume click always bypasses it via force=True)."""
+    return _master_enabled(workspace_root, force=force)
+
+
 def _maybe_start_tts(
     workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
 ) -> None:
-    if not _should_automate(workspace_root, workspace, force=force):
-        return
     status = project_status(workspace)
     if status.get("audio_uploaded"):
         return
-    if tts_job_snapshot(workspace).get("status") == "running":
+    tts_job = status.get("tts_job") or {}
+    if tts_job.get("status") == "running":
+        return
+    is_recovery = bool(tts_job.get("restart_required")) or tts_job.get("status") in {
+        "error",
+        "interrupted",
+    }
+    allowed = (
+        _should_recover(workspace_root, force=force)
+        if is_recovery
+        else _should_automate(workspace_root, workspace, force=force)
+    )
+    if not allowed:
         return
     try:
         start_audio_generation(workspace)
-        print(f"[automation] Started TTS for {project_id}")
+        verb = "Recovered" if is_recovery else "Started"
+        print(f"[automation] {verb} TTS for {project_id}")
     except Exception as exc:
         print(f"[automation] TTS start skipped for {project_id}: {exc}")
 
@@ -108,16 +131,27 @@ def _maybe_start_tts(
 def _maybe_start_whisper(
     workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
 ) -> None:
-    if not _should_automate(workspace_root, workspace, force=force):
-        return
     status = project_status(workspace)
     if not status.get("audio_uploaded") or status.get("timestamps_ready"):
         return
-    if timestamps_job_snapshot(workspace).get("status") == "running":
+    timestamps_job = status.get("timestamps_job") or {}
+    if timestamps_job.get("status") == "running":
+        return
+    is_recovery = bool(timestamps_job.get("restart_required")) or timestamps_job.get("status") in {
+        "error",
+        "interrupted",
+    }
+    allowed = (
+        _should_recover(workspace_root, force=force)
+        if is_recovery
+        else _should_automate(workspace_root, workspace, force=force)
+    )
+    if not allowed:
         return
     try:
         start_segment_timestamps(workspace, model="medium")
-        print(f"[automation] Started Whisper for {project_id}")
+        verb = "Recovered" if is_recovery else "Started"
+        print(f"[automation] {verb} Whisper for {project_id}")
     except Exception as exc:
         print(f"[automation] Whisper start skipped for {project_id}: {exc}")
 
@@ -125,26 +159,45 @@ def _maybe_start_whisper(
 def _maybe_start_pipeline(
     workspace_root: Path, workspace: Path, project_id: str, *, force: bool = False
 ) -> None:
-    if not _should_automate(workspace_root, workspace, force=force):
-        return
     status = project_status(workspace)
     if not status.get("viewer_ready"):
         return
     pipeline = pipeline_job_snapshot(workspace)
     pipeline_status = str(pipeline.get("status") or "idle")
-    list_status = str(status.get("list_status") or "")
     if pipeline_status == "running":
         return
-    needs_pipeline = list_status in {
+    list_status = str(status.get("list_status") or "")
+    broll_total = int(status.get("broll_total") or 0)
+    broll_fetched = int(status.get("broll_fetched") or 0)
+    duplicates_remaining = int(status.get("duplicates_remaining") or 0)
+
+    # Recovery: b-roll fetch was already started at least once and is either
+    # incomplete, has duplicates still needing a refetch, or ended in an
+    # error/interrupted/warning state — keep retrying regardless of
+    # automation_goal until it's fully fetched and clean.
+    is_recovery = (
+        pipeline_status in {"error", "interrupted", "warning"}
+        or (broll_total > 0 and broll_fetched < broll_total)
+        or duplicates_remaining > 0
+    )
+    needs_pipeline = is_recovery or list_status in {
         "ready_for_broll",
         "fetching_broll",
         "clearing_duplicates",
-    } or pipeline_status in {"error", "interrupted", "warning"}
+    }
     if not needs_pipeline:
+        return
+    allowed = (
+        _should_recover(workspace_root, force=force)
+        if is_recovery
+        else _should_automate(workspace_root, workspace, force=force)
+    )
+    if not allowed:
         return
     try:
         start_broll_pipeline(workspace)
-        print(f"[automation] Started b-roll pipeline for {project_id}")
+        verb = "Recovered" if is_recovery else "Started"
+        print(f"[automation] {verb} b-roll pipeline for {project_id}")
     except Exception as exc:
         print(f"[automation] Pipeline start skipped for {project_id}: {exc}")
 
@@ -295,8 +348,12 @@ def resume_automation(
     """Manually nudge automation forward — used by the UI's Resume / Resume all buttons.
 
     force=True bypasses the global automation-enabled toggle so a stuck project
-    can be nudged even while automation is paused; it never bypasses a
-    project's own automation_goal (goal "none" is always left untouched).
+    can be nudged even while automation is paused. It never bypasses a
+    project's own "Manual" automation_goal for *starting a new stage* — but
+    resuming work that was already started and got interrupted (a crash mid
+    Whisper run, an incomplete b-roll fetch, etc.) always happens regardless
+    of goal, since that's basic reliability, not automation the user opted
+    out of.
     """
     if project_id:
         try:
