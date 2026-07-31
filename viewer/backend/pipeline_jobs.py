@@ -13,7 +13,7 @@ from project_manager import workspace_paths
 
 PIPELINE_JOB_NAME = ".broll_pipeline.json"
 STALE_JOB_SECONDS = 30 * 60
-MAX_DUPLICATE_PASSES = 5
+MAX_DUPLICATE_PASSES = 10
 FETCH_CONCURRENCY = 2
 
 _pipeline_lock = threading.Lock()
@@ -31,6 +31,7 @@ _default_pipeline_state: dict[str, Any] = {
     "total": 0,
     "cleared": 0,
     "clear_total": 0,
+    "failed_segment_ids": [],
 }
 
 
@@ -108,11 +109,10 @@ def load_pipeline_job_state(workspace: Path, *, recover_on_startup: bool = False
         if should_recover:
             state.update(
                 {
-                    "status": "error",
-                    "message": "B-roll pipeline interrupted — reopen or re-run.",
+                    "status": "interrupted",
+                    "message": "B-roll pipeline interrupted — will resume automatically.",
                     "error": "Server restarted or job stalled during b-roll pipeline.",
-                    "stage": "error",
-                    "progress_percent": 0,
+                    "stage": "interrupted",
                 }
             )
 
@@ -213,10 +213,15 @@ def compute_list_status(
     broll_total: int,
     duplicates_remaining: int,
     manual_refetch_done: bool,
+    automation_goal: str = "none",
+    automation_enabled_flag: bool = True,
+    queued_for_export: bool = False,
 ) -> str:
     export_status = str(export_job.get("status") or "idle")
     if export_status == "done":
         return "complete"
+    if queued_for_export and export_status != "running":
+        return "queued_for_export"
     if export_status == "running":
         return "exporting"
 
@@ -239,8 +244,14 @@ def compute_list_status(
     if not timestamps_exists:
         return "needs_timestamps"
 
+    goal = (automation_goal or "none").strip().lower()
+    if goal != "none" and not automation_enabled_flag:
+        return "automation_paused"
+
+    export_ready = manual_refetch_done or goal == "auto_export"
+
     if broll_total <= 0:
-        return "ready_for_refetch" if not manual_refetch_done else "ready_for_export"
+        return "ready_for_export" if export_ready else "ready_for_refetch"
 
     if broll_fetched < broll_total:
         return "fetching_broll" if pipeline_status == "running" else "ready_for_broll"
@@ -248,7 +259,7 @@ def compute_list_status(
     if duplicates_remaining > 0:
         return "clearing_duplicates" if pipeline_status == "running" else "ready_for_broll"
 
-    if manual_refetch_done:
+    if export_ready:
         return "ready_for_export"
     return "ready_for_refetch"
 
@@ -280,10 +291,14 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
         try:
             from broll_judge import JudgmentCache
             from broll_viewer import build_segment_rows, fetch_segment_video
+            from fetch_retry import run_with_retry
+            from user_sessions import read_manifest, touch_manifest
 
             cache_dir = paths["cache"]
             flagged_path = paths["flagged"]
             judgment_cache = JudgmentCache(cache_dir)
+            manifest = read_manifest(workspace)
+            automation_goal = str(manifest.get("automation_goal") or "none").strip().lower()
 
             def load_rows() -> list[dict[str, Any]]:
                 return _timed_rows(
@@ -294,6 +309,25 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     )
                 )
 
+            def fetch_row(row: dict[str, Any], *, refetch: bool) -> None:
+                segment_id = int(row["segment_id"])
+
+                def do_fetch() -> None:
+                    fetch_segment_video(
+                        paths["selections"],
+                        paths["script"],
+                        segment_id,
+                        str(row.get("search_query") or row.get("description") or ""),
+                        refetch=refetch,
+                        provider_override="mix",
+                        segment=row,
+                        cache_dir=cache_dir,
+                        judgment_cache=judgment_cache,
+                        flagged_path=flagged_path,
+                    )
+
+                run_with_retry(do_fetch, label=f"segment-{segment_id}")
+
             rows = load_rows()
             missing = [
                 row
@@ -301,113 +335,127 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 if segment_needs_broll(row) and not segment_has_broll_coverage(row)
             ]
             needed_total = sum(1 for row in rows if segment_needs_broll(row))
-            already = needed_total - len(missing)
+            fetched_ok = needed_total - len(missing)
+            failed_ids: list[int] = []
+
             _set_pipeline_state(
                 workspace,
                 stage="fetch_broll",
-                message=f"Fetching b-roll ({already}/{needed_total})…",
-                done=already,
+                message=f"Fetching b-roll ({fetched_ok}/{needed_total})…",
+                done=fetched_ok,
                 total=needed_total,
-                progress_percent=int((already / needed_total) * 70) if needed_total else 70,
+                failed_segment_ids=[],
+                progress_percent=int((fetched_ok / needed_total) * 70) if needed_total else 70,
             )
 
-            def fetch_one(row: dict[str, Any]) -> None:
-                fetch_segment_video(
-                    paths["selections"],
-                    paths["script"],
-                    int(row["segment_id"]),
-                    str(row.get("search_query") or row.get("description") or ""),
-                    refetch=False,
-                    provider_override="mix",
-                    segment=row,
-                    cache_dir=cache_dir,
-                    judgment_cache=judgment_cache,
-                    flagged_path=flagged_path,
-                )
-
-            completed = already
-            if missing:
+            def fetch_batch(batch: list[dict[str, Any]]) -> list[int]:
+                still_failed: list[int] = []
+                if not batch:
+                    return still_failed
                 with ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY) as pool:
-                    futures = {pool.submit(fetch_one, row): row for row in missing}
+                    futures = {pool.submit(fetch_row, row, refetch=False): row for row in batch}
                     for future in as_completed(futures):
                         row = futures[future]
+                        segment_id = int(row["segment_id"])
                         try:
                             future.result()
+                            fetched_ok_nonlocal[0] += 1
                         except Exception as exc:
-                            print(
-                                f"[pipeline] fetch failed segment "
-                                f"{row.get('segment_id')}: {exc}"
-                            )
-                        completed += 1
+                            print(f"[pipeline] fetch failed segment {segment_id}: {exc}")
+                            still_failed.append(segment_id)
                         _set_pipeline_state(
                             workspace,
                             stage="fetch_broll",
-                            message=f"Fetching b-roll ({completed}/{needed_total})…",
-                            done=completed,
+                            message=f"Fetching b-roll ({fetched_ok_nonlocal[0]}/{needed_total})…",
+                            done=fetched_ok_nonlocal[0],
                             total=needed_total,
-                            progress_percent=int((completed / max(needed_total, 1)) * 70),
+                            failed_segment_ids=sorted(set(still_failed + failed_ids)),
+                            progress_percent=int(
+                                (fetched_ok_nonlocal[0] / max(needed_total, 1)) * 70
+                            ),
                         )
+                return still_failed
+
+            fetched_ok_nonlocal = [fetched_ok]
+            failed_ids = fetch_batch(missing)
+            retry_round = 0
+            while failed_ids and retry_round < 5:
+                retry_round += 1
+                rows_by_id = {int(row["segment_id"]): row for row in load_rows()}
+                retry_rows = [
+                    rows_by_id[segment_id]
+                    for segment_id in failed_ids
+                    if segment_id in rows_by_id
+                ]
+                failed_ids = fetch_batch(retry_rows)
+                if failed_ids:
+                    time.sleep(3.0)
+            fetched_ok = fetched_ok_nonlocal[0]
 
             rows = load_rows()
             fetched, total = compute_broll_counts(rows)
             if total > 0 and fetched < total:
                 _set_pipeline_state(
                     workspace,
-                    status="error",
-                    stage="error",
-                    message=f"B-roll incomplete ({fetched}/{total}).",
+                    status="interrupted",
+                    stage="fetch_broll",
+                    message=f"B-roll incomplete ({fetched}/{total}) — will retry.",
                     error=f"Only fetched {fetched} of {total} required segments.",
                     done=fetched,
                     total=total,
+                    failed_segment_ids=sorted(set(failed_ids)),
                     progress_percent=70,
                 )
                 return
 
-            # Clear duplicates until none remain.
             initial_ids = _duplicate_segment_ids(rows)
+            if not initial_ids:
+                if automation_goal == "auto_export":
+                    touch_manifest(workspace, manual_refetch_done=True)
+                _set_pipeline_state(
+                    workspace,
+                    status="done",
+                    stage="done",
+                    message=(
+                        "B-roll ready — auto-export queued."
+                        if automation_goal == "auto_export"
+                        else "B-roll ready — review and refetch at least one clip before export."
+                    ),
+                    error=None,
+                    done=fetched,
+                    total=total,
+                    cleared=0,
+                    clear_total=0,
+                    progress_percent=100,
+                )
+                return
+
             clear_total = len(initial_ids)
             cleared_ids: set[int] = set()
             _set_pipeline_state(
                 workspace,
                 stage="clear_duplicates",
-                message=(
-                    "No duplicates found."
-                    if clear_total == 0
-                    else f"Clearing duplicates (0/{clear_total})…"
-                ),
+                message=f"Clearing duplicates (0/{clear_total})…",
                 done=fetched,
                 total=total,
                 cleared=0,
                 clear_total=clear_total,
-                progress_percent=75 if clear_total else 100,
+                progress_percent=75,
             )
 
-            cleared_cleanly = clear_total == 0
+            cleared_cleanly = False
             for _pass_index in range(MAX_DUPLICATE_PASSES):
                 rows = load_rows()
                 affected = _duplicate_segment_ids(rows)
                 if not affected:
                     cleared_cleanly = True
                     break
-                if clear_total == 0:
-                    clear_total = len(affected)
                 for segment_id in affected:
                     row = next((r for r in rows if int(r["segment_id"]) == segment_id), None)
                     if row is None or not segment_needs_broll(row):
                         continue
                     try:
-                        fetch_segment_video(
-                            paths["selections"],
-                            paths["script"],
-                            segment_id,
-                            str(row.get("search_query") or row.get("description") or ""),
-                            refetch=True,
-                            provider_override="mix",
-                            segment=row,
-                            cache_dir=cache_dir,
-                            judgment_cache=judgment_cache,
-                            flagged_path=flagged_path,
-                        )
+                        fetch_row(row, refetch=True)
                     except Exception as exc:
                         print(f"[pipeline] duplicate refetch failed segment {segment_id}: {exc}")
                     cleared_ids.add(segment_id)
@@ -424,15 +472,27 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     )
 
             rows = load_rows()
-            if not cleared_cleanly and _duplicate_segment_ids(rows):
-                remaining = len(_duplicate_segment_ids(rows))
+            remaining_dupes = len(_duplicate_segment_ids(rows))
+            if not cleared_cleanly and remaining_dupes > 0:
+                if automation_goal == "auto_export":
+                    _set_pipeline_state(
+                        workspace,
+                        status="warning",
+                        stage="clear_duplicates",
+                        message=f"Duplicates remain ({remaining_dupes}) — orchestrator will retry.",
+                        error=f"{remaining_dupes} duplicate-affected segment(s) remain.",
+                        cleared=len(cleared_ids),
+                        clear_total=max(clear_total, len(cleared_ids)),
+                        progress_percent=99,
+                    )
+                    return
                 _set_pipeline_state(
                     workspace,
                     status="error",
                     stage="error",
-                    message=f"Could not clear all duplicates ({remaining} left).",
+                    message=f"Could not clear all duplicates ({remaining_dupes} left).",
                     error=(
-                        f"Still {remaining} duplicate-affected segment(s) after "
+                        f"Still {remaining_dupes} duplicate-affected segment(s) after "
                         f"{MAX_DUPLICATE_PASSES} passes."
                     ),
                     cleared=len(cleared_ids),
@@ -442,11 +502,17 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                 return
 
             fetched, total = compute_broll_counts(rows)
+            if automation_goal == "auto_export":
+                touch_manifest(workspace, manual_refetch_done=True)
             _set_pipeline_state(
                 workspace,
                 status="done",
                 stage="done",
-                message="B-roll ready — review and refetch at least one clip before export.",
+                message=(
+                    "B-roll ready — auto-export queued."
+                    if automation_goal == "auto_export"
+                    else "B-roll ready — review and refetch at least one clip before export."
+                ),
                 error=None,
                 done=fetched,
                 total=total,
@@ -457,9 +523,9 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
         except BaseException as exc:
             _set_pipeline_state(
                 workspace,
-                status="error",
+                status="interrupted",
                 stage="error",
-                message="B-roll pipeline failed.",
+                message="B-roll pipeline failed — will retry.",
                 error=str(exc) or "Pipeline failed.",
                 progress_percent=0,
             )

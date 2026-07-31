@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { Download, FolderOpen, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { AutomationDropModal } from "@/components/AutomationDropModal";
+import {
+  fetchAutomationSettings,
+  fetchAutomationStatus,
+  resumeAutomation,
+  setAutomationEnabled,
+  type AutomationGoal,
+  type AutomationStatus,
+} from "@/lib/automation";
 import {
   createProject,
   deleteProject,
@@ -48,7 +57,7 @@ function progressPercent(project: ProjectSummary): number | null {
     if (total > 0) return Math.round((done / total) * 100);
     return project.pipeline_job?.progress_percent ?? 0;
   }
-  if (status === "exporting") {
+  if (status === "exporting" || status === "queued_for_export") {
     return project.export_job?.progress_percent ?? 0;
   }
   return null;
@@ -77,8 +86,12 @@ function stepLabel(project: ProjectSummary): string {
       return "Ready for refetch";
     case "ready_for_export":
       return "Ready for export";
+    case "queued_for_export":
+      return "Queued for export";
     case "exporting":
       return `Exporting ${project.export_job?.progress_percent ?? 0}%`;
+    case "automation_paused":
+      return "Automation paused";
     case "complete":
       return "Complete";
     case "needs_script":
@@ -121,8 +134,17 @@ export function ProjectPicker() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [automationEnabled, setAutomationEnabledState] = useState(true);
+  const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
+  const [pendingDropFiles, setPendingDropFiles] = useState<File[] | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const dragDepthRef = useRef(0);
+
+  useEffect(() => {
+    void fetchAutomationSettings()
+      .then((settings) => setAutomationEnabledState(settings.enabled))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -152,6 +174,35 @@ export function ProjectPicker() {
   }, [refresh]);
 
   usePolling(() => refresh({ silent: true }), STATUS_POLL_MS);
+
+  const refreshAutomationStatus = useCallback(async () => {
+    try {
+      const status = await fetchAutomationStatus();
+      setAutomationStatus(status);
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
+
+  usePolling(() => refreshAutomationStatus(), STATUS_POLL_MS);
+
+  const handleAutomationToggle = async (enabled: boolean) => {
+    setAutomationEnabledState(enabled);
+    setError(null);
+    try {
+      await setAutomationEnabled(enabled);
+      if (enabled) {
+        const status = await resumeAutomation();
+        setAutomationStatus(status);
+      } else {
+        await refreshAutomationStatus();
+      }
+      await refresh({ silent: true });
+    } catch (err) {
+      setAutomationEnabledState(!enabled);
+      setError(err instanceof Error ? err.message : "Failed to update automation");
+    }
+  };
 
   const openProject = (project: ProjectSummary) => {
     session.selectProject(project.id, project.name);
@@ -198,7 +249,7 @@ export function ProjectPicker() {
   };
 
   const importJsonFiles = useCallback(
-    async (files: File[]) => {
+    async (files: File[], automationGoal: AutomationGoal) => {
       const jsonFiles = files.filter(
         (file) =>
           file.name.toLowerCase().endsWith(".json") || file.type.includes("json"),
@@ -223,7 +274,7 @@ export function ProjectPicker() {
             summary.title ||
             file.name.replace(/\.json$/i, "");
           const project = await createProject(title || undefined);
-          await uploadScriptPayload(script, project.id);
+          await uploadScriptPayload(script, project.id, { automation_goal: automationGoal });
           imported += 1;
         } catch (err) {
           failures.push(
@@ -234,9 +285,19 @@ export function ProjectPicker() {
 
       await refresh({ silent: true });
       if (imported > 0) {
-        setImportNotice(
-          `Imported ${imported} script${imported === 1 ? "" : "s"} — voice → segments → b-roll runs automatically.`,
-        );
+        if (automationGoal === "none") {
+          setImportNotice(
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — automation is off. Open a project to continue manually.`,
+          );
+        } else if (automationGoal === "auto_export") {
+          setImportNotice(
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — pipeline runs automatically through export to Documents.`,
+          );
+        } else {
+          setImportNotice(
+            `Imported ${imported} script${imported === 1 ? "" : "s"} — voice → segments → b-roll runs automatically. Refetch at least one clip before export.`,
+          );
+        }
       }
       if (failures.length) {
         setError(failures.join(" · "));
@@ -274,8 +335,36 @@ export function ProjectPicker() {
     dragDepthRef.current = 0;
     setDragging(false);
     const files = Array.from(event.dataTransfer.files || []);
-    void importJsonFiles(files);
+    const jsonFiles = files.filter(
+      (file) =>
+        file.name.toLowerCase().endsWith(".json") || file.type.includes("json"),
+    );
+    if (!jsonFiles.length) {
+      setError("Drop one or more .json script files.");
+      return;
+    }
+    if (automationEnabled) {
+      setPendingDropFiles(jsonFiles);
+      return;
+    }
+    void importJsonFiles(jsonFiles, "none");
   };
+
+  const exportQueueLabel = (() => {
+    if (!automationStatus?.enabled) return null;
+    const queueLength = automationStatus.queue_length ?? 0;
+    const exportingId = automationStatus.exporting_project_id;
+    if (!exportingId && queueLength === 0) return null;
+    const exportingProject = exportingId
+      ? projects.find((project) => project.id === exportingId)
+      : null;
+    const exportingName = exportingProject?.name ?? exportingId?.slice(0, 8) ?? "project";
+    if (exportingId) {
+      const position = queueLength > 0 ? ` · ${queueLength} queued` : "";
+      return `Exporting ${exportingName}${position}`;
+    }
+    return `${queueLength} project${queueLength === 1 ? "" : "s"} queued for export`;
+  })();
 
   return (
     <section
@@ -293,16 +382,42 @@ export function ProjectPicker() {
         </div>
       ) : null}
 
+      {pendingDropFiles ? (
+        <AutomationDropModal
+          fileCount={pendingDropFiles.length}
+          busy={busy}
+          onCancel={() => setPendingDropFiles(null)}
+          onChoose={(goal) => {
+            const files = pendingDropFiles;
+            setPendingDropFiles(null);
+            if (files) void importJsonFiles(files, goal);
+          }}
+        />
+      ) : null}
+
       <div className="glow-card w-full p-6 lg:p-8">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="glow-title text-3xl font-bold tracking-tight">Projects</h2>
             <p className="mt-3 max-w-2xl text-[0.95rem] leading-7 text-[var(--muted)]">
-              Drop one or more script JSON files anywhere on this page to import. Pipeline runs
-              automatically through b-roll and duplicate clearing — export stays manual after you
-              refetch at least one clip.
+              Drop script JSON files to import. With automation on, choose fetch & review or
+              hands-off auto-export to Documents. Exports run one at a time; TTS, Whisper, and
+              b-roll fetch run in parallel per project.
             </p>
+            {exportQueueLabel ? (
+              <p className="mt-2 text-sm font-medium text-[var(--accent)]">{exportQueueLabel}</p>
+            ) : null}
           </div>
+          <label className="flex shrink-0 items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] px-3 py-2 text-sm">
+            <span className="text-[var(--muted)]">Automation</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[var(--accent)]"
+              checked={automationEnabled}
+              onChange={(event) => void handleAutomationToggle(event.target.checked)}
+              disabled={busy}
+            />
+          </label>
         </div>
 
         <div className="mt-8">
@@ -350,7 +465,8 @@ export function ProjectPicker() {
                     >
                       {project.list_status === "complete" ||
                       project.list_status === "ready_for_export" ||
-                      project.list_status === "ready_for_refetch" ? (
+                      project.list_status === "ready_for_refetch" ||
+                      project.list_status === "queued_for_export" ? (
                         <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
                       ) : (
                         <FolderOpen className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />

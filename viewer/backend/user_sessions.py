@@ -63,6 +63,19 @@ def projects_root(workspace_root: Path) -> Path:
     return root
 
 
+def resolve_workspace_root(workspace: Path) -> Path | None:
+    """Infer workspace root (parent of projects/) from a project workspace path."""
+    resolved = workspace.resolve()
+    if resolved.parent.name == "projects":
+        return resolved.parent.parent
+    parts = resolved.parts
+    try:
+        projects_idx = parts.index("projects")
+        return Path(*parts[:projects_idx])
+    except ValueError:
+        return None
+
+
 def list_local_project_ids(workspace_root: Path) -> set[str]:
     """Project folder names currently on local disk."""
     root = projects_root(workspace_root)
@@ -190,6 +203,7 @@ def project_summary(workspace_root: Path, project_id: str) -> dict[str, Any]:
         "broll_total": status.get("broll_total", 0),
         "duplicates_remaining": status.get("duplicates_remaining", 0),
         "manual_refetch_done": status.get("manual_refetch_done", False),
+        "automation_goal": status.get("automation_goal") or "none",
         "list_status": status.get("list_status") or "in_progress",
     }
 

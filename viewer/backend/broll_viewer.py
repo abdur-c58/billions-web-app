@@ -93,7 +93,7 @@ from project_manager import (
     tts_job_snapshot,
     workspace_paths,
 )
-from pipeline_jobs import load_all_pipeline_job_states, load_pipeline_job_state
+from pipeline_jobs import load_all_pipeline_job_states, load_pipeline_job_state, pipeline_job_snapshot
 from storage_r2 import (
     list_r2_background_audio,
     purge_stale_exported_videos,
@@ -250,10 +250,19 @@ def project_is_protected(project_id: str) -> bool:
     if project_export_running(project_id):
         return True
     try:
+        from automation_orchestrator import is_queued_for_export
+
+        if is_queued_for_export(project_id):
+            return True
+    except Exception:
+        pass
+    try:
         workspace = project_workspace(WORKSPACE_DIR, project_id)
         if timestamps_job_snapshot(workspace).get("status") == "running":
             return True
         if tts_job_snapshot(workspace).get("status") == "running":
+            return True
+        if pipeline_job_snapshot(workspace).get("status") == "running":
             return True
     except Exception:
         pass
@@ -1585,6 +1594,24 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
+        if parsed.path == "/api/automation/settings":
+            try:
+                from automation_settings import read_automation_settings
+
+                self._send_json(read_automation_settings(WORKSPACE_DIR))
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/automation/status":
+            try:
+                from automation_orchestrator import automation_status
+
+                self._send_json(automation_status(WORKSPACE_DIR))
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/project/list":
             try:
                 from project_r2 import sync_local_projects_with_r2
@@ -1592,15 +1619,21 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 sync_local_projects_with_r2(WORKSPACE_DIR)
                 prune_inactive_projects()
                 projects = list_projects(WORKSPACE_DIR)
-                running = next(
-                    (
-                        p
-                        for p in projects
-                        if p.get("timestamps_job", {}).get("status") == "running"
-                        or p.get("tts_job", {}).get("status") == "running"
-                    ),
-                    None,
-                )
+                from automation_orchestrator import is_queued_for_export
+
+                def _project_is_busy(project: dict[str, Any]) -> bool:
+                    if project.get("timestamps_job", {}).get("status") == "running":
+                        return True
+                    if project.get("tts_job", {}).get("status") == "running":
+                        return True
+                    if project.get("pipeline_job", {}).get("status") == "running":
+                        return True
+                    if project.get("export_job", {}).get("status") == "running":
+                        return True
+                    project_id = str(project.get("id") or "")
+                    return bool(project_id and is_queued_for_export(project_id))
+
+                running = next((p for p in projects if _project_is_busy(p)), None)
                 self._send_json(
                     {
                         "projects": projects,
@@ -2122,6 +2155,30 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         self._sync_from_workspace()
 
+        if parsed.path == "/api/automation/settings":
+            try:
+                from automation_settings import write_automation_settings
+
+                body = self._read_json_body() if self.headers.get("Content-Length") else {}
+                enabled = body.get("enabled")
+                if not isinstance(enabled, bool):
+                    self._send_json({"error": "enabled must be a boolean"}, HTTPStatus.BAD_REQUEST)
+                    return
+                settings = write_automation_settings(WORKSPACE_DIR, enabled=enabled)
+                self._send_json(settings)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/automation/resume":
+            try:
+                from automation_orchestrator import resume_automation
+
+                self._send_json(resume_automation(WORKSPACE_DIR))
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
         if parsed.path == "/api/project/create":
             try:
                 body = self._read_json_body() if self.headers.get("Content-Length") else {}
@@ -2162,6 +2219,7 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 workspace = self._require_workspace() if self.workspace_mode else self.project_dir
                 content_type = self.headers.get("Content-Type", "")
+                automation_goal: str | None = None
                 if "multipart/form-data" in content_type:
                     parts = parse_multipart_form(self._read_body(), content_type)
                     file_part = parts.get("file") or parts.get("script")
@@ -2169,12 +2227,35 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                         self._send_json({"error": "Missing script file"}, HTTPStatus.BAD_REQUEST)
                         return
                     script_data = json.loads(file_part[1].decode("utf-8"))
+                    goal_part = parts.get("automation_goal")
+                    if goal_part:
+                        automation_goal = goal_part[1].decode("utf-8").strip() or None
                 else:
-                    script_data = self._read_json_body()
+                    payload = self._read_json_body()
+                    if isinstance(payload, dict) and isinstance(payload.get("script"), dict):
+                        automation_goal = payload.get("automation_goal")
+                        if isinstance(automation_goal, str):
+                            automation_goal = automation_goal.strip() or None
+                        else:
+                            automation_goal = None
+                        script_data = payload["script"]
+                    else:
+                        script_data = payload
+                        if isinstance(payload, dict):
+                            raw_goal = payload.get("automation_goal")
+                            automation_goal = (
+                                str(raw_goal).strip() if isinstance(raw_goal, str) else None
+                            )
+                            if isinstance(script_data, dict) and automation_goal:
+                                script_data = {
+                                    key: value
+                                    for key, value in script_data.items()
+                                    if key != "automation_goal"
+                                }
                 if not script_data:
                     self._send_json({"error": "Empty script payload"}, HTTPStatus.BAD_REQUEST)
                     return
-                status = save_script(workspace, script_data)
+                status = save_script(workspace, script_data, automation_goal=automation_goal)
                 self._sync_from_workspace()
                 self._send_json(status)
             except Exception as exc:
@@ -2986,6 +3067,9 @@ def main() -> None:
         load_all_timestamps_job_states(WORKSPACE_DIR)
         load_all_tts_job_states(WORKSPACE_DIR)
         load_all_pipeline_job_states(WORKSPACE_DIR)
+        from automation_orchestrator import start_automation_orchestrator
+
+        start_automation_orchestrator(WORKSPACE_DIR)
         prune_inactive_projects()
         for project in list_projects(WORKSPACE_DIR):
             try:

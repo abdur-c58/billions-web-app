@@ -47,7 +47,7 @@ export type TtsJobStatus = {
 };
 
 export type PipelineJobStatus = {
-  status: "idle" | "running" | "done" | "error";
+  status: "idle" | "running" | "done" | "error" | "warning" | "interrupted";
   message: string;
   error: string | null;
   progress_percent?: number;
@@ -71,9 +71,13 @@ export type ProjectListStatus =
   | "clearing_duplicates"
   | "ready_for_refetch"
   | "ready_for_export"
+  | "queued_for_export"
   | "exporting"
   | "complete"
+  | "automation_paused"
   | "in_progress";
+
+export type AutomationGoal = "none" | "fetch_review" | "auto_export";
 
 export type ProjectStatus = {
   workspace: string;
@@ -125,6 +129,7 @@ export type ProjectStatus = {
   broll_total?: number;
   duplicates_remaining?: number;
   manual_refetch_done?: boolean;
+  automation_goal?: AutomationGoal;
   list_status?: ProjectListStatus;
 };
 
@@ -161,14 +166,21 @@ export async function uploadScriptFile(file: File) {
   });
 }
 
-export async function uploadScriptPayload(script: object, projectId?: string) {
+export async function uploadScriptPayload(
+  script: object,
+  projectId?: string,
+  options?: { automation_goal?: AutomationGoal },
+) {
   return apiFetch<ProjectStatus>("/api/project/upload/script", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(projectId ? { "X-Billions-Project": projectId } : {}),
     },
-    body: JSON.stringify(script),
+    body: JSON.stringify({
+      script,
+      automation_goal: options?.automation_goal,
+    }),
   });
 }
 
@@ -270,6 +282,7 @@ export type ProjectSummary = {
   broll_total?: number;
   duplicates_remaining?: number;
   manual_refetch_done?: boolean;
+  automation_goal?: AutomationGoal;
   list_status?: ProjectListStatus;
 };
 

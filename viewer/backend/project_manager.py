@@ -456,12 +456,18 @@ def start_audio_generation(
                 progress_percent=2,
             )
 
-            synthesize_transcript_to_file(
-                transcript,
-                temp_output,
-                config,
-                on_progress=on_progress,
-                should_cancel=cancel_event.is_set,
+            from fetch_retry import run_with_retry
+
+            run_with_retry(
+                lambda: synthesize_transcript_to_file(
+                    transcript,
+                    temp_output,
+                    config,
+                    on_progress=on_progress,
+                    should_cancel=cancel_event.is_set,
+                ),
+                max_attempts=5,
+                label="tts",
             )
 
             if cancel_event.is_set():
@@ -720,12 +726,9 @@ def project_status(workspace: Path) -> dict[str, Any]:
     except Exception:
         export_job = {}
 
-    manual_refetch_done = False
-    try:
-        manifest = read_manifest(workspace)
-        manual_refetch_done = bool(manifest.get("manual_refetch_done"))
-    except Exception:
-        manual_refetch_done = False
+    from user_sessions import parse_workspace_scope
+
+    project_id = parse_workspace_scope(workspace)
 
     broll_fetched = 0
     broll_total = 0
@@ -744,6 +747,31 @@ def project_status(workspace: Path) -> dict[str, Any]:
         except Exception:
             pass
 
+    manual_refetch_done = False
+    automation_goal = "none"
+    try:
+        manifest = read_manifest(workspace)
+        manual_refetch_done = bool(manifest.get("manual_refetch_done"))
+        automation_goal = str(manifest.get("automation_goal") or "none").strip().lower()
+    except Exception:
+        manual_refetch_done = False
+        automation_goal = "none"
+
+    automation_enabled_flag = True
+    queued_for_export = False
+    try:
+        from automation_settings import automation_enabled
+        from automation_orchestrator import is_queued_for_export
+        from user_sessions import resolve_workspace_root
+
+        workspace_root = resolve_workspace_root(workspace)
+        if workspace_root is not None:
+            automation_enabled_flag = automation_enabled(workspace_root)
+        if project_id:
+            queued_for_export = is_queued_for_export(project_id)
+    except Exception:
+        pass
+
     list_status = compute_list_status(
         script_exists=script_exists,
         audio_exists=audio_exists,
@@ -756,13 +784,13 @@ def project_status(workspace: Path) -> dict[str, Any]:
         broll_total=broll_total,
         duplicates_remaining=duplicates_remaining,
         manual_refetch_done=manual_refetch_done,
+        automation_goal=automation_goal,
+        automation_enabled_flag=automation_enabled_flag,
+        queued_for_export=queued_for_export,
     )
 
     transcript_preview = _build_transcript_preview(paths["script"]) if script_exists else None
 
-    from user_sessions import parse_workspace_scope
-
-    project_id = parse_workspace_scope(workspace)
     from remotion_render import remotion_available
 
     return {
@@ -795,6 +823,7 @@ def project_status(workspace: Path) -> dict[str, Any]:
         "broll_total": broll_total,
         "duplicates_remaining": duplicates_remaining,
         "manual_refetch_done": manual_refetch_done,
+        "automation_goal": automation_goal,
         "list_status": list_status,
         "transcript_preview": transcript_preview,
         "script_summary": script_summary,
@@ -810,7 +839,28 @@ def project_status(workspace: Path) -> dict[str, Any]:
     }
 
 
-def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
+def project_automation_active(workspace: Path) -> bool:
+    """True when global automation is on and this project has a non-none goal."""
+    try:
+        from automation_settings import automation_enabled
+        from user_sessions import read_manifest, resolve_workspace_root
+
+        workspace_root = resolve_workspace_root(workspace)
+        if workspace_root is None or not automation_enabled(workspace_root):
+            return False
+        manifest = read_manifest(workspace)
+        goal = str(manifest.get("automation_goal") or "none").strip().lower()
+        return goal != "none"
+    except Exception:
+        return False
+
+
+def save_script(
+    workspace: Path,
+    script_data: dict[str, Any],
+    *,
+    automation_goal: str | None = None,
+) -> dict[str, Any]:
     from script_format import analyze_script_remotion, validate_script_payload
 
     validate_script_payload(script_data)
@@ -843,6 +893,10 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
 
         title = script_data.get("title")
         updates: dict[str, Any] = {"manual_refetch_done": False}
+        if automation_goal is not None:
+            goal = str(automation_goal).strip().lower()
+            if goal in {"none", "fetch_review", "auto_export"}:
+                updates["automation_goal"] = goal
         if isinstance(title, str) and title.strip():
             updates["name"] = title.strip()
         touch_manifest(workspace, **updates)
@@ -855,14 +909,17 @@ def save_script(workspace: Path, script_data: dict[str, Any]) -> dict[str, Any]:
     except Exception:
         pass
 
-    # Auto-start Fish TTS so home-page bulk imports keep moving without opening setup.
-    try:
-        from fish_audio_tts import validate_fish_config
+    # Auto-start Fish TTS when automation is enabled for this project.
+    if project_automation_active(workspace):
+        try:
+            from fish_audio_tts import validate_fish_config
 
-        validate_fish_config()
-        start_audio_generation(workspace)
-    except Exception as exc:
-        print(f"[pipeline] auto-TTS skipped: {exc}")
+            validate_fish_config()
+            start_audio_generation(workspace)
+        except Exception as exc:
+            print(f"[pipeline] auto-TTS skipped: {exc}")
+    else:
+        print("[pipeline] auto-TTS skipped: automation off or goal is none")
 
     return project_status(workspace)
 
@@ -1008,7 +1065,8 @@ def start_segment_timestamps(
             try:
                 from pipeline_jobs import start_broll_pipeline
 
-                start_broll_pipeline(workspace)
+                if project_automation_active(workspace):
+                    start_broll_pipeline(workspace)
             except Exception as pipeline_exc:
                 print(f"[pipeline] auto b-roll start skipped: {pipeline_exc}")
             if on_complete:
