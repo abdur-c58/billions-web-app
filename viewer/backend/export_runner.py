@@ -27,6 +27,29 @@ from user_sessions import read_manifest
 from youtube_description import build_youtube_description
 
 
+def _start_background_r2_upload(
+    *,
+    local_path: Path,
+    project_name: str,
+    project_id: str,
+    status_file: Path,
+) -> None:
+    """Upload after export is already marked done — never block the queue."""
+
+    def _run() -> None:
+        try:
+            key = upload_exported_video(local_path, project_name)
+            update_export_state(project_id, status_file, r2_key=key)
+        except Exception as exc:
+            print(f"[export-r2] Background upload failed: {exc}")
+
+    threading.Thread(
+        target=_run,
+        daemon=True,
+        name=f"r2-upload-{project_id[:8]}",
+    ).start()
+
+
 def start_export_for_workspace(
     workspace: Path,
     project_id: str,
@@ -121,12 +144,14 @@ def start_export_for_workspace(
                 selections_path=selections_path,
                 audio_path=audio_path,
             )
-            r2_key: str | None = None
-            try:
-                r2_key = upload_exported_video(Path(result["output"]), project_name or project_id[:8])
-            except Exception as r2_exc:
-                print(f"[export-r2] Upload skipped: {r2_exc}")
             youtube_description: str | None = None
+            set_state(
+                stage="finalize",
+                message="Generating YouTube description…",
+                progress_percent=99,
+                output=result["output"],
+                encoder=result["encoder"],
+            )
             try:
                 youtube_description = build_youtube_description(
                     script_path=script_path,
@@ -136,6 +161,8 @@ def start_export_for_workspace(
                 )
             except Exception as desc_exc:
                 print(f"[export] Description generation skipped: {desc_exc}")
+            # Local MP4 is the source of truth — mark done before any cloud work
+            # so a hung R2 upload can never pin the sequential export queue.
             set_state(
                 status="done",
                 stage="done",
@@ -148,8 +175,14 @@ def start_export_for_workspace(
                 progress_percent=100,
                 eta_seconds=0,
                 inputs_hash=inputs_hash,
-                r2_key=r2_key,
+                r2_key=None,
                 youtube_description=youtube_description,
+            )
+            _start_background_r2_upload(
+                local_path=Path(result["output"]),
+                project_name=project_name or project_id[:8],
+                project_id=project_id,
+                status_file=status_file,
             )
         except ExportCancelled:
             if not cancel_event.is_set():

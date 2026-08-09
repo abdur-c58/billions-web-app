@@ -229,6 +229,69 @@ def build_chapter_lines(chapters: list[dict[str, Any]]) -> list[str]:
     ]
 
 
+# Beats that exist for retention/production reasons rather than being real
+# viewer-facing sections: hooks, subscribe prompts, teases and sign-offs.
+_NON_CONTENT_BEAT = re.compile(
+    r"\b(hook|cta|call\s*to\s*action|subscribe|tease|teaser|retention|"
+    r"outro|sign[\s-]*off|intro|cold\s*open)\b",
+    re.IGNORECASE,
+)
+
+
+def is_content_chapter(label: str) -> bool:
+    """True when a beat label describes actual video content."""
+    return not _NON_CONTENT_BEAT.search(str(label or ""))
+
+
+def select_content_chapters(chapters: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep only real content beats, anchored by an Intro at 0:00.
+
+    YouTube ignores a chapter list whose first entry isn't 0:00, so the opening
+    hook is replaced by a plain "Intro" marker instead of being dropped
+    outright.
+    """
+    content = [
+        {**chapter, "title": str(chapter.get("label") or "").strip()}
+        for chapter in chapters
+        if is_content_chapter(chapter.get("label"))
+    ]
+    content.sort(key=lambda item: item["start_seconds"])
+
+    if not content:
+        return []
+
+    if content[0]["start_seconds"] > 0:
+        content.insert(
+            0,
+            {
+                "beat": 0,
+                "label": "Intro",
+                "title": "Intro",
+                "segment_id": None,
+                "start_seconds": 0.0,
+            },
+        )
+    else:
+        content[0]["title"] = "Intro"
+
+    _apply_number_one_title(content, chapters)
+    return content
+
+
+def build_plain_chapters(*, timestamps_path: Path) -> list[dict[str, Any]]:
+    """Chapter titles + timestamps straight from the script beats (no AI)."""
+    raw_chapters = collect_beat_chapters(timestamps_path)
+    selected = select_content_chapters(raw_chapters)
+    return [
+        {
+            "title": chapter["title"],
+            "timestamp": format_youtube_timestamp(chapter["start_seconds"]),
+            "start_seconds": chapter["start_seconds"],
+        }
+        for chapter in selected
+    ]
+
+
 def build_youtube_chapters_block(
     *,
     script_path: Path,

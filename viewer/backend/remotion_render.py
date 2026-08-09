@@ -118,6 +118,9 @@ def render_remotion_clip(
 
     env = os.environ.copy()
     env.setdefault("REMOTION_DISABLE_TELEMETRY", "1")
+    # Force UTF-8 so Node/Remotion stderr with unicode titles doesn't hit cp1252.
+    env.setdefault("PYTHONUTF8", "1")
+    env.setdefault("PYTHONIOENCODING", "utf-8")
 
     try:
         result = subprocess.run(
@@ -125,6 +128,8 @@ def render_remotion_clip(
             cwd=REMOTION_DIR,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
             env=env,
         )

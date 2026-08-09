@@ -122,11 +122,18 @@ def _cache_path_for_key(key: str, cache_dir: Path) -> Path:
 
 
 def upload_exported_video(local_path: Path, project_name: str) -> str:
-    """Upload a rendered export to R2 under 'Exported Videos/' and return its key."""
+    """Upload a rendered export to R2 under 'Exported Videos/' and return its key.
+
+    Streams from disk with multipart upload — never loads the whole MP4 into RAM
+    (``read_bytes()`` + ``put_object`` hung exports at 97% on ~700MB files).
+    """
     if not _r2_configured():
         raise RuntimeError("R2 is not configured — cannot upload exported video.")
     if not local_path.exists() or local_path.stat().st_size == 0:
         raise FileNotFoundError(f"Export file not found: {local_path}")
+
+    from boto3.s3.transfer import TransferConfig
+    from botocore.config import Config as BotoConfig
 
     safe_name = "".join(
         c if (c.isalnum() or c in " _-") else "_" for c in project_name
@@ -135,19 +142,45 @@ def upload_exported_video(local_path: Path, project_name: str) -> str:
     filename = f"{safe_name}_{date_tag}.mp4"
     key = f"{EXPORTED_VIDEOS_PREFIX}{filename}"
 
-    client = _r2_client()
+    # Fresh client with hard network timeouts so a stalled Cloudflare socket
+    # cannot pin the export worker forever after mux finishes.
+    import boto3
+
+    account_id = os.environ["R2_ACCOUNT_ID"]
+    client = boto3.client(
+        "s3",
+        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+        region_name="auto",
+        config=BotoConfig(
+            connect_timeout=30,
+            read_timeout=120,
+            retries={"max_attempts": 3, "mode": "standard"},
+        ),
+    )
     bucket = os.environ["R2_BUCKET_NAME"]
     now_str = str(int(time.time()))
-    client.put_object(
+    size_mb = local_path.stat().st_size / (1024 * 1024)
+    print(f"[export-r2] Uploading {size_mb:.0f} MB to R2: {key}")
+    client.upload_file(
+        Filename=str(local_path),
         Bucket=bucket,
         Key=key,
-        Body=local_path.read_bytes(),
-        ContentType="video/mp4",
-        Metadata={
-            "last-downloaded": now_str,
-            "uploaded-at": now_str,
-            "project-name": project_name[:256],
+        ExtraArgs={
+            "ContentType": "video/mp4",
+            "Metadata": {
+                "last-downloaded": now_str,
+                "uploaded-at": now_str,
+                "project-name": project_name[:256],
+            },
         },
+        Config=TransferConfig(
+            multipart_threshold=64 * 1024 * 1024,
+            multipart_chunksize=64 * 1024 * 1024,
+            max_concurrency=4,
+            use_threads=True,
+        ),
     )
     print(f"[export-r2] Uploaded export to R2: {key}")
     return key

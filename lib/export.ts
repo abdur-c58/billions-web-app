@@ -7,6 +7,24 @@ export async function fetchExportStatus(projectId: string): Promise<ExportSnapsh
   });
 }
 
+export type YoutubeChapter = {
+  title: string;
+  timestamp: string;
+  start_seconds: number;
+};
+
+export type YoutubeChapters = {
+  project_id: string;
+  chapters: YoutubeChapter[];
+  text: string;
+};
+
+export async function fetchYoutubeChapters(projectId?: string): Promise<YoutubeChapters> {
+  return apiFetch<YoutubeChapters>("/api/export/chapters", {
+    headers: projectId ? { "X-Billions-Project": projectId } : undefined,
+  });
+}
+
 export async function regenerateYoutubeDescription(
   includeEmojis: boolean,
   includeChapters: boolean,

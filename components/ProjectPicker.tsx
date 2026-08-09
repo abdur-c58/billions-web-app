@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
-import { Download, FolderOpen, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { Check, Clock, Download, FolderOpen, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { AutomationDropModal } from "@/components/AutomationDropModal";
 import {
   OverwriteConfirmModal,
@@ -24,6 +24,7 @@ import {
   uploadScriptPayload,
   type ProjectSummary,
 } from "@/lib/project";
+import { fetchYoutubeChapters } from "@/lib/export";
 import { buildScriptSummary, prepareScriptImport } from "@/lib/script";
 import { useSession } from "@/context/SessionContext";
 import { cn } from "@/lib/utils";
@@ -159,6 +160,8 @@ export function ProjectPicker() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [resumingId, setResumingId] = useState<string | null>(null);
+  const [copyingChaptersId, setCopyingChaptersId] = useState<string | null>(null);
+  const [chaptersCopiedId, setChaptersCopiedId] = useState<string | null>(null);
   const [resumingAll, setResumingAll] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [automationEnabled, setAutomationEnabledState] = useState(true);
@@ -291,6 +294,30 @@ export function ProjectPicker() {
       setError(err instanceof Error ? err.message : "Failed to delete project");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleCopyChapters = async (project: ProjectSummary) => {
+    setCopyingChaptersId(project.id);
+    setChaptersCopiedId(null);
+    setError(null);
+    try {
+      const payload = await fetchYoutubeChapters(project.id);
+      const text = payload.text.trim();
+      if (!text) {
+        setError(`No content chapters found for ${project.name}.`);
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setChaptersCopiedId(project.id);
+      window.setTimeout(
+        () => setChaptersCopiedId((current) => (current === project.id ? null : current)),
+        2000,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to copy chapters");
+    } finally {
+      setCopyingChaptersId(null);
     }
   };
 
@@ -633,6 +660,8 @@ export function ProjectPicker() {
               const deleting = deletingId === project.id;
               const exporting = exportingId === project.id;
               const canExport = project.list_status === "ready_for_export";
+              const copyingChapters = copyingChaptersId === project.id;
+              const chaptersCopied = chaptersCopiedId === project.id;
               const resuming = resumingId === project.id;
               const canResume =
                 !!project.automation_goal &&
@@ -707,6 +736,24 @@ export function ProjectPicker() {
                             <Download className="h-3.5 w-3.5" />
                           )}
                           Export
+                        </button>
+                      ) : null}
+                      {project.viewer_ready ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyChapters(project)}
+                          disabled={copyingChapters || busy}
+                          title="Copy chapter titles and timestamps"
+                          className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-55"
+                        >
+                          {copyingChapters ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : chaptersCopied ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <Clock className="h-3.5 w-3.5" />
+                          )}
+                          {chaptersCopied ? "Copied" : "Chapters"}
                         </button>
                       ) : null}
                       {canResume ? (

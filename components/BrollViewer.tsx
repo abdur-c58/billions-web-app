@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { useWhisperResegment } from "@/hooks/useWhisperResegment";
 import { resolveBrollApiUrl } from "@/lib/api";
+import { fetchYoutubeChapters } from "@/lib/export";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
 import type { FolderFetchPlan, FolderShortageStrategy, ThumbnailPrompt } from "@/lib/types";
@@ -46,6 +47,9 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [copiedThumbnailLabel, setCopiedThumbnailLabel] = useState<string | null>(null);
   const [titleCopied, setTitleCopied] = useState(false);
+  const [copyingChapters, setCopyingChapters] = useState(false);
+  const [chaptersCopied, setChaptersCopied] = useState(false);
+  const [chaptersError, setChaptersError] = useState<string | null>(null);
   const thumbnailGenerationRef = useRef(false);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
@@ -306,6 +310,27 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
       setCopiedThumbnailLabel(null);
     }
   }, []);
+
+  const handleCopyChapters = useCallback(async () => {
+    setCopyingChapters(true);
+    setChaptersError(null);
+    setChaptersCopied(false);
+    try {
+      const payload = await fetchYoutubeChapters(projectId ?? undefined);
+      const text = payload.text.trim();
+      if (!text) {
+        setChaptersError("No content chapters found for this project.");
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setChaptersCopied(true);
+      window.setTimeout(() => setChaptersCopied(false), 2000);
+    } catch (err) {
+      setChaptersError(err instanceof Error ? err.message : "Failed to copy chapters");
+    } finally {
+      setCopyingChapters(false);
+    }
+  }, [projectId]);
 
   const handleCopyTitle = useCallback(async () => {
     const text = viewer.title?.trim();
@@ -701,12 +726,33 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
 
           <button
             type="button"
+            onClick={() => void handleCopyChapters()}
+            disabled={copyingChapters}
+            title={chaptersError ?? "Copy chapter titles and timestamps"}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {copyingChapters ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : chaptersCopied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Clock className="h-4 w-4" />
+            )}
+            {chaptersCopied ? "Chapters copied" : "Copy chapters"}
+          </button>
+
+          <button
+            type="button"
             onClick={() => void handleOpenThumbnailPrompts()}
             className="inline-flex items-center gap-2 rounded-[10px] border border-violet-300/30 bg-violet-500/15 px-3.5 py-2.5 text-sm font-semibold text-violet-100 transition-colors hover:bg-violet-500/25"
           >
             <Image className="h-4 w-4" />
             Thumbnail prompts
           </button>
+
+          {chaptersError ? (
+            <span className="text-xs text-[#ffc9c9]">{chaptersError}</span>
+          ) : null}
 
           <div className="min-w-[200px] flex-1 overflow-visible text-[0.86rem] text-[var(--muted)]">
             <span>{viewer.exportProgressText}</span>

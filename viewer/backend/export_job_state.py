@@ -79,6 +79,10 @@ def compute_progress_percent(stage: str, current: int, total: int, status: str) 
         return 94
     if stage == "encode":
         return 97
+    if stage == "upload":
+        return 98
+    if stage == "finalize":
+        return 99
     return 0
 
 

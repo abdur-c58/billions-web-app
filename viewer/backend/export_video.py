@@ -182,11 +182,15 @@ def run_ffmpeg(args: list[str], quiet: bool = True, should_cancel: CancelCheck |
     project_id = _current_export_project_id()
     command = ["ffmpeg", "-hide_banner", "-y", *args]
     _check_cancel(should_cancel)
+    # Always decode as UTF-8. Windows defaults to cp1252, which crashes when
+    # ffmpeg stderr echoes paths containing macrons (e.g. "Taupō" → byte 0x8d).
     proc = subprocess.Popen(
         command,
         stdout=subprocess.DEVNULL if quiet else None,
         stderr=subprocess.PIPE if quiet else None,
-        text=quiet,
+        text=True if quiet else False,
+        encoding="utf-8" if quiet else None,
+        errors="replace" if quiet else None,
     )
     if project_id:
         with _active_ffmpeg_lock:
@@ -196,7 +200,7 @@ def run_ffmpeg(args: list[str], quiet: bool = True, should_cancel: CancelCheck |
         if should_cancel and should_cancel():
             raise ExportCancelled("Export cancelled")
         if proc.returncode != 0:
-            err = (stderr or "").strip()
+            err = (stderr or "").strip() if isinstance(stderr, str) else ""
             raise RuntimeError(err or "ffmpeg failed")
         _ = stdout
     finally:
@@ -219,6 +223,8 @@ def detect_encoder(
         ["ffmpeg", "-hide_banner", "-encoders"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     ).stdout
 
@@ -271,6 +277,8 @@ def _ffmpeg_capability(args: list[str]) -> str:
             ["ffmpeg", "-hide_banner", *args],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         ).stdout
     except OSError:
@@ -315,6 +323,8 @@ def gpu_scale_available(encoder_name: str) -> bool:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
     _gpu_scale_support = probe.returncode == 0
@@ -1441,6 +1451,8 @@ def probe_duration(audio_path: Path) -> float:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
     return float(result.stdout.strip())
@@ -1462,6 +1474,8 @@ def probe_decoded_duration(audio_path: Path) -> float:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
     output = (result.stderr or "") + (result.stdout or "")
@@ -1504,7 +1518,14 @@ def probe_mean_volume(audio_path: Path, max_probe_seconds: float | None = 120.0)
     if max_probe_seconds:
         command.extend(["-t", f"{max_probe_seconds:.3f}"])
     command.extend(["-i", str(audio_path), "-af", "volumedetect", "-f", "null", "-"])
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
     output = (result.stderr or "") + (result.stdout or "")
     match = re.search(r"mean_volume:\s*([-\d.]+)\s*dB", output)
     if not match:

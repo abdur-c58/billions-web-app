@@ -73,6 +73,7 @@ from broll_judge import (
     pick_best_candidate,
     summarize_judgments,
 )
+from youtube_chapters import build_plain_chapters
 from youtube_description import build_youtube_description
 from youtube_thumbnail_prompts import build_thumbnail_prompts
 from project_manager import (
@@ -93,13 +94,17 @@ from project_manager import (
     tts_job_snapshot,
     workspace_paths,
 )
-from pipeline_jobs import load_all_pipeline_job_states, load_pipeline_job_state, pipeline_job_snapshot
+from pipeline_jobs import (
+    load_all_pipeline_job_states,
+    load_pipeline_job_state,
+    pipeline_job_snapshot,
+    resolve_broll_search_query,
+)
 from storage_r2 import (
     list_r2_background_audio,
     purge_stale_exported_videos,
     resolve_r2_background_audio,
     touch_exported_video_access,
-    upload_exported_video,
     upload_storage_audio,
     validate_audio_storage_key,
     validate_audio_storage_prefix,
@@ -346,7 +351,13 @@ def selection_matches_segment(
         return False
 
     saved_query = selection.get("search_query")
-    if saved_query and saved_query != segment["search_query"]:
+    segment_query = str(segment.get("search_query") or "").strip()
+    # The query check exists to invalidate a selection when the script's query
+    # changed. When the script segment has no query of its own, the fetch had to
+    # derive one (from label/content), so a saved query can't contradict it —
+    # rejecting it here made those clips invisible forever and the b-roll
+    # pipeline refetched them on an endless loop.
+    if saved_query and segment_query and saved_query != segment_query:
         return False
 
     return True
@@ -805,6 +816,8 @@ def fetch_segment_video(
 ) -> dict[str, Any]:
     script_query = search_query.strip()
     if not script_query and not (query_override and query_override.strip()):
+        script_query = resolve_broll_search_query(segment)
+    if not script_query and not (query_override and query_override.strip()):
         raise RuntimeError(
             f"Missing search query for segment {segment_id} — cannot fetch b-roll."
         )
@@ -1226,6 +1239,32 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         status_file = workspace_paths(workspace)["export_status"]
         return export_snapshot(pid, status_file)
 
+    def _youtube_chapters(self) -> dict[str, Any]:
+        """Chapter titles + timestamps for a project, scoped by request header.
+
+        Resolved straight from the project id rather than the synced instance
+        paths so the project list can request chapters without opening the
+        project first.
+        """
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        project_id = (
+            str((params.get("project_id") or [""])[0]).strip()
+            or self.headers.get("X-Billions-Project", "").strip()
+        )
+        if not project_id:
+            raise ValueError("Select a project first.")
+
+        workspace = project_workspace(WORKSPACE_DIR, project_id)
+        paths = workspace_paths(workspace)
+        timestamps_path = paths["timestamps"]
+        if not timestamps_path.exists():
+            raise ValueError("Segment timestamps are not ready for this project yet.")
+
+        chapters = build_plain_chapters(timestamps_path=timestamps_path)
+        text = "\n".join(f"{item['timestamp']} {item['title']}" for item in chapters)
+        return {"project_id": project_id, "chapters": chapters, "text": text}
+
     def _regenerate_youtube_description(
         self,
         *,
@@ -1495,16 +1534,18 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     selections_path=self.selections_path,
                     audio_path=self.audio_path,
                 )
-                # Upload to R2 "Exported Videos/" folder asynchronously.
-                r2_key: str | None = None
-                try:
-                    r2_key = upload_exported_video(
-                        Path(result["output"]),
-                        project_name or project_id[:8],
-                    )
-                except Exception as r2_exc:
-                    print(f"[export-r2] Upload skipped: {r2_exc}")
+                # Local MP4 is done — finish the job, then upload to R2 in the
+                # background so a hung Cloudflare socket cannot block the queue.
+                from export_runner import _start_background_r2_upload
+
                 youtube_description: str | None = None
+                set_state(
+                    stage="finalize",
+                    message="Generating YouTube description…",
+                    progress_percent=99,
+                    output=result["output"],
+                    encoder=result["encoder"],
+                )
                 try:
                     youtube_description = build_youtube_description(
                         script_path=self.script_path,
@@ -1526,8 +1567,14 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     progress_percent=100,
                     eta_seconds=0,
                     inputs_hash=inputs_hash,
-                    r2_key=r2_key,
+                    r2_key=None,
                     youtube_description=youtube_description,
+                )
+                _start_background_r2_upload(
+                    local_path=Path(result["output"]),
+                    project_name=project_name or project_id[:8],
+                    project_id=project_id,
+                    status_file=status_file,
                 )
             except ExportCancelled:
                 if not cancel_event.is_set():
@@ -1969,6 +2016,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
             try:
                 self._send_json(self._export_snapshot_for())
             except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/export/chapters":
+            try:
+                self._send_json(self._youtube_chapters())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 

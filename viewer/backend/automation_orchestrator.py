@@ -207,9 +207,15 @@ def _maybe_start_pipeline(
     if not allowed:
         return
     try:
+        before = pipeline_job_snapshot(workspace)
+        started_at_before = before.get("started_at")
         start_broll_pipeline(workspace)
-        verb = "Recovered" if is_recovery else "Started"
-        print(f"[automation] {verb} b-roll pipeline for {project_id}")
+        after = pipeline_job_snapshot(workspace)
+        # start_broll_pipeline is a no-op when a live worker already holds
+        # status=running — don't log "Recovered" for a skipped call.
+        if after.get("status") == "running" and after.get("started_at") != started_at_before:
+            verb = "Recovered" if is_recovery else "Started"
+            print(f"[automation] {verb} b-roll pipeline for {project_id}")
     except Exception as exc:
         print(f"[automation] Pipeline start skipped for {project_id}: {exc}")
 

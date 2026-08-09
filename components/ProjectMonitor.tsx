@@ -53,7 +53,13 @@ function jobError(project: ProjectSummary): { stage: StageKey; message: string }
     (pipelineStatus === "error" || pipelineStatus === "interrupted" || pipelineStatus === "warning") &&
     project.pipeline_job?.error
   ) {
-    return { stage: "broll", message: project.pipeline_job.error };
+    const message = project.pipeline_job.error;
+    // Incomplete fetch is not a hard failure — the orchestrator / pipeline
+    // loop keeps retrying. Don't paint the project red for that.
+    if (/only fetched \d+ of \d+/i.test(message) || /will retry/i.test(message)) {
+      return null;
+    }
+    return { stage: "broll", message };
   }
   if (project.export_job?.status === "error" && project.export_job.error) {
     return { stage: "export", message: project.export_job.error };
@@ -166,6 +172,24 @@ function headline(
 
   if (err) return { text: err.message, tone: "error" };
 
+  const pipelineMsg = project.pipeline_job?.message || "";
+  const pipelineErr = project.pipeline_job?.error || "";
+  if (
+    /only fetched \d+ of \d+/i.test(pipelineErr) ||
+    /b-roll incomplete/i.test(pipelineMsg) ||
+    /retrying remaining b-roll/i.test(pipelineMsg)
+  ) {
+    const done = project.pipeline_job?.done ?? project.broll_fetched ?? 0;
+    const total = project.pipeline_job?.total ?? project.broll_total ?? 0;
+    return {
+      text:
+        total > 0
+          ? `Retrying remaining b-roll clips (${done}/${total})…`
+          : "Retrying remaining b-roll clips…",
+      tone: "active",
+    };
+  }
+
   switch (ls) {
     case "complete":
       return { text: "Done — exported successfully.", tone: "done" };
@@ -206,8 +230,17 @@ function headline(
         tone: "active",
       };
     }
-    case "ready_for_broll":
+    case "ready_for_broll": {
+      const done = project.broll_fetched ?? project.pipeline_job?.done ?? 0;
+      const total = project.broll_total ?? project.pipeline_job?.total ?? 0;
+      if (total > 0 && done < total) {
+        return {
+          text: `Retrying remaining b-roll clips (${done}/${total})…`,
+          tone: "active",
+        };
+      }
       return { text: "Starting b-roll fetch…", tone: "active" };
+    }
     case "segmenting":
       return { text: `Transcribing audio (${project.timestamps_job?.progress_percent ?? 0}%)…`, tone: "active" };
     case "needs_timestamps":

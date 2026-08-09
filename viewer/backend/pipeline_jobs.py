@@ -17,6 +17,9 @@ STALE_JOB_SECONDS = 30 * 60
 # If fetched/cleared count doesn't move for this long while status=running,
 # treat the worker as silently hung and restart the pipeline.
 PROGRESS_STALL_SECONDS = 60
+# Retry passes tolerated without the fetched count improving before we give up
+# and surface a real error instead of looping "Retrying remaining…" forever.
+MAX_STAGNANT_FETCH_PASSES = 6
 MAX_DUPLICATE_PASSES = 10
 FETCH_CONCURRENCY = 2
 
@@ -457,94 +460,181 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
             if not still_current():
                 return
 
-            rows = load_rows()
-            missing = [
-                row
-                for row in rows
-                if segment_needs_broll(row) and not segment_has_broll_coverage(row)
-            ]
-            needed_total = sum(1 for row in rows if segment_needs_broll(row))
-            fetched_ok = needed_total - len(missing)
-            failed_ids: list[int] = []
+            # Keep fetching until every required segment has coverage. Never exit
+            # after a single incomplete pass — that left projects sitting on
+            # "Only fetched X of Y" until the next watchdog tick (and looked
+            # broken in the UI even while automation intended to retry).
+            incomplete_passes = 0
+            best_done = -1
+            stagnant_passes = 0
+            while still_current():
+                rows = load_rows()
+                missing = [
+                    row
+                    for row in rows
+                    if segment_needs_broll(row) and not segment_has_broll_coverage(row)
+                ]
+                needed_total = sum(1 for row in rows if segment_needs_broll(row))
+                fetched_ok = needed_total - len(missing)
 
-            _set_pipeline_state(
-                workspace,
-                stage="fetch_broll",
-                message=f"Fetching b-roll ({fetched_ok}/{needed_total})…",
-                done=fetched_ok,
-                total=needed_total,
-                failed_segment_ids=[],
-                progress_percent=int((fetched_ok / needed_total) * 70) if needed_total else 70,
-            )
+                _set_pipeline_state(
+                    workspace,
+                    status="running",
+                    stage="fetch_broll",
+                    message=(
+                        f"Fetching b-roll ({fetched_ok}/{needed_total})…"
+                        if missing
+                        else f"B-roll complete ({fetched_ok}/{needed_total})."
+                    ),
+                    error=None,
+                    done=fetched_ok,
+                    total=needed_total,
+                    failed_segment_ids=[],
+                    progress_percent=int((fetched_ok / max(needed_total, 1)) * 70),
+                )
 
-            def fetch_batch(batch: list[dict[str, Any]]) -> list[int]:
-                still_failed: list[int] = []
-                if not batch:
+                if not missing or needed_total == 0:
+                    break
+
+                def fetch_batch(batch: list[dict[str, Any]]) -> list[int]:
+                    still_failed: list[int] = []
+                    if not batch:
+                        return still_failed
+                    pool = ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY)
+                    try:
+                        futures = {
+                            pool.submit(fetch_row, row, refetch=False): row for row in batch
+                        }
+                        pending = set(futures.keys())
+                        while pending:
+                            if not still_current():
+                                for future in pending:
+                                    future.cancel()
+                                return still_failed
+                            done_set, pending = as_completed_wait(pending, timeout=5.0)
+                            for future in done_set:
+                                row = futures[future]
+                                segment_id = int(row["segment_id"])
+                                try:
+                                    future.result()
+                                    fetched_ok_nonlocal[0] += 1
+                                except Exception as exc:
+                                    print(f"[pipeline] fetch failed segment {segment_id}: {exc}")
+                                    still_failed.append(segment_id)
+                                if still_current():
+                                    _set_pipeline_state(
+                                        workspace,
+                                        stage="fetch_broll",
+                                        message=(
+                                            f"Fetching b-roll "
+                                            f"({fetched_ok_nonlocal[0]}/{needed_total})…"
+                                        ),
+                                        done=fetched_ok_nonlocal[0],
+                                        total=needed_total,
+                                        failed_segment_ids=sorted(set(still_failed)),
+                                        progress_percent=int(
+                                            (fetched_ok_nonlocal[0] / max(needed_total, 1)) * 70
+                                        ),
+                                    )
+                    finally:
+                        pool.shutdown(wait=False, cancel_futures=True)
                     return still_failed
-                # Don't use `with ThreadPoolExecutor` — its shutdown(wait=True) would
-                # block forever on a hung HTTP fetch and prevent the stall watchdog
-                # from launching a replacement worker. shutdown(wait=False) lets us
-                # abandon hung futures after still_current() flips.
-                pool = ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY)
-                try:
-                    futures = {pool.submit(fetch_row, row, refetch=False): row for row in batch}
-                    pending = set(futures.keys())
-                    while pending:
-                        if not still_current():
-                            for future in pending:
-                                future.cancel()
-                            return still_failed
-                        done_set, pending = as_completed_wait(pending, timeout=5.0)
-                        for future in done_set:
-                            row = futures[future]
-                            segment_id = int(row["segment_id"])
-                            try:
-                                future.result()
-                                fetched_ok_nonlocal[0] += 1
-                            except Exception as exc:
-                                print(f"[pipeline] fetch failed segment {segment_id}: {exc}")
-                                still_failed.append(segment_id)
-                            if still_current():
-                                _set_pipeline_state(
-                                    workspace,
-                                    stage="fetch_broll",
-                                    message=f"Fetching b-roll ({fetched_ok_nonlocal[0]}/{needed_total})…",
-                                    done=fetched_ok_nonlocal[0],
-                                    total=needed_total,
-                                    failed_segment_ids=sorted(set(still_failed + failed_ids)),
-                                    progress_percent=int(
-                                        (fetched_ok_nonlocal[0] / max(needed_total, 1)) * 70
-                                    ),
-                                )
-                finally:
-                    pool.shutdown(wait=False, cancel_futures=True)
-                return still_failed
 
-            fetched_ok_nonlocal = [fetched_ok]
-            failed_ids = fetch_batch(missing)
-            if not still_current():
-                return
-            retry_round = 0
-            while failed_ids and retry_round < 5:
+                fetched_ok_nonlocal = [fetched_ok]
+                failed_ids = fetch_batch(missing)
                 if not still_current():
                     return
-                retry_round += 1
-                rows_by_id = {int(row["segment_id"]): row for row in load_rows()}
+
+                # Re-check from disk — a "successful" future that didn't persist
+                # coverage must still be retried.
+                rows = load_rows()
+                still_missing = [
+                    row
+                    for row in rows
+                    if segment_needs_broll(row) and not segment_has_broll_coverage(row)
+                ]
+                if not still_missing:
+                    break
+
+                incomplete_passes += 1
+                missing_ids = [int(row["segment_id"]) for row in still_missing]
+                current_done = needed_total - len(still_missing)
+                if current_done > best_done:
+                    best_done = current_done
+                    stagnant_passes = 0
+                else:
+                    stagnant_passes += 1
+                if stagnant_passes >= MAX_STAGNANT_FETCH_PASSES:
+                    _set_pipeline_state(
+                        workspace,
+                        status="interrupted",
+                        stage="fetch_broll",
+                        message=(
+                            f"B-roll stuck at {current_done}/{needed_total} — "
+                            "needs a look."
+                        ),
+                        error=(
+                            f"No progress after {stagnant_passes} retry passes. "
+                            f"Segments still missing clips: "
+                            f"{', '.join(str(i) for i in sorted(set(missing_ids)))}"
+                        ),
+                        done=current_done,
+                        total=needed_total,
+                        failed_segment_ids=sorted(set(missing_ids)),
+                        progress_percent=int((current_done / max(needed_total, 1)) * 70),
+                    )
+                    print(
+                        f"[pipeline] Giving up on b-roll for {workspace.name} at "
+                        f"{current_done}/{needed_total} after {stagnant_passes} "
+                        f"stagnant passes (segments {sorted(set(missing_ids))})"
+                    )
+                    return
+                # Prefer retrying segments that explicitly failed; otherwise all remaining.
+                retry_ids = failed_ids or missing_ids
+                rows_by_id = {int(row["segment_id"]): row for row in rows}
                 retry_rows = [
                     rows_by_id[segment_id]
-                    for segment_id in failed_ids
+                    for segment_id in retry_ids
                     if segment_id in rows_by_id
                 ]
-                failed_ids = fetch_batch(retry_rows)
-                if failed_ids:
-                    time.sleep(3.0)
+                backoff = min(30.0, 2.0 + incomplete_passes * 1.5)
+                _set_pipeline_state(
+                    workspace,
+                    status="running",
+                    stage="fetch_broll",
+                    message=(
+                        f"Retrying remaining b-roll "
+                        f"({needed_total - len(still_missing)}/{needed_total}) "
+                        f"— next attempt in {backoff:.0f}s…"
+                    ),
+                    error=None,
+                    done=needed_total - len(still_missing),
+                    total=needed_total,
+                    failed_segment_ids=sorted(set(missing_ids)),
+                    progress_percent=int(
+                        ((needed_total - len(still_missing)) / max(needed_total, 1)) * 70
+                    ),
+                )
+                print(
+                    f"[pipeline] Incomplete {needed_total - len(still_missing)}/{needed_total} "
+                    f"for {workspace.name} — retrying {len(retry_rows)} segment(s) "
+                    f"in {backoff:.0f}s (pass {incomplete_passes})"
+                )
+                time.sleep(backoff)
+                if not still_current():
+                    return
+                if retry_rows:
+                    fetched_ok_nonlocal = [needed_total - len(still_missing)]
+                    fetch_batch(retry_rows)
+
             if not still_current():
                 return
-            fetched_ok = fetched_ok_nonlocal[0]
 
             rows = load_rows()
             fetched, total = compute_broll_counts(rows)
             if total > 0 and fetched < total:
+                # Should be unreachable while the loop above runs, but keep a
+                # safety net so the orchestrator can still resume if we exit early.
                 _set_pipeline_state(
                     workspace,
                     status="interrupted",
@@ -553,7 +643,6 @@ def start_broll_pipeline(workspace: Path) -> dict[str, Any]:
                     error=f"Only fetched {fetched} of {total} required segments.",
                     done=fetched,
                     total=total,
-                    failed_segment_ids=sorted(set(failed_ids)),
                     progress_percent=70,
                 )
                 return
