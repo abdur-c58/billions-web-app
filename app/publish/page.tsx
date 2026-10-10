@@ -56,6 +56,12 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** The script's whole `thumbnail` block, as written in the script JSON. */
+function thumbnailPromptText(thumbnail: NonNullable<PublishVideo["thumbnail"]>): string {
+  const block = JSON.stringify({ thumbnail }, null, 2);
+  return block.slice(block.indexOf("\n") + 1, block.lastIndexOf("\n")).replace(/^ {2}/gm, "");
+}
+
 const STATUS_LABEL: Record<PublishVideo["state"], string> = {
   ready: "READY FOR PUBLISHING",
   not_ready: "NOT READY",
@@ -117,10 +123,15 @@ function VideoEntry({ video }: { video: PublishVideo }) {
       </Field>
 
       <Field label="Thumbnail prompt" name="thumbnail_prompt">
-        {video.thumbnail_prompt ? (
-          <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-black/25 p-3 font-sans text-sm leading-relaxed">
-            {video.thumbnail_prompt}
-          </pre>
+        {video.thumbnail ? (
+          <>
+            <p className="mb-2 text-xs text-[var(--muted)]">
+              The full thumbnail brief: image prompt plus overlay text and styling. Use all of it.
+            </p>
+            <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--border)] bg-black/25 p-3 font-mono text-xs leading-relaxed">
+              {thumbnailPromptText(video.thumbnail)}
+            </pre>
+          </>
         ) : (
           <p>(missing)</p>
         )}
