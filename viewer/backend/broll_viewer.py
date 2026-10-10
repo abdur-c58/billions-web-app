@@ -76,6 +76,7 @@ from broll_judge import (
 from youtube_chapters import build_plain_chapters
 from youtube_description import build_youtube_description
 from script_format import script_thumbnail
+from publish_queue import build_publish_queue, set_published
 from project_manager import (
     SCRIPT_NAME,
     _alignment_summary_from_timestamps_file,
@@ -2023,6 +2024,20 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
 
+        if parsed.path == "/api/publish/queue":
+            try:
+                entries = build_publish_queue(WORKSPACE_DIR)
+                self._send_json(
+                    {
+                        "generated_at": time.time(),
+                        "ready_count": sum(1 for entry in entries if entry["ready_for_publishing"]),
+                        "videos": entries,
+                    }
+                )
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
         if parsed.path == "/api/export/thumbnail":
             try:
                 self._send_json(self._script_thumbnail())
@@ -2932,6 +2947,20 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/publish/mark":
+            try:
+                body = self._read_json_body()
+                project_id = str(body.get("project_id") or "").strip()
+                if not project_id:
+                    raise ValueError("project_id is required.")
+                status = set_published(WORKSPACE_DIR, project_id, bool(body.get("published", True)))
+                self._send_json({"project_id": project_id, **status})
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
         if parsed.path == "/api/export/youtube-description":
