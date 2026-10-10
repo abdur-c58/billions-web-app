@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, isRetryableFetchError, resolveBrollApiUrl, retryDelayMs, sleep } from "@/lib/api";
-import { regenerateThumbnailPrompts, regenerateYoutubeDescription } from "@/lib/export";
+import { regenerateYoutubeDescription } from "@/lib/export";
 import { formatDuration, truncateExportMessage } from "@/lib/format";
 import { findSegmentAtExportTime, formatTimestampClock, parseTimestamp } from "@/lib/timestamp";
 import type {
@@ -207,12 +207,6 @@ export function useBrollViewer() {
     },
     [updateExportUi],
   );
-
-  const regenerateThumbnails = useCallback(async () => {
-    const snapshot = await regenerateThumbnailPrompts();
-    updateExportUi(snapshot);
-    return snapshot.thumbnail_prompts || [];
-  }, [updateExportUi]);
 
   const loadSegments = useCallback(async () => {
     const payload = await apiFetch<SegmentsPayload>("/api/segments");
@@ -1303,7 +1297,6 @@ export function useBrollViewer() {
     startExport,
     cancelExport,
     regenerateDescription,
-    regenerateThumbnails,
     flagClip,
     flagConflict,
     dismissFlagConflict,

@@ -30,6 +30,8 @@ export type FactCardProps = LayoutProps & {
   titleWeight?: number;
   lineHeight?: number;
   durationInFrames?: number;
+  /** Multiplier for all pixel sizes, which are authored for a 1080p frame. */
+  scale?: number;
 };
 
 export const FactCard: React.FC<FactCardProps> = ({
@@ -51,12 +53,15 @@ export const FactCard: React.FC<FactCardProps> = ({
   labelSize = 28,
   titleWeight = 800,
   lineHeight = 1.45,
+  scale = 1,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = spring({ frame, fps, config: { damping: 200 } });
   const label = factNumber ? `Fact ${factNumber}` : "Fact";
-  const layout = layoutStyles({ textAlign, verticalAlign, padding });
+  const s = scale > 0 ? scale : 1;
+  const layout = layoutStyles({ textAlign, verticalAlign, padding: padding * s });
+  const maxWidth = contentMaxWidth * s;
 
   return (
     <AbsoluteFill
@@ -71,24 +76,24 @@ export const FactCard: React.FC<FactCardProps> = ({
     >
       <div
         style={{
-          transform: `translateY(${(1 - enter) * 40}px)`,
+          transform: `translateY(${(1 - enter) * 40 * s}px)`,
           opacity: enter,
           ...layout.content,
-          maxWidth: contentMaxWidth,
+          maxWidth,
         }}
       >
         {showFactBadge ? (
           <div
             style={{
               display: "inline-block",
-              padding: "10px 18px",
+              padding: `${10 * s}px ${18 * s}px`,
               borderRadius: 999,
               background: "rgba(255,255,255,0.06)",
-              border: `1px solid ${accentColor}`,
+              border: `${Math.max(1, Math.round(s))}px solid ${accentColor}`,
               color: accentColor,
-              fontSize: labelSize,
+              fontSize: labelSize * s,
               fontWeight: 700,
-              letterSpacing: 1.2,
+              letterSpacing: 1.2 * s,
               textTransform: "uppercase",
             }}
           >
@@ -97,22 +102,22 @@ export const FactCard: React.FC<FactCardProps> = ({
         ) : null}
         <h1
           style={{
-            marginTop: showFactBadge ? 36 : 0,
-            fontSize: titleSize,
+            marginTop: showFactBadge ? 36 * s : 0,
+            fontSize: titleSize * s,
             lineHeight: 1.1,
             fontWeight: titleWeight,
-            maxWidth: contentMaxWidth,
+            maxWidth,
           }}
         >
           {title}
         </h1>
         <p
           style={{
-            marginTop: 28,
-            fontSize: bodySize,
+            marginTop: 28 * s,
+            fontSize: bodySize * s,
             lineHeight,
             color: bodyColor,
-            maxWidth: contentMaxWidth,
+            maxWidth,
             opacity: interpolate(frame, [8, 24], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",

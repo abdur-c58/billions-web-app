@@ -348,6 +348,44 @@ def validate_script_payload(script_data: dict[str, Any]) -> None:
                         f"'{composition}'. Supported: {allowed}."
                     )
 
+    validate_thumbnail_block(script_data.get("thumbnail"))
+
+
+def validate_thumbnail_block(thumbnail: Any) -> None:
+    if thumbnail is None:
+        return
+    if not isinstance(thumbnail, dict):
+        raise ValueError('"thumbnail" must be an object.')
+    image_prompt = thumbnail.get("image_prompt")
+    if not isinstance(image_prompt, str) or not image_prompt.strip():
+        raise ValueError('"thumbnail.image_prompt" must be a non-empty string.')
+    overlay_text = thumbnail.get("overlay_text")
+    if overlay_text is None:
+        return
+    if not isinstance(overlay_text, dict):
+        raise ValueError('"thumbnail.overlay_text" must be an object.')
+    for key, value in overlay_text.items():
+        if not isinstance(value, str):
+            raise ValueError(f'"thumbnail.overlay_text.{key}" must be a string.')
+
+
+def script_thumbnail(script_data: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the script's thumbnail brief, or None when the script has none."""
+    thumbnail = script_data.get("thumbnail") if isinstance(script_data, dict) else None
+    if not isinstance(thumbnail, dict):
+        return None
+    image_prompt = str(thumbnail.get("image_prompt") or "").strip()
+    if not image_prompt:
+        return None
+    overlay_raw = thumbnail.get("overlay_text")
+    overlay_text: dict[str, str] = {}
+    if isinstance(overlay_raw, dict):
+        for key, value in overlay_raw.items():
+            text = str(value or "").strip()
+            if text:
+                overlay_text[str(key)] = text
+    return {"image_prompt": image_prompt, "overlay_text": overlay_text}
+
 
 def iter_content_segments(script_data: dict[str, Any]) -> list[tuple[int, str]]:
     """Return narration text segments sorted by segment_id (format-agnostic)."""

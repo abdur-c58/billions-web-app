@@ -925,6 +925,11 @@ def render_segment_clip(
         overlay_position = str(overlay_block.get("position") or "lower-third").strip().lower()
         if overlay_position not in OVERLAY_POSITIONS:
             overlay_position = "lower-third"
+        props.setdefault("scale", round(out_height / 1080, 4))
+        if is_split or is_overlay:
+            props.setdefault("verticalAlign", "center")
+        if is_overlay:
+            props.setdefault("padding", 48)
         half_w = max(2, out_width // 2)
         cache_payload: dict[str, Any] = {
             "composition": composition,

@@ -39,6 +39,7 @@ export type ScriptJson = {
   channel?: string;
   script?: ScriptBeatBlock[];
   segments?: unknown;
+  thumbnail?: unknown;
 };
 
 const KNOWN_REMOTION_COMPOSITIONS = new Set(["FactCard", "TitleCard"]);
@@ -138,6 +139,29 @@ export function validateScriptPayload(data: unknown): asserts data is ScriptJson
           );
         }
       }
+    }
+  }
+  validateThumbnailBlock(scriptData.thumbnail);
+}
+
+function validateThumbnailBlock(thumbnail: unknown): void {
+  if (thumbnail == null) return;
+  if (typeof thumbnail !== "object" || Array.isArray(thumbnail)) {
+    throw new Error('"thumbnail" must be an object.');
+  }
+  const block = thumbnail as Record<string, unknown>;
+  const imagePrompt = block.image_prompt;
+  if (typeof imagePrompt !== "string" || !imagePrompt.trim()) {
+    throw new Error('"thumbnail.image_prompt" must be a non-empty string.');
+  }
+  const overlayText = block.overlay_text;
+  if (overlayText == null) return;
+  if (typeof overlayText !== "object" || Array.isArray(overlayText)) {
+    throw new Error('"thumbnail.overlay_text" must be an object.');
+  }
+  for (const [key, value] of Object.entries(overlayText)) {
+    if (typeof value !== "string") {
+      throw new Error(`"thumbnail.overlay_text.${key}" must be a string.`);
     }
   }
 }

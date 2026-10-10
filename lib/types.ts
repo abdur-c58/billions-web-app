@@ -273,17 +273,15 @@ export type ExportSnapshot = {
   /** R2 key of the uploaded export file. */
   r2_key?: string | null;
   youtube_description?: string | null;
-  thumbnail_prompts?: ThumbnailPrompt[] | null;
   project_id?: string | null;
   project_name?: string | null;
 };
 
-export type ThumbnailPrompt = {
-  label: string;
-  style: string;
-  visual_approach?: string;
-  rationale: string;
-  prompt: string;
+/** Thumbnail brief from the script JSON's top-level `thumbnail` block. */
+export type ScriptThumbnail = {
+  image_prompt: string;
+  /** e.g. line_1_white, line_2_red, font, curiosity_device, corner_badge */
+  overlay_text: Record<string, string>;
 };
 
 export type BackgroundAudioFile = {

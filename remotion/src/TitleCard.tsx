@@ -28,6 +28,8 @@ export type TitleCardProps = LayoutProps & {
   titleWeight?: number;
   lineHeight?: number;
   durationInFrames?: number;
+  /** Multiplier for all pixel sizes, which are authored for a 1080p frame. */
+  scale?: number;
 };
 
 export const TitleCard: React.FC<TitleCardProps> = ({
@@ -47,11 +49,13 @@ export const TitleCard: React.FC<TitleCardProps> = ({
   subtitleSize = 36,
   titleWeight = 800,
   lineHeight = 1.4,
+  scale = 1,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = spring({ frame, fps, config: { damping: 180 } });
-  const layout = layoutStyles({ textAlign, verticalAlign, padding });
+  const s = scale > 0 ? scale : 1;
+  const layout = layoutStyles({ textAlign, verticalAlign, padding: padding * s });
 
   return (
     <AbsoluteFill
@@ -69,17 +73,17 @@ export const TitleCard: React.FC<TitleCardProps> = ({
           transform: `scale(${0.92 + enter * 0.08})`,
           opacity: enter,
           ...layout.content,
-          maxWidth: contentMaxWidth,
+          maxWidth: contentMaxWidth * s,
         }}
       >
         {showAccentBar ? (
           <div
             style={{
-              width: 120,
-              height: 6,
+              width: 120 * s,
+              height: 6 * s,
               borderRadius: 999,
               background: accentColor,
-              margin: textAlign === "center" ? "0 auto 36px" : "0 0 36px",
+              margin: textAlign === "center" ? `0 auto ${36 * s}px` : `0 0 ${36 * s}px`,
               opacity: interpolate(frame, [0, 12], [0, 1], {
                 extrapolateRight: "clamp",
               }),
@@ -88,10 +92,10 @@ export const TitleCard: React.FC<TitleCardProps> = ({
         ) : null}
         <h1
           style={{
-            fontSize: titleSize,
+            fontSize: titleSize * s,
             lineHeight: 1.05,
             fontWeight: titleWeight,
-            letterSpacing: -1.5,
+            letterSpacing: -1.5 * s,
           }}
         >
           {title}
@@ -99,8 +103,8 @@ export const TitleCard: React.FC<TitleCardProps> = ({
         {subtitle ? (
           <p
             style={{
-              marginTop: 28,
-              fontSize: subtitleSize,
+              marginTop: 28 * s,
+              fontSize: subtitleSize * s,
               lineHeight,
               color: subtitleColor,
             }}

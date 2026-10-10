@@ -75,8 +75,9 @@ from broll_judge import (
 )
 from youtube_chapters import build_plain_chapters
 from youtube_description import build_youtube_description
-from youtube_thumbnail_prompts import build_thumbnail_prompts
+from script_format import script_thumbnail
 from project_manager import (
+    SCRIPT_NAME,
     _alignment_summary_from_timestamps_file,
     cancel_audio_generation,
     load_all_timestamps_job_states,
@@ -1299,30 +1300,24 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         update_export_state(project_id, status_file, youtube_description=youtube_description)
         return self._export_snapshot_for(project_id)
 
-    def _regenerate_thumbnail_prompts(self) -> dict[str, Any]:
-        project_id = self.headers.get("X-Billions-Project", "").strip()
+    def _script_thumbnail(self) -> dict[str, Any]:
+        """The thumbnail brief written into the project's script JSON."""
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        project_id = (
+            str((params.get("project_id") or [""])[0]).strip()
+            or self.headers.get("X-Billions-Project", "").strip()
+        )
         if not project_id:
             raise ValueError("Select a project first.")
-        workspace = self._require_workspace()
-        if not self.script_path.exists():
+
+        workspace = project_workspace(WORKSPACE_DIR, project_id)
+        script_path = workspace / SCRIPT_NAME
+        if not workspace.is_dir() or not script_path.exists():
             raise ValueError("Script not found for this project.")
 
-        project_name = None
-        try:
-            project_name = read_manifest(workspace).get("name")
-        except Exception:
-            project_name = None
-        if not project_name:
-            title = read_json(self.timestamps_path, {}).get("title")
-            project_name = title or project_id[:8]
-
-        thumbnail_prompts = build_thumbnail_prompts(
-            script_path=self.script_path,
-            project_name=project_name,
-        )
-        status_file = workspace_paths(workspace)["export_status"]
-        update_export_state(project_id, status_file, thumbnail_prompts=thumbnail_prompts)
-        return self._export_snapshot_for(project_id)
+        script_data = read_json(script_path, {})
+        return {"project_id": project_id, "thumbnail": script_thumbnail(script_data)}
 
     def _download_youtube_audio(self) -> None:
         body = self._read_json_body()
@@ -2022,6 +2017,15 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/export/chapters":
             try:
                 self._send_json(self._youtube_chapters())
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+
+        if parsed.path == "/api/export/thumbnail":
+            try:
+                self._send_json(self._script_thumbnail())
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except Exception as exc:
@@ -2947,16 +2951,6 @@ class BrollViewerHandler(BaseHTTPRequestHandler):
                     include_emojis=include_emojis,
                     include_chapters=include_chapters,
                 )
-                self._send_json(snapshot)
-            except ValueError as exc:
-                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
-            except Exception as exc:
-                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
-            return
-
-        if parsed.path == "/api/export/thumbnail-prompts":
-            try:
-                snapshot = self._regenerate_thumbnail_prompts()
                 self._send_json(snapshot)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)

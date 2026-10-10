@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Clapperboard, Clock, Copy, Download, Flag, FolderOpen, Image, Loader2, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
@@ -15,13 +15,69 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useBrollViewer, type FetchProvider } from "@/hooks/useBrollViewer";
 import { useWhisperResegment } from "@/hooks/useWhisperResegment";
 import { resolveBrollApiUrl } from "@/lib/api";
-import { fetchYoutubeChapters } from "@/lib/export";
+import { fetchScriptThumbnail, fetchYoutubeChapters } from "@/lib/export";
 import { EMPTY_JUDGMENT_SUMMARY } from "@/lib/judgment";
 import { readStoredProject } from "@/lib/session";
-import type { FolderFetchPlan, FolderShortageStrategy, ThumbnailPrompt } from "@/lib/types";
+import type { FolderFetchPlan, FolderShortageStrategy, ScriptThumbnail } from "@/lib/types";
 
 const DESCRIPTION_EMOJIS_KEY = "broll-description-emojis";
 const DESCRIPTION_CHAPTERS_KEY = "broll-description-chapters";
+
+type ThumbnailCopyKey = "prompt" | "text" | "all";
+
+/** Overlay keys like `line_1_white` / `line_2_red`: line number plus text colour. */
+const OVERLAY_LINE_KEY = /^line_(\d+)(?:_([a-z]+))?$/i;
+
+type OverlayLine = { key: string; order: number; text: string; color: string; colorName: string | null };
+
+function overlayLines(overlay: Record<string, string>): OverlayLine[] {
+  const lines: OverlayLine[] = [];
+  for (const [key, text] of Object.entries(overlay)) {
+    const match = OVERLAY_LINE_KEY.exec(key);
+    if (!match) continue;
+    const colorName = match[2]?.toLowerCase() ?? null;
+    lines.push({ key, order: Number(match[1]), text, color: colorName ?? "white", colorName });
+  }
+  return lines.sort((a, b) => a.order - b.order);
+}
+
+function overlayDetails(overlay: Record<string, string>): [string, string][] {
+  return Object.entries(overlay).filter(([key]) => !OVERLAY_LINE_KEY.test(key));
+}
+
+function humanizeKey(key: string): string {
+  const words = key.replace(/_/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function thumbnailBriefText(brief: ScriptThumbnail): string {
+  const parts = ["IMAGE PROMPT", brief.image_prompt];
+  const lines = overlayLines(brief.overlay_text);
+  const details = overlayDetails(brief.overlay_text);
+  if (lines.length || details.length) {
+    parts.push("", "OVERLAY TEXT");
+    for (const line of lines) {
+      parts.push(`Line ${line.order}${line.colorName ? ` (${line.colorName})` : ""}: ${line.text}`);
+    }
+    for (const [key, value] of details) {
+      parts.push(`${humanizeKey(key)}: ${value}`);
+    }
+  }
+  return parts.join("\n");
+}
+
+function ThumbnailCopyButton({ copied, onClick }: { copied: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
 
 export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => void }) {
   const viewer = useBrollViewer();
@@ -42,15 +98,14 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
   const [regeneratingDescription, setRegeneratingDescription] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
-  const [thumbnailPrompts, setThumbnailPrompts] = useState<ThumbnailPrompt[]>([]);
-  const [regeneratingThumbnails, setRegeneratingThumbnails] = useState(false);
+  const [thumbnailBrief, setThumbnailBrief] = useState<ScriptThumbnail | null>(null);
+  const [loadingThumbnail, setLoadingThumbnail] = useState(false);
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
-  const [copiedThumbnailLabel, setCopiedThumbnailLabel] = useState<string | null>(null);
+  const [copiedThumbnailKey, setCopiedThumbnailKey] = useState<ThumbnailCopyKey | null>(null);
   const [titleCopied, setTitleCopied] = useState(false);
   const [copyingChapters, setCopyingChapters] = useState(false);
   const [chaptersCopied, setChaptersCopied] = useState(false);
   const [chaptersError, setChaptersError] = useState<string | null>(null);
-  const thumbnailGenerationRef = useRef(false);
   const folderFormatEnabled = viewer.scriptFormat === "folder";
   const summary = viewer.judgmentSummary ?? EMPTY_JUDGMENT_SUMMARY;
   const exportActive = ["running", "done", "error", "interrupted"].includes(
@@ -103,14 +158,6 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
       setCopiedDescription(description);
     }
   }, [descriptionModalOpen, regeneratingDescription, viewer.exportSnapshot.youtube_description]);
-
-  useEffect(() => {
-    if (!thumbnailModalOpen || regeneratingThumbnails) return;
-    const cached = viewer.exportSnapshot.thumbnail_prompts;
-    if (cached?.length) {
-      setThumbnailPrompts(cached);
-    }
-  }, [thumbnailModalOpen, regeneratingThumbnails, viewer.exportSnapshot.thumbnail_prompts]);
 
   const fetchingIds = [...viewer.loadingIds].sort((a, b) => a - b);
   const showFetchActivity = fetchingIds.length > 0 || viewer.batchProgress !== null;
@@ -273,43 +320,40 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
     }
   }, [includeChapters, includeEmojis, viewer.regenerateDescription]);
 
-  const runThumbnailGeneration = useCallback(async () => {
-    if (thumbnailGenerationRef.current) return;
-    thumbnailGenerationRef.current = true;
-    setRegeneratingThumbnails(true);
+  const handleOpenThumbnail = useCallback(async () => {
     setThumbnailError(null);
-    setCopiedThumbnailLabel(null);
-    try {
-      const prompts = await viewer.regenerateThumbnails();
-      setThumbnailPrompts(prompts);
-    } catch (err) {
-      setThumbnailError(err instanceof Error ? err.message : "Failed to generate thumbnail prompts");
-    } finally {
-      thumbnailGenerationRef.current = false;
-      setRegeneratingThumbnails(false);
-    }
-  }, [viewer.regenerateThumbnails]);
-
-  const handleOpenThumbnailPrompts = useCallback(() => {
-    setThumbnailError(null);
-    setCopiedThumbnailLabel(null);
+    setCopiedThumbnailKey(null);
+    setThumbnailBrief(null);
     setThumbnailModalOpen(true);
-    const cached = viewer.exportSnapshot.thumbnail_prompts;
-    if (cached?.length) {
-      setThumbnailPrompts(cached);
-      return;
-    }
-    void runThumbnailGeneration();
-  }, [runThumbnailGeneration, viewer.exportSnapshot.thumbnail_prompts]);
-
-  const handleCopyThumbnailPrompt = useCallback(async (item: ThumbnailPrompt) => {
+    setLoadingThumbnail(true);
     try {
-      await navigator.clipboard.writeText(item.prompt);
-      setCopiedThumbnailLabel(item.label);
-    } catch {
-      setCopiedThumbnailLabel(null);
+      const payload = await fetchScriptThumbnail(projectId ?? undefined);
+      setThumbnailBrief(payload.thumbnail);
+    } catch (err) {
+      setThumbnailError(err instanceof Error ? err.message : "Failed to load thumbnail brief");
+    } finally {
+      setLoadingThumbnail(false);
     }
-  }, []);
+  }, [projectId]);
+
+  const handleCopyThumbnail = useCallback(
+    async (key: ThumbnailCopyKey) => {
+      if (!thumbnailBrief) return;
+      const text =
+        key === "prompt"
+          ? thumbnailBrief.image_prompt
+          : key === "text"
+            ? overlayLines(thumbnailBrief.overlay_text).map((line) => line.text).join("\n")
+            : thumbnailBriefText(thumbnailBrief);
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedThumbnailKey(key);
+      } catch {
+        setCopiedThumbnailKey(null);
+      }
+    },
+    [thumbnailBrief],
+  );
 
   const handleCopyChapters = useCallback(async () => {
     setCopyingChapters(true);
@@ -743,11 +787,11 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
 
           <button
             type="button"
-            onClick={() => void handleOpenThumbnailPrompts()}
+            onClick={() => void handleOpenThumbnail()}
             className="inline-flex items-center gap-2 rounded-[10px] border border-violet-300/30 bg-violet-500/15 px-3.5 py-2.5 text-sm font-semibold text-violet-100 transition-colors hover:bg-violet-500/25"
           >
             <Image className="h-4 w-4" />
-            Thumbnail prompts
+            Thumbnail
           </button>
 
           {chaptersError ? (
@@ -985,7 +1029,7 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
               className="w-full max-w-[900px] rounded-2xl border border-white/10 bg-[#11131a] p-5 shadow-2xl"
               role="dialog"
               aria-modal="true"
-              aria-label="YouTube thumbnail prompts"
+              aria-label="YouTube thumbnail"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start gap-3">
@@ -993,77 +1037,98 @@ export function BrollViewer({ onBackToProjects }: { onBackToProjects?: () => voi
                   <Image className="size-5 text-violet-300" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold text-white">YouTube thumbnail prompts (A/B)</h3>
+                  <h3 className="text-base font-semibold text-white">YouTube thumbnail</h3>
                   <p className="mt-1 text-sm text-white/65">
-                    Two paste-ready AI image prompts using proven thumbnail formats. Test both on YouTube.
+                    Image prompt and overlay text from this project&apos;s script JSON.
                   </p>
                 </div>
               </div>
 
-              {regeneratingThumbnails && thumbnailPrompts.length === 0 ? (
+              {loadingThumbnail ? (
                 <div className="mt-6 flex items-center justify-center gap-2 py-12 text-sm text-white/70">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating thumbnail prompts…
+                  Loading thumbnail brief…
                 </div>
-              ) : (
+              ) : thumbnailBrief ? (
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {thumbnailPrompts.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex min-h-0 flex-col rounded-xl border border-white/10 bg-black/25 p-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/90">
-                            Variation {item.label}
-                          </p>
-                          <p className="mt-0.5 text-sm font-semibold text-white">{item.style}</p>
-                          {item.visual_approach ? (
-                            <p className="mt-0.5 text-xs text-white/55">{item.visual_approach}</p>
-                          ) : null}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleCopyThumbnailPrompt(item)}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-                        >
-                          {copiedThumbnailLabel === item.label ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-300" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
-                          {copiedThumbnailLabel === item.label ? "Copied" : "Copy"}
-                        </button>
-                      </div>
-                      {item.rationale ? (
-                        <p className="mt-2 text-xs leading-relaxed text-white/60">{item.rationale}</p>
-                      ) : null}
-                      <pre className="mt-2 max-h-[34vh] flex-1 overflow-auto rounded-lg border border-white/10 bg-black/35 p-2.5 text-[11px] leading-relaxed text-white/90 whitespace-pre-wrap">
-                        {item.prompt}
-                      </pre>
+                  <div className="flex min-h-0 flex-col rounded-xl border border-white/10 bg-black/25 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/90">
+                        Image prompt
+                      </p>
+                      <ThumbnailCopyButton
+                        copied={copiedThumbnailKey === "prompt"}
+                        onClick={() => void handleCopyThumbnail("prompt")}
+                      />
                     </div>
-                  ))}
+                    <pre className="mt-2 max-h-[40vh] flex-1 overflow-auto rounded-lg border border-white/10 bg-black/35 p-2.5 text-[11px] leading-relaxed text-white/90 whitespace-pre-wrap">
+                      {thumbnailBrief.image_prompt}
+                    </pre>
+                  </div>
+
+                  <div className="flex min-h-0 flex-col rounded-xl border border-white/10 bg-black/25 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/90">
+                        Overlay text
+                      </p>
+                      {overlayLines(thumbnailBrief.overlay_text).length ? (
+                        <ThumbnailCopyButton
+                          copied={copiedThumbnailKey === "text"}
+                          onClick={() => void handleCopyThumbnail("text")}
+                        />
+                      ) : null}
+                    </div>
+                    {overlayLines(thumbnailBrief.overlay_text).length ? (
+                      <div className="mt-2 rounded-lg border border-white/10 bg-black/60 px-3 py-4">
+                        {overlayLines(thumbnailBrief.overlay_text).map((line) => (
+                          <p
+                            key={line.key}
+                            className="text-2xl font-black uppercase leading-tight tracking-tight"
+                            style={{ color: line.color, WebkitTextStroke: "1px #000" }}
+                          >
+                            {line.text}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-white/55">No overlay text lines in the script.</p>
+                    )}
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {overlayDetails(thumbnailBrief.overlay_text).map(([key, value]) => (
+                        <div key={key}>
+                          <dt className="font-semibold text-white/55">{humanizeKey(key)}</dt>
+                          <dd className="mt-0.5 leading-relaxed text-white/90">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
                 </div>
-              )}
+              ) : !thumbnailError ? (
+                <p className="mt-6 rounded-xl border border-white/10 bg-black/25 p-4 text-sm text-white/70">
+                  This script has no <code className="text-violet-200">thumbnail</code> block. Add one to the
+                  script JSON (see <code className="text-violet-200">SCRIPT_JSON_FORMAT.md</code>) and re-import it.
+                </p>
+              ) : null}
 
               {thumbnailError ? (
                 <p className="mt-3 text-sm text-[#ffc9c9]">{thumbnailError}</p>
               ) : null}
 
               <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => void runThumbnailGeneration()}
-                  disabled={regeneratingThumbnails}
-                  className="inline-flex items-center gap-2 rounded-[10px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-55"
-                >
-                  {regeneratingThumbnails ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  Regenerate
-                </button>
+                {thumbnailBrief ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyThumbnail("all")}
+                    className="inline-flex items-center gap-2 rounded-[10px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                  >
+                    {copiedThumbnailKey === "all" ? (
+                      <Check className="h-4 w-4 text-emerald-300" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    {copiedThumbnailKey === "all" ? "Brief copied" : "Copy full brief"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setThumbnailModalOpen(false)}
