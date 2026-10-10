@@ -56,9 +56,15 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Overlay fields the thumbnail prompt leaves out. */
+const HIDDEN_OVERLAY_FIELDS = new Set(["corner_badge"]);
+
 /** The script's whole `thumbnail` block, as written in the script JSON. */
 function thumbnailPromptText(thumbnail: NonNullable<PublishVideo["thumbnail"]>): string {
-  const block = JSON.stringify({ thumbnail }, null, 2);
+  const overlayText = Object.fromEntries(
+    Object.entries(thumbnail.overlay_text ?? {}).filter(([key]) => !HIDDEN_OVERLAY_FIELDS.has(key)),
+  );
+  const block = JSON.stringify({ thumbnail: { ...thumbnail, overlay_text: overlayText } }, null, 2);
   return block.slice(block.indexOf("\n") + 1, block.lastIndexOf("\n")).replace(/^ {2}/gm, "");
 }
 
