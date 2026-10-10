@@ -1,48 +1,35 @@
-import { apiFetch } from "@/lib/api";
 import type { ScriptThumbnail } from "@/lib/types";
 
-export type PublishCheck = {
-  key: string;
-  label: string;
-  ok: boolean;
-  detail: string;
-};
+export type PublishState = "ready" | "published";
 
-export type PublishState = "ready" | "not_ready" | "published";
-
+/** One video in the R2 Publish/ folder (see viewer/backend/publish_r2.py). */
 export type PublishVideo = {
   project_id: string;
-  project_name: string;
   title: string;
   channel: string;
-  video_path: string;
-  video_exists: boolean;
-  video_size_bytes: number;
-  exported_at: number | null;
   thumbnail: ScriptThumbnail | null;
-  thumbnail_prompt: string;
   chapters: { title: string; timestamp: string; start_seconds: number }[];
   chapters_text: string;
-  checks: PublishCheck[];
-  ready_for_publishing: boolean;
+  video_key: string;
+  video_filename: string;
+  video_size_bytes: number;
+  exported_at: number | null;
+  synced_at: number | null;
   published: boolean;
   published_at: number | null;
   state: PublishState;
 };
 
-export type PublishQueue = {
-  generated_at: number;
-  ready_count: number;
-  videos: PublishVideo[];
-};
-
+/** Plain fetch: these routes live on the website itself, not the Python backend. */
 export async function markPublished(projectId: string, published: boolean) {
-  return apiFetch<{ project_id: string; published: boolean; published_at: number | null }>(
-    "/api/publish/mark",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ project_id: projectId, published }),
-    },
-  );
+  const response = await fetch("/api/publish/mark", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_id: projectId, published }),
+  });
+  const payload = (await response.json().catch(() => ({}))) as { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error || `Request failed (${response.status})`);
+  }
+  return payload;
 }

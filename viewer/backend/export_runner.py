@@ -22,8 +22,9 @@ from export_video import (
     summarize_export_error,
 )
 from project_manager import workspace_paths
+from publish_r2 import sync_publish_entry_safely
 from storage_r2 import upload_exported_video
-from user_sessions import read_manifest
+from user_sessions import read_manifest, resolve_workspace_root
 from youtube_description import build_youtube_description
 
 
@@ -42,6 +43,7 @@ def _start_background_r2_upload(
             update_export_state(project_id, status_file, r2_key=key)
         except Exception as exc:
             print(f"[export-r2] Background upload failed: {exc}")
+        sync_publish_entry_safely(resolve_workspace_root(status_file.parent), project_id)
 
     threading.Thread(
         target=_run,

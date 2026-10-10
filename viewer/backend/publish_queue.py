@@ -184,6 +184,8 @@ def build_publish_entry(workspace_root: Path, project_id: str) -> dict[str, Any]
         "video_exists": video_exists,
         "video_size_bytes": video_size,
         "exported_at": export.get("updated_at"),
+        "inputs_hash": stored_hash,
+        "exported_r2_key": export.get("r2_key"),
         "thumbnail": thumbnail,
         "thumbnail_prompt": thumbnail_brief_text(thumbnail) if thumbnail else "",
         "chapters": chapters,

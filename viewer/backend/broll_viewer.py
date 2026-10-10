@@ -3222,6 +3222,18 @@ def main() -> None:
         threading.Thread(target=_prune_loop, daemon=True).start()
 
     load_all_export_states(WORKSPACE_DIR)
+
+    def _publish_sync_loop() -> None:
+        from publish_r2 import sync_all_publish_entries
+
+        while True:
+            try:
+                sync_all_publish_entries(WORKSPACE_DIR)
+            except Exception as exc:
+                print(f"[publish-r2] Sync loop error: {exc}")
+            time.sleep(600)
+
+    threading.Thread(target=_publish_sync_loop, daemon=True, name="publish-r2-sync").start()
     ensure_port_available(args.host, args.port)
 
     server = ThreadingHTTPServer((args.host, args.port), BrollViewerHandler)

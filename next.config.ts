@@ -57,10 +57,6 @@ const nextConfig: NextConfig = {
         destination: `${backendBase}/api/export/:path*`,
       },
       {
-        source: "/api/publish/:path*",
-        destination: `${backendBase}/api/publish/:path*`,
-      },
-      {
         source: "/api/activity",
         destination: `${backendBase}/api/activity`,
       },

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getEffectiveBackendUrl } from "@/lib/backend-tunnel";
-import type { PublishQueue, PublishVideo } from "@/lib/publish";
+import { headers } from "next/headers";
+import type { PublishVideo } from "@/lib/publish";
+import { listPublishVideos } from "@/lib/publish-r2";
 import { MarkPublishedButton, PublishAutoRefresh } from "@/components/PublishControls";
 import { cn } from "@/lib/utils";
 
@@ -10,40 +11,29 @@ export const metadata: Metadata = {
   title: "Publish queue",
 };
 
-async function backendCandidates(): Promise<string[]> {
-  const candidates: string[] = [];
-  const effective = await getEffectiveBackendUrl();
-  if (effective) candidates.push(effective);
-  // A saved tunnel URL goes stale whenever cloudflared restarts; locally the
-  // backend is always reachable directly.
-  if (!process.env.VERCEL) {
-    const local = `http://127.0.0.1:${process.env.BROLL_BACKEND_PORT || "8766"}`;
-    if (!candidates.includes(local)) candidates.push(local);
+async function loadVideos(): Promise<{
+  videos: PublishVideo[] | null;
+  loadedAt: number;
+  error: string | null;
+}> {
+  const loadedAt = Date.now() / 1000;
+  try {
+    return { videos: await listPublishVideos(), loadedAt, error: null };
+  } catch (err) {
+    return {
+      videos: null,
+      loadedAt,
+      error: err instanceof Error ? err.message : "Failed to read R2 publish folder.",
+    };
   }
-  return candidates;
 }
 
-async function loadQueue(): Promise<{ queue: PublishQueue | null; error: string | null }> {
-  const candidates = await backendCandidates();
-  if (!candidates.length) {
-    return { queue: null, error: "Python backend is not configured." };
-  }
-  let lastError = "";
-  for (const backendUrl of candidates) {
-    try {
-      const response = await fetch(`${backendUrl}/api/publish/queue`, { cache: "no-store" });
-      const payload = (await response.json()) as PublishQueue & { error?: string };
-      if (!response.ok) {
-        lastError = payload.error || `Backend returned ${response.status}.`;
-        continue;
-      }
-      return { queue: payload, error: null };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "request failed";
-      lastError = `Cannot reach Python backend (${backendUrl}): ${message}`;
-    }
-  }
-  return { queue: null, error: lastError };
+async function siteOrigin(): Promise<string> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3001";
+  const proto =
+    requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
 }
 
 function formatDate(seconds: number | null): string {
@@ -70,13 +60,11 @@ function thumbnailPromptText(thumbnail: NonNullable<PublishVideo["thumbnail"]>):
 
 const STATUS_LABEL: Record<PublishVideo["state"], string> = {
   ready: "READY FOR PUBLISHING",
-  not_ready: "NOT READY",
   published: "PUBLISHED",
 };
 
 const STATUS_CLASSES: Record<PublishVideo["state"], string> = {
   ready: "border-emerald-400/50 bg-emerald-400/15 text-emerald-300",
-  not_ready: "border-amber-400/50 bg-amber-400/10 text-amber-300",
   published: "border-sky-400/50 bg-sky-400/10 text-sky-300",
 };
 
@@ -89,13 +77,14 @@ function Field({ label, name, children }: { label: string; name: string; childre
   );
 }
 
-function VideoEntry({ video }: { video: PublishVideo }) {
+function VideoEntry({ video, origin }: { video: PublishVideo; origin: string }) {
+  const downloadUrl = `${origin}/api/publish/download/${video.project_id}`;
   return (
     <article
       id={`video-${video.project_id}`}
       data-project-id={video.project_id}
       data-status={video.state}
-      data-ready-for-publishing={video.ready_for_publishing ? "true" : "false"}
+      data-ready-for-publishing={video.state === "ready" ? "true" : "false"}
       className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-raised)] px-5 py-5"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -112,17 +101,23 @@ function VideoEntry({ video }: { video: PublishVideo }) {
       </div>
 
       <Field label="Video title" name="title">
-        <p className="text-lg font-semibold">{video.title || "(missing)"}</p>
+        <p className="text-lg font-semibold">{video.title}</p>
       </Field>
 
       <Field label="Channel" name="channel">
-        <p>{video.channel || "(missing)"}</p>
+        <p>{video.channel}</p>
       </Field>
 
-      <Field label="Video file path" name="video_path">
-        <p className="break-all font-mono text-xs">{video.video_path || "(missing)"}</p>
+      <Field label="Video download" name="video_download">
+        <a
+          href={downloadUrl}
+          data-download-url={downloadUrl}
+          className="break-all font-mono text-xs text-sky-300 underline underline-offset-2"
+        >
+          {downloadUrl}
+        </a>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          {video.video_exists ? `File found, ${formatSize(video.video_size_bytes)}` : "File not found on disk"}
+          File name: <span className="font-mono">{video.video_filename}</span> · {formatSize(video.video_size_bytes)}
           {" · "}Exported {formatDate(video.exported_at)}
           {video.published ? ` · Published ${formatDate(video.published_at)}` : ""}
         </p>
@@ -144,47 +139,29 @@ function VideoEntry({ video }: { video: PublishVideo }) {
       </Field>
 
       <Field label="Chapters" name="chapters">
-        {video.chapters_text ? (
-          <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-black/25 p-3 font-mono text-sm leading-relaxed">
-            {video.chapters_text}
-          </pre>
-        ) : (
-          <p>(missing)</p>
-        )}
-      </Field>
-
-      <Field label="Checks" name="checks">
-        <ul className="space-y-1">
-          {video.checks.map((check) => (
-            <li key={check.key} data-check={check.key} data-ok={check.ok ? "true" : "false"}>
-              <span className={check.ok ? "text-emerald-400" : "text-red-400"}>
-                {check.ok ? "[PASS]" : "[FAIL]"}
-              </span>{" "}
-              {check.label}
-              {check.detail ? <span className="text-[var(--muted)]"> — {check.detail}</span> : null}
-            </li>
-          ))}
-        </ul>
+        <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-black/25 p-3 font-mono text-sm leading-relaxed">
+          {video.chapters_text}
+        </pre>
       </Field>
     </article>
   );
 }
 
 export default async function PublishPage() {
-  const { queue, error } = await loadQueue();
-  const videos = queue?.videos ?? [];
+  const [{ videos, loadedAt, error }, origin] = await Promise.all([loadVideos(), siteOrigin()]);
+  const readyCount = videos?.filter((video) => video.state === "ready").length ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 lg:px-6">
       <PublishAutoRefresh />
       <h1 className="text-xl font-semibold text-[var(--foreground)]">Publish queue</h1>
       <p className="mt-1 text-sm text-[var(--muted)]">
-        Every finished export with what&apos;s needed to publish it. A video is labelled READY FOR
-        PUBLISHING only when all of its checks pass.
+        Finished exports that passed every check, stored in cloud storage so they can be published even
+        when the editing PC is off. Download each video from its link.
       </p>
       <p data-field="summary" className="mt-3 text-sm text-[var(--foreground)]">
-        {queue
-          ? `${queue.ready_count} ready for publishing · ${videos.length} exported · updated ${formatDate(queue.generated_at)}`
+        {videos
+          ? `${readyCount} ready for publishing · ${videos.length} total · updated ${formatDate(loadedAt)}`
           : null}
       </p>
 
@@ -194,15 +171,15 @@ export default async function PublishPage() {
         </div>
       ) : null}
 
-      {queue && videos.length === 0 ? (
+      {videos && videos.length === 0 ? (
         <div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-8 text-center text-sm text-[var(--muted)]">
-          No finished exports yet.
+          No videos waiting to publish.
         </div>
       ) : null}
 
       <div className="mt-6 flex flex-col gap-4">
-        {videos.map((video) => (
-          <VideoEntry key={video.project_id} video={video} />
+        {(videos ?? []).map((video) => (
+          <VideoEntry key={video.project_id} video={video} origin={origin} />
         ))}
       </div>
     </div>
