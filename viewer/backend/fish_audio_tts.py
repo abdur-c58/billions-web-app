@@ -17,7 +17,8 @@ from typing import Any, Callable
 
 FISH_TTS_URL = "https://api.fish.audio/v1/tts"
 DEFAULT_WPM = 145
-DEFAULT_MODEL = "s2.1-pro-free"
+DEFAULT_MODEL = "drama-3-preview"
+DEFAULT_DIRECTION = "calm, measured storyteller voice, unhurried pace"
 DEFAULT_MAX_CHARS_PER_CHUNK = 2500
 
 
@@ -35,6 +36,7 @@ class FishTtsConfig:
     chunk_length: int
     normalize_loudness: bool
     auto_delay_seconds: int
+    direction: str
 
 
 def _env_float(name: str, default: float) -> float:
@@ -68,6 +70,7 @@ def load_fish_config() -> FishTtsConfig:
         normalize_loudness=os.environ.get("FISH_TTS_NORMALIZE_LOUDNESS", "1").strip().lower()
         not in {"0", "false", "no"},
         auto_delay_seconds=_env_int("FISH_TTS_AUTO_DELAY_SECONDS", 10),
+        direction=os.environ.get("FISH_TTS_DIRECTION", DEFAULT_DIRECTION).strip(),
     )
 
 

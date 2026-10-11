@@ -28,6 +28,7 @@ type ScriptSegment = {
   content?: string;
   type?: string | string[];
   remotion?: { composition?: string };
+  delivery?: unknown;
 };
 
 type ScriptBeatBlock = {
@@ -131,6 +132,7 @@ export function validateScriptPayload(data: unknown): asserts data is ScriptJson
       if (!String(segment.content ?? "").trim()) {
         throw new Error(`Segment ${segmentId} is missing content.`);
       }
+      validateSegmentDelivery(segmentId, segment.delivery);
       if (isRemotionSegment(segment)) {
         const composition = remotionComposition(segment);
         if (!KNOWN_REMOTION_COMPOSITIONS.has(composition)) {
@@ -142,6 +144,21 @@ export function validateScriptPayload(data: unknown): asserts data is ScriptJson
     }
   }
   validateThumbnailBlock(scriptData.thumbnail);
+}
+
+const DELIVERY_MAX_CHARS = 120;
+
+function validateSegmentDelivery(segmentId: number, delivery: unknown): void {
+  if (delivery == null) return;
+  if (typeof delivery !== "string" || !delivery.trim()) {
+    throw new Error(`Segment ${segmentId} "delivery" must be a non-empty string.`);
+  }
+  if (/[\[\].!?]/.test(delivery)) {
+    throw new Error(`Segment ${segmentId} "delivery" must not contain square brackets or . ! ?`);
+  }
+  if (delivery.trim().length > DELIVERY_MAX_CHARS) {
+    throw new Error(`Segment ${segmentId} "delivery" must be at most ${DELIVERY_MAX_CHARS} characters.`);
+  }
 }
 
 function validateThumbnailBlock(thumbnail: unknown): void {

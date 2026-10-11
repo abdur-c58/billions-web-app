@@ -114,6 +114,18 @@ So for chapters to come out well, name your content beats descriptively ("Coloni
 | `description` | Optional | string | A plain-English description of the visual. Used as the b-roll search query when `type` doesn't provide one. |
 | `type` | Optional | array, string, or omitted | How the visual is sourced. See section 6. |
 | `remotion` | Optional | object | Settings for an animated text card instead of (or on top of) stock footage. See section 7. |
+| `delivery` | Optional | string, max 120 chars, no `[ ] . ! ?` | How the voiceover should perform this segment, e.g. `"slower, quiet and somber"`. See below. |
+
+### Voice delivery (`delivery`)
+
+The voiceover uses Fish Audio's `drama-3-preview` model, which reads a direction in square brackets before each sentence and performs it — it is never spoken. The backend adds the default direction `calm, measured storyteller voice, unhurried pace` before **every sentence automatically**; scripts don't need to do anything.
+
+Set `delivery` on a segment only when that segment should sound different. It replaces the default for every sentence in that segment, so write the **whole** direction, not just the change (e.g. `"calm, measured storyteller voice, unhurried pace, quietly somber"`).
+
+- **Never put `[brackets]` or direction words in `content`.** `content` must be exactly the spoken words; Whisper matches the audio back to it for timing.
+- Keep it short, plain-language, like briefing a voice actor: emotion, intent, pace.
+- Don't use it on most segments — the default is the house style. Typical uses: a tragic moment, a reveal, a tense build-up, the final line.
+- The default can be changed with `FISH_TTS_DIRECTION` in `.env.local`.
 
 ### Narration order is `segment_id` order, not file order
 
@@ -421,6 +433,7 @@ Beat 1 is replaced by the `0:00 Intro` marker, and beat 2 is dropped as a subscr
 - [ ] Remotion compositions are spelled exactly `FactCard` or `TitleCard`.
 - [ ] `title` and `channel` are set, so exports are named and filed correctly.
 - [ ] If there's a `thumbnail` block, it has an `image_prompt` and every `overlay_text` value is a quoted string.
+- [ ] `content` has no `[bracket]` cues; any per-segment voice direction goes in `delivery` (no `[ ] . ! ?`, ≤120 chars).
 
 | Mistake | What happens |
 |---|---|

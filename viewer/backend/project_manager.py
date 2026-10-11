@@ -392,7 +392,7 @@ def start_audio_generation(
         synthesize_transcript_to_file,
         validate_fish_config,
     )
-    from script_format import build_narration_transcript
+    from script_format import build_tts_text
 
     paths = workspace_paths(workspace)
     if not paths["script"].exists():
@@ -460,7 +460,7 @@ def start_audio_generation(
         try:
             with paths["script"].open("r", encoding="utf-8") as infile:
                 script_data = json.load(infile)
-            transcript = build_narration_transcript(script_data)
+            transcript = build_tts_text(script_data, config.direction)
 
             _set_tts_state(
                 workspace,

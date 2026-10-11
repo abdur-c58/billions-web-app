@@ -339,6 +339,7 @@ def validate_script_payload(script_data: dict[str, Any]) -> None:
             seen_ids.add(segment_id)
             if not str(segment.get("content", "")).strip():
                 raise ValueError(f"Segment {segment_id} is missing content.")
+            validate_segment_delivery(segment_id, segment.get("delivery"))
             if is_remotion_segment(segment):
                 composition = parse_remotion_fields(segment)["composition"]
                 if composition not in KNOWN_REMOTION_COMPOSITIONS:
@@ -349,6 +350,24 @@ def validate_script_payload(script_data: dict[str, Any]) -> None:
                     )
 
     validate_thumbnail_block(script_data.get("thumbnail"))
+
+
+DELIVERY_MAX_CHARS = 120
+
+
+def validate_segment_delivery(segment_id: int, delivery: Any) -> None:
+    if delivery is None:
+        return
+    if not isinstance(delivery, str) or not delivery.strip():
+        raise ValueError(f'Segment {segment_id} "delivery" must be a non-empty string.')
+    if re.search(r"[\[\].!?]", delivery):
+        raise ValueError(
+            f'Segment {segment_id} "delivery" must not contain square brackets or . ! ?'
+        )
+    if len(delivery.strip()) > DELIVERY_MAX_CHARS:
+        raise ValueError(
+            f'Segment {segment_id} "delivery" must be at most {DELIVERY_MAX_CHARS} characters.'
+        )
 
 
 def validate_thumbnail_block(thumbnail: Any) -> None:
@@ -409,6 +428,42 @@ def build_narration_transcript(script_data: dict[str, Any], *, separator: str = 
     if not parts:
         raise ValueError("No segment content found in script.")
     return separator.join(parts)
+
+
+def build_tts_text(script_data: dict[str, Any], default_direction: str) -> str:
+    """Narration for TTS with a ``[direction]`` cue before every sentence.
+
+    A segment's ``delivery`` overrides ``default_direction`` for that segment.
+    The cues are never spoken, so timestamps and word counts must keep using
+    ``build_narration_transcript``.
+    """
+    segments: list[tuple[int, str, str]] = []
+    for beat_block in script_data.get("script", []):
+        for segment in beat_block.get("segments", []):
+            text = str(segment.get("content", "")).strip()
+            if not text:
+                continue
+            segment_id = int(segment.get("segment_id", len(segments) + 1))
+            delivery = segment.get("delivery")
+            direction = (
+                delivery.strip()
+                if isinstance(delivery, str) and delivery.strip()
+                else default_direction.strip()
+            )
+            segments.append((segment_id, text, direction))
+    if not segments:
+        raise ValueError("No segment content found in script.")
+    segments.sort(key=lambda item: item[0])
+
+    parts: list[str] = []
+    for _, text, direction in segments:
+        if not direction:
+            parts.append(text)
+            continue
+        for sentence in re.split(r"(?<=[.!?])\s+", text):
+            if sentence.strip():
+                parts.append(f"[{direction}] {sentence.strip()}")
+    return " ".join(parts)
 
 
 def build_script_summary(script_data: dict[str, Any]) -> dict[str, Any]:
