@@ -120,31 +120,36 @@ def sync_publish_entry(workspace_root: Path, project_id: str) -> str | None:
     manifest_key = f"{folder}{MANIFEST_NAME}"
 
     existing = _read_object_json(client, bucket, manifest_key)
-    if (
+    video_uploaded = bool(
         existing
         and existing.get("inputs_hash") == entry["inputs_hash"]
         and existing.get("video_size_bytes") == entry["video_size_bytes"]
         and _object_size(client, bucket, str(existing.get("video_key") or "")) == entry["video_size_bytes"]
-    ):
-        return manifest_key
-
-    video_filename = _safe_filename(entry["title"], project_id)
-    video_key = f"{folder}{video_filename}"
-    size = _put_video(
-        client,
-        bucket,
-        video_key=video_key,
-        local_path=Path(entry["video_path"]),
-        exported_r2_key=entry.get("exported_r2_key"),
     )
-    if existing and existing.get("video_key") and existing["video_key"] != video_key:
-        client.delete_object(Bucket=bucket, Key=existing["video_key"])
+
+    if video_uploaded:
+        video_key = str(existing["video_key"])
+        video_filename = str(existing.get("video_filename") or video_key.rsplit("/", 1)[-1])
+        size = entry["video_size_bytes"]
+    else:
+        video_filename = _safe_filename(entry["title"], project_id)
+        video_key = f"{folder}{video_filename}"
+        size = _put_video(
+            client,
+            bucket,
+            video_key=video_key,
+            local_path=Path(entry["video_path"]),
+            exported_r2_key=entry.get("exported_r2_key"),
+        )
+        if existing and existing.get("video_key") and existing["video_key"] != video_key:
+            client.delete_object(Bucket=bucket, Key=existing["video_key"])
 
     manifest = {
         "project_id": project_id,
         "title": entry["title"],
         "channel": entry["channel"],
         "thumbnail": entry["thumbnail"],
+        "youtube_description": entry["youtube_description"],
         "chapters": entry["chapters"],
         "chapters_text": entry["chapters_text"],
         "video_key": video_key,
@@ -154,6 +159,10 @@ def sync_publish_entry(workspace_root: Path, project_id: str) -> str | None:
         "synced_at": time.time(),
         "inputs_hash": entry["inputs_hash"],
     }
+    if existing and all(
+        existing.get(key) == value for key, value in manifest.items() if key != "synced_at"
+    ):
+        return manifest_key
     client.put_object(
         Bucket=bucket,
         Key=manifest_key,

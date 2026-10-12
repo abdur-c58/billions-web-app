@@ -8,6 +8,8 @@ export type PublishVideo = {
   title: string;
   channel: string;
   thumbnail: ScriptThumbnail | null;
+  /** Script's `youtube_description`, without chapters. Missing on videos synced before it existed. */
+  youtube_description?: string;
   chapters: { title: string; timestamp: string; start_seconds: number }[];
   chapters_text: string;
   video_key: string;

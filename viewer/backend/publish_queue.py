@@ -13,7 +13,7 @@ from typing import Any
 
 from export_job_state import compute_export_inputs_hash, export_snapshot
 from project_manager import workspace_paths
-from script_format import script_thumbnail
+from script_format import script_thumbnail, script_youtube_description
 from user_sessions import PROJECT_ID_RE, project_workspace, projects_root, read_manifest
 from youtube_chapters import build_plain_chapters
 
@@ -188,6 +188,7 @@ def build_publish_entry(workspace_root: Path, project_id: str) -> dict[str, Any]
         "exported_r2_key": export.get("r2_key"),
         "thumbnail": thumbnail,
         "thumbnail_prompt": thumbnail_brief_text(thumbnail) if thumbnail else "",
+        "youtube_description": script_youtube_description(script_data),
         "chapters": chapters,
         "chapters_text": "\n".join(f"{c['timestamp']} {c['title']}" for c in chapters),
         "checks": checks,

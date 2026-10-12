@@ -350,6 +350,32 @@ def validate_script_payload(script_data: dict[str, Any]) -> None:
                     )
 
     validate_thumbnail_block(script_data.get("thumbnail"))
+    validate_youtube_description(script_data.get("youtube_description"))
+
+
+YOUTUBE_DESCRIPTION_MAX_CHARS = 5000
+
+
+def validate_youtube_description(description: Any) -> None:
+    if description is None:
+        return
+    if not isinstance(description, str):
+        raise ValueError('"youtube_description" must be a string.')
+    if "<" in description or ">" in description:
+        raise ValueError('"youtube_description" must not contain < or > (YouTube rejects them).')
+    if len(description) > YOUTUBE_DESCRIPTION_MAX_CHARS:
+        raise ValueError(
+            f'"youtube_description" must be at most {YOUTUBE_DESCRIPTION_MAX_CHARS} characters '
+            "(YouTube's limit, chapters included)."
+        )
+
+
+def script_youtube_description(script_data: dict[str, Any]) -> str:
+    """The script's YouTube description (without chapters), or "" when it has none."""
+    if not isinstance(script_data, dict):
+        return ""
+    description = script_data.get("youtube_description")
+    return description.strip() if isinstance(description, str) else ""
 
 
 DELIVERY_MAX_CHARS = 120

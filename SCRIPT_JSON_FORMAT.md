@@ -80,6 +80,7 @@ Unknown extra keys are ignored, so you can safely add your own notes or metadata
 | `title` | Recommended | string | Becomes the project name, the exported MP4 filename, and is used to detect duplicate imports (section 9). Without it the project is called `Project <id>` and exports as `Untitled Video.mp4`. |
 | `channel` | Recommended | string | Becomes the export folder: `Documents/ExportedVids/<channel>/exported/<title>.mp4`. Without it the folder is `Unknown Channel`. |
 | `thumbnail` | Optional | object | The YouTube thumbnail brief shown by the **Thumbnail** button in the b-roll viewer. See section 7b. |
+| `youtube_description` | Optional | string, max 5,000 chars | The YouTube video description, **without** chapters. See section 7c. |
 
 Characters that Windows forbids in filenames (`< > : " / \ | ? *`) are stripped from `title` and `channel` when building the export path. Accented characters such as `ō` or `ā` are kept and work fine.
 
@@ -282,6 +283,21 @@ The brief is read from the imported script, so to change it, edit the JSON and r
 
 ---
 
+## 7c. The `youtube_description`
+
+An optional top-level string: the text for the YouTube description box. Use `\n` for line breaks and `\n\n` between paragraphs.
+
+```json
+"youtube_description": "The Lost Lemon Mine is one of the great legends of the Canadian Rockies ...\n\nMORE FROM ANCIENT CANADA\n- ...\n\nAncient Canada covers unexplained Canadian history most people were never properly taught. Subscribe for more."
+```
+
+- **Don't include chapters or timestamps.** They're generated from the narration timing after export and added after the description automatically.
+- The publish page shows it as **Video description**, then **Chapters**, then **Full YouTube description**, which is the description, a blank line, and the chapters, ready to paste as-is.
+- YouTube allows 5,000 characters in total, chapters included, so keep the description well under that (about 1,500 characters is plenty).
+- No `<` or `>` characters; YouTube rejects descriptions that contain them.
+
+---
+
 ## 8. How the b-roll search query is chosen
 
 For every non-Remotion segment (and the b-roll behind `split-right`/`overlay` cards), the fetcher uses the first non-empty value from this list:
@@ -433,6 +449,7 @@ Beat 1 is replaced by the `0:00 Intro` marker, and beat 2 is dropped as a subscr
 - [ ] Remotion compositions are spelled exactly `FactCard` or `TitleCard`.
 - [ ] `title` and `channel` are set, so exports are named and filed correctly.
 - [ ] If there's a `thumbnail` block, it has an `image_prompt` and every `overlay_text` value is a quoted string.
+- [ ] If there's a `youtube_description`, it has no chapters/timestamps and no `<` or `>`.
 - [ ] `content` has no `[bracket]` cues; any per-segment voice direction goes in `delivery` (no `[ ] . ! ?`, ≤120 chars).
 
 | Mistake | What happens |

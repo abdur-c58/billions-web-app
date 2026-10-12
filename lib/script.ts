@@ -41,6 +41,7 @@ export type ScriptJson = {
   script?: ScriptBeatBlock[];
   segments?: unknown;
   thumbnail?: unknown;
+  youtube_description?: unknown;
 };
 
 const KNOWN_REMOTION_COMPOSITIONS = new Set(["FactCard", "TitleCard"]);
@@ -144,6 +145,24 @@ export function validateScriptPayload(data: unknown): asserts data is ScriptJson
     }
   }
   validateThumbnailBlock(scriptData.thumbnail);
+  validateYoutubeDescription(scriptData.youtube_description);
+}
+
+const YOUTUBE_DESCRIPTION_MAX_CHARS = 5000;
+
+function validateYoutubeDescription(description: unknown): void {
+  if (description == null) return;
+  if (typeof description !== "string") {
+    throw new Error('"youtube_description" must be a string.');
+  }
+  if (/[<>]/.test(description)) {
+    throw new Error('"youtube_description" must not contain < or > (YouTube rejects them).');
+  }
+  if (description.length > YOUTUBE_DESCRIPTION_MAX_CHARS) {
+    throw new Error(
+      `"youtube_description" must be at most ${YOUTUBE_DESCRIPTION_MAX_CHARS} characters (YouTube's limit, chapters included).`,
+    );
+  }
 }
 
 const DELIVERY_MAX_CHARS = 120;

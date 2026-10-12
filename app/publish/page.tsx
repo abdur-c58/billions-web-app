@@ -58,6 +58,13 @@ function thumbnailPromptText(thumbnail: NonNullable<PublishVideo["thumbnail"]>):
   return block.slice(block.indexOf("\n") + 1, block.lastIndexOf("\n")).replace(/^ {2}/gm, "");
 }
 
+/** Everything that goes in the YouTube description box: the script's description, then the chapters. */
+function fullDescriptionText(video: PublishVideo): string {
+  const description = video.youtube_description?.trim() ?? "";
+  const chapters = video.chapters_text.trim();
+  return [description, chapters].filter(Boolean).join("\n\n");
+}
+
 const STATUS_LABEL: Record<PublishVideo["state"], string> = {
   ready: "READY FOR PUBLISHING",
   published: "PUBLISHED",
@@ -138,9 +145,28 @@ function VideoEntry({ video, origin }: { video: PublishVideo; origin: string }) 
         )}
       </Field>
 
+      <Field label="Video description" name="video_description">
+        {video.youtube_description?.trim() ? (
+          <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--border)] bg-black/25 p-3 font-sans text-sm leading-relaxed">
+            {video.youtube_description.trim()}
+          </pre>
+        ) : (
+          <p>(none in script)</p>
+        )}
+      </Field>
+
       <Field label="Chapters" name="chapters">
         <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-black/25 p-3 font-mono text-sm leading-relaxed">
           {video.chapters_text}
+        </pre>
+      </Field>
+
+      <Field label="Full YouTube description (paste exactly as-is)" name="full_youtube_description">
+        <p className="mb-2 text-xs text-[var(--muted)]">
+          The video description followed by the chapters, ready to paste into the YouTube description box.
+        </p>
+        <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--border)] bg-black/25 p-3 font-sans text-sm leading-relaxed">
+          {fullDescriptionText(video)}
         </pre>
       </Field>
     </article>
